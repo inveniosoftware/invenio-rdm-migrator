@@ -48,7 +48,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
     def __init__(self, db_uri, table_loads, output_path):
         """Constructor."""
         self.db_uri = db_uri
-        self.output_dir = Path(output_path)
+        self.output_dir = Path(output_path) / f"data/tables{_ts(iso=False)}"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._table_loads = table_loads
 
@@ -116,11 +116,8 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
             self._cleanup()
 
 
-class PostgreSQLTableLoad(ABC):
-    """Create CSV files with table create and inserts.
-
-    Computes the rows based on the loaders attributes (e.g. parent_cache).
-    """
+class DBTableLoad(ABC):
+    """Create CSV files with table create and inserts."""
 
     def __init__(self, tables):
         """Constructor."""
