@@ -7,7 +7,7 @@
 
 """Invenio RDM migration record load module."""
 
-from ...transform import DBTableLoad, PostgreSQLCopyLoad
+from ...transform import TableGenerator, PostgreSQLCopyLoad
 from .tables import RDMRecordTableLoad, RDMVersionStateComputedTable
 
 
@@ -34,7 +34,7 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreS
                 RDMVersionStateComputedTable(self.parent_cache),
             ]
         )
-    
+
     def _cleanup_db(self):
         """Cleanup DB after load."""
         # FIXME: abstract to tables, can we do without invenio imports

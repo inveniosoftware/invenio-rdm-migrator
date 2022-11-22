@@ -9,14 +9,16 @@
 
 
 import contextlib
+import csv
 import json
+import psycopg
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import fields
 from datetime import datetime
+from invenio_records.dictutils import dict_set # TODO: can we do without?
 from pathlib import Path
 
-import psycopg
 from .base import Load
 
 
@@ -49,7 +51,6 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
         """Constructor."""
         self.db_uri = db_uri
         self.output_dir = Path(output_path) / f"data/tables{_ts(iso=False)}"
-        self.output_dir.mkdir(parents=True, exist_ok=True)
         self._table_loads = table_loads
 
     def _cleanup(self, db=False):
@@ -60,6 +61,8 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
 
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
         _prepared_tables = []
         for table in self._table_loads:
             # otherwise the generator is exahusted by the first table
@@ -67,7 +70,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
             _prepared_tables.extend(
                 table.prepare(self.output_dir, entries=entries)
             )
-        
+
         return iter(_prepared_tables)  # yield at the end vs yield per table
 
     def _load(self, table_entries):
@@ -109,19 +112,20 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
 
     def run(self, entries, cleanup=False):
         """Load entries."""
-        table_entries = self._prepare(entries) 
+        table_entries = self._prepare(entries)
         self._load(table_entries)
 
         if cleanup:
             self._cleanup()
 
 
-class DBTableLoad(ABC):
+class TableGenerator(ABC):
     """Create CSV files with table create and inserts."""
 
-    def __init__(self, tables):
+    def __init__(self, tables, pks=None):
         """Constructor."""
         self._tables = tables
+        self.pks = pks or []
 
     @abstractmethod
     def _cleanup_db(self):
@@ -134,8 +138,8 @@ class DBTableLoad(ABC):
         pass
 
     @abstractmethod
-    def _generate_db_tuples(self, **kwargs):
-        """Yield generated tuples."""
+    def _generate_rows(self, **kwargs):
+        """Yield generated rows."""
         pass
 
     @abstractmethod
@@ -149,3 +153,26 @@ class DBTableLoad(ABC):
 
         if db:  # DB cleanup is not always desired
             self._cleanup_db()
+
+    def _generate_pks(self, data):
+        for path, pk_func in self.pks:
+            dict_set(data, path, pk_func(data))
+
+    def prepare(self, output_dir, entries, **kwargs):
+        """Compute rows."""
+        # use this context manager to close all opened files at once
+        with contextlib.ExitStack() as stack:
+            out_files = {}
+            for entry in entries:
+                # is_db_empty would come in play and make _generate_pks optional
+                self._generate_pks(entry)
+                for entry in self._generate_rows(entry):
+                    if entry._table_name not in out_files:
+                        fpath = output_dir / f"{entry._table_name}.csv"
+                        out_files[entry._table_name] = csv.writer(
+                            stack.enter_context(open(fpath, "w+"))
+                        )
+                    writer = out_files[entry._table_name]
+                    writer.writerow(as_csv_row(entry))
+
+        return self.tables
