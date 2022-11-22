@@ -6,9 +6,9 @@
     modify it under the terms of the MIT License; see LICENSE file for more
     details.
 
-====================
+=====================
  Invenio-RDM-Migrator
-====================
+=====================
 
 .. image:: https://github.com/inveniosoftware/invenio-rdm-migrator/workflows/CI/badge.svg
         :target: https://github.com/inveniosoftware/invenio-rdm-migrator/actions?query=workflow%3ACI+branch%3Amaster
