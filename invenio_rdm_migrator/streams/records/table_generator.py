@@ -8,20 +8,16 @@
 """Invenio RDM migration record table load module."""
 
 
-import contextlib
-import csv
 import random
 import uuid
 from datetime import datetime
 
-from invenio_records.dictutils import dict_set # TODO: can we do without?
-
-from ...load.postgresql import DBTableLoad, as_csv_row
+from ...load.postgresql import TableGenerator
 from ...load.models import PersistentIdentifier
 from .models import RDMVersionState, RDMParentMetadata, RDMRecordMetadata
 
 
-class RDMVersionStateComputedTable(DBTableLoad):
+class RDMVersionStateComputedTable(TableGenerator):
     """RDM version state computed table."""
 
     def __init__(self, parent_cache):
@@ -31,8 +27,8 @@ class RDMVersionStateComputedTable(DBTableLoad):
         )
         self.parent_cache = parent_cache
 
-    def _generate_db_tuples(self, **kwargs):
-        for parent_id, parent_state in self.parent_cache.items():
+    def _generate_rows(self, **kwargs):
+        for parent_state in self.parent_cache.values():
             # Version state to be populated in the end from the final state
             yield RDMVersionState(
                 latest_index=parent_state["version"]["latest_index"],
@@ -40,16 +36,6 @@ class RDMVersionStateComputedTable(DBTableLoad):
                 latest_id=parent_state["version"]["latest_id"],
                 next_draft_id=None,
             )
-
-    def prepare(self, output_dir, **kwargs):
-        """Compute rows."""
-        fpath = output_dir / f"rdm_versions_state.csv"
-        with open(fpath, "a") as fp:
-            writer = csv.writer(fp)
-            for entry in self._generate_db_tuples():
-                writer.writerow(as_csv_row(entry))
-
-        return self.tables
 
 # keep track of generated PKs, since there's a chance they collide
 GENERATED_PID_PKS = set()
@@ -75,7 +61,7 @@ def _generate_uuid(data):
     return str(uuid.uuid4())
 
 
-class RDMRecordTableLoad(DBTableLoad):
+class RDMRecordTableLoad(TableGenerator):
     """RDM Record and related tables load."""
 
     def __init__(self, parent_cache):
@@ -85,23 +71,19 @@ class RDMRecordTableLoad(DBTableLoad):
                 PersistentIdentifier,
                 RDMParentMetadata,
                 RDMRecordMetadata,
+            ],
+            pks = [
+                ("record.id", _generate_uuid),
+                ("parent.id", _generate_uuid),
+                ("record.json.pid", _generate_recid),
+                ("parent.json.pid", _generate_recid),
+                ("record.parent_id", lambda d: d["parent"]["id"]),
             ]
         )
         self.parent_cache = parent_cache
-        self.pks = [
-            ("record.id", _generate_uuid),
-            ("parent.id", _generate_uuid),
-            ("record.json.pid", _generate_recid),
-            ("parent.json.pid", _generate_recid),
-            ("record.parent_id", lambda d: d["parent"]["id"]),
-        ]
-
-    def _generate_pks(self, data):
-        for path, pk_func in self.pks:
-            dict_set(data, path, pk_func(data))
 
 
-    def _generate_db_tuples(self, data, **kwargs):
+    def _generate_rows(self, data, **kwargs):
         now = datetime.utcnow().isoformat()
 
         # record
@@ -188,22 +170,3 @@ class RDMRecordTableLoad(DBTableLoad):
                 cached_parent["version"] = dict(
                     latest_index=rec["index"], latest_id=rec["id"]
                 )
-
-    def prepare(self, output_dir, datagen, **kwargs):
-        """Compute rows."""
-        # use this context manager to close all opened files at once
-        with contextlib.ExitStack() as stack:
-            out_files = {}
-            for entry in datagen:
-                # is_db_empty would come in play and make _generate_pks optional                    
-                self._generate_pks(entry)
-                for entry in self._generate_db_tuples(entry):
-                    if entry._table_name not in out_files:
-                        fpath = output_dir / f"{entry._table_name}.csv"
-                        out_files[entry._table_name] = csv.writer(
-                            stack.enter_context(open(fpath, "w+"))
-                        )
-                    writer = out_files[entry._table_name]
-                    writer.writerow(as_csv_row(entry))
-
-        return self.tables
