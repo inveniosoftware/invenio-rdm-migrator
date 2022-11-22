@@ -12,6 +12,7 @@ from dataclasses import InitVar, dataclass
 
 @dataclass
 class PersistentIdentifier:
+    """Persistent identifier dataclass model."""
 
     id: str
     pid_type: str

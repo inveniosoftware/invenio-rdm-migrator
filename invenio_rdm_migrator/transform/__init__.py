@@ -7,8 +7,9 @@
 
 """Invenio RDM migration transform module."""
 
-from .base import Transform
+from .base import Entry, Transform
 
 __all__ = (
+    "Entry",
     "Transform",
 )

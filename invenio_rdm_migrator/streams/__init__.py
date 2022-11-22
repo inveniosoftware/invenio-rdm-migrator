@@ -7,8 +7,6 @@
 
 """Invenio RDM migration streams."""
 
-from .base import Stream
+from .streams import Stream
 
-__all__ = (
-    "Stream",
-)
+__all__ = "Stream"
