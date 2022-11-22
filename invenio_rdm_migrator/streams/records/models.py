@@ -12,6 +12,7 @@ from dataclasses import InitVar, dataclass
 
 @dataclass
 class RDMRecordMetadata:
+    """RDM Record Metadata dataclass model."""
 
     id: str
     json: dict
@@ -27,6 +28,7 @@ class RDMRecordMetadata:
 
 @dataclass
 class RDMRecordFile:
+    """RDM Record File dataclass model."""
 
     id: str
     json: dict
@@ -42,6 +44,7 @@ class RDMRecordFile:
 
 @dataclass
 class RDMParentMetadata:
+    """RDM Parent Metadata dataclass model."""
 
     id: str
     json: dict
@@ -54,6 +57,7 @@ class RDMParentMetadata:
 
 @dataclass
 class RDMVersionState:
+    """RDM Version State dataclass model."""
 
     latest_index: int
     parent_id: str
@@ -65,6 +69,7 @@ class RDMVersionState:
 
 @dataclass
 class RDMDraftMetadata:
+    """RDM Draft Metadata dataclass model."""
 
     id: str
     json: dict
@@ -83,5 +88,6 @@ class RDMDraftMetadata:
 
 @dataclass
 class RDMDraftFile(RDMRecordFile):
+    """RDM Draft File dataclass model."""
 
     _table_name: InitVar[str] = "rdm_drafts_files"

@@ -54,15 +54,15 @@ To run the migration you need:
 - Install the dependencies of the migration code:
 
 .. code-block:: console
-    $ pip install -r migration/requirements.txt
 
+    $ pip install -r migration/requirements.txt
 
 - Edit the code where the db credentials are hardcoded (right now they are `zenodo:zenodo`, replace by your instances')
 - Run the migration ETL. In the existing case it requires JSONLines file with the records.
 
 .. code-block:: console
-    $ python run.py data/records-dump.jsonl
 
+    $ python run.py data/records-dump.jsonl
 
 This will read from the jsonlines file, transform the entries to the RDM data model, output csv files with the data to load on the db (available in `/data/tables`), then perform a `COPY` operation to the DB. The created CSV files are suffixed with the timestamp, so there will be no clash between runs. However, if you wish to delete those files after running the migration, add the `--cleanup` flag to the run command from above.
 
@@ -76,12 +76,12 @@ The `run.py` file is where the ETL stream is defined and executed. You can hook 
 Imagine you wish to read from an XML file and then transform it to RDM data model, so the load process stays the same.
 
 .. code-block:: python
+
     stream = Stream(
         extract=XMLExtract(filename),
         transform=XMLToRDMRecordTransform(),
         load=PostgreSQLCopyLoad(),
     )
-
 
 How to define the `XMLExtract` and `XMLToRDMRecordTransform` classes is explained in the following sections:
 
@@ -91,6 +91,7 @@ Extract
 The extract is the first part of the data processing stream. It's functionality is quite simple: return an iterator of records, where each record is a dictionary. For example, to implement the `XMLExtract` class:
 
 .. code-block:: python
+
     class XMLExtract(Extract):
     ...
 
@@ -98,7 +99,6 @@ The extract is the first part of the data processing stream. It's functionality 
             with open("file.xml") as file:
                 for entry in file:
                     yield xml.loads(entry)
-
 
 It is up to discussion if the _transformation_ from XML/JSON string to dictionary should be part of the extract or is it a "pre-transform" step.
 
@@ -110,6 +110,7 @@ The transformer has the biggest part of the code logic. It is in charge of makin
 To transform something to an RDM record, you need to implement `transform/base:RDMRecordTransform`. For each record it will yield what is considered a semantically "full" record: the record itself, its parent, its draft in case it exists and the files related them.
 
 .. code-block:: python
+
     {
         "record": self._record(entry),
         "draft": self._draft(entry),
@@ -117,7 +118,6 @@ To transform something to an RDM record, you need to implement `transform/base:R
         "record_files": self._record_files(entry),
         "draft_files": self._draft_files(entry),
     }
-
 
 This means that you will need to implement the functions for each key. Note that, only `_record` and `_parent` should return content, the others can return `None`. In this case we will need to rethink which methods should be `abstractmethod` and which ones be defaulted to `None/{}/some other default` in the base). You can find an example implementation at `transform/zenodo:ZenodoToRDMRecordTransform`.
 
@@ -135,13 +135,13 @@ The final step to have the records available in the RDM instance is to load them
 - 1. Prepare the inserts in one csv file per table.
 
 .. code-block:: console
+
     $ /migration/data/tables1668697280.943311
         |
         | - pidstore_pid.csv
         | - rdm_parents_metadata.csv
         | - rdm_records_metadata.csv
         | - rdm_versions_state.csv
-
 
 2. Perform the actual loading, using `COPY`. Doing all rows at once is more efficient than performing one `INSERT` per row.
 

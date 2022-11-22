@@ -7,7 +7,7 @@
 
 """Invenio RDM migration record transform interfaces."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from ...transform import Entry, Transform
 
@@ -95,7 +95,7 @@ class RDMRecordEntry(Entry):
         pass
 
     @abstractmethod
-    def _files (self, entry):
+    def _files(self, entry):
         """Transform the files of a record."""
         pass
 
@@ -116,7 +116,6 @@ class RDMRecordEntry(Entry):
 
     def transform(self, entry):
         """Transform a record single entry."""
-
         return {
             "created": self._created(entry),
             "updated": self._updated(entry),

@@ -12,9 +12,9 @@ import random
 import uuid
 from datetime import datetime
 
-from ...load.postgresql import TableGenerator
 from ...load.models import PersistentIdentifier
-from .models import RDMVersionState, RDMParentMetadata, RDMRecordMetadata
+from ...load.postgresql import TableGenerator
+from .models import RDMParentMetadata, RDMRecordMetadata, RDMVersionState
 
 
 class RDMVersionStateComputedTable(TableGenerator):
@@ -22,9 +22,7 @@ class RDMVersionStateComputedTable(TableGenerator):
 
     def __init__(self, parent_cache):
         """Constructor."""
-        super().__init__(
-            tables=[RDMVersionState]
-        )
+        super().__init__(tables=[RDMVersionState])
         self.parent_cache = parent_cache
 
     def _generate_rows(self, **kwargs):
@@ -37,8 +35,10 @@ class RDMVersionStateComputedTable(TableGenerator):
                 next_draft_id=None,
             )
 
+
 # keep track of generated PKs, since there's a chance they collide
 GENERATED_PID_PKS = set()
+
 
 def _pid_pk():
     while True:
@@ -57,6 +57,7 @@ def _generate_recid(data):
         "status": "R",
     }
 
+
 def _generate_uuid(data):
     return str(uuid.uuid4())
 
@@ -72,16 +73,15 @@ class RDMRecordTableLoad(TableGenerator):
                 RDMParentMetadata,
                 RDMRecordMetadata,
             ],
-            pks = [
+            pks=[
                 ("record.id", _generate_uuid),
                 ("parent.id", _generate_uuid),
                 ("record.json.pid", _generate_recid),
                 ("parent.json.pid", _generate_recid),
                 ("record.parent_id", lambda d: d["parent"]["id"]),
-            ]
+            ],
         )
         self.parent_cache = parent_cache
-
 
     def _generate_rows(self, data, **kwargs):
         now = datetime.utcnow().isoformat()

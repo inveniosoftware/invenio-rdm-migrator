@@ -11,13 +11,14 @@
 import contextlib
 import csv
 import json
-import psycopg
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import fields
 from datetime import datetime
-from invenio_records.dictutils import dict_set # TODO: can we do without?
 from pathlib import Path
+
+import psycopg
+from invenio_records.dictutils import dict_set  # TODO: can we do without?
 
 from .base import Load
 
@@ -60,16 +61,13 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
-
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         _prepared_tables = []
         for table in self._table_loads:
             # otherwise the generator is exahusted by the first table
             # TODO: nested generators, how expensive is this copy op?
-            _prepared_tables.extend(
-                table.prepare(self.output_dir, entries=entries)
-            )
+            _prepared_tables.extend(table.prepare(self.output_dir, entries=entries))
 
         return iter(_prepared_tables)  # yield at the end vs yield per table
 

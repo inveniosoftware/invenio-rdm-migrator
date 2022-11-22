@@ -28,7 +28,7 @@ class Stream:
         extract_gen = self.extract.run()
         transform_gen = self.transform.run(extract_gen)
         self.load.run(transform_gen, cleanup=cleanup)
-        
+
         end_time = datetime.now()
         print(f"Stream ended {end_time.isoformat()}")
 
