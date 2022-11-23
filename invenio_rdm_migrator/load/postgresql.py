@@ -51,12 +51,12 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
     def __init__(self, db_uri, table_loads, output_path):
         """Constructor."""
         self.db_uri = db_uri
-        self.output_dir = Path(output_path) / f"data/tables{_ts(iso=False)}"
-        self._table_loads = table_loads
+        self.output_dir = Path(output_path) / f"tables{_ts(iso=False)}"
+        self.table_loads = table_loads
 
     def _cleanup(self, db=False):
         """Cleanup csv files and DB after load."""
-        for table in self.tables:
+        for table in self.table_loads:
             table.cleanup_files(db)
 
     def _prepare(self, entries):
@@ -64,7 +64,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         _prepared_tables = []
-        for table in self._table_loads:
+        for table in self.table_loads:
             # otherwise the generator is exahusted by the first table
             # TODO: nested generators, how expensive is this copy op?
             _prepared_tables.extend(table.prepare(self.output_dir, entries=entries))
@@ -161,4 +161,4 @@ class TableGenerator(ABC):
                     writer = out_files[entry._table_name]
                     writer.writerow(as_csv_row(entry))
 
-        return self.tables
+        return self._tables
