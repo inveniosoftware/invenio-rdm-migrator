@@ -48,10 +48,10 @@ def as_csv_row(dc):
 class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, table_loads, output_path):
+    def __init__(self, db_uri, table_loads, tmp_dir):
         """Constructor."""
         self.db_uri = db_uri
-        self.output_dir = Path(output_path) / f"tables{_ts(iso=False)}"
+        self.tmp_dir = Path(tmp_dir) / f"tables{_ts(iso=False)}"
         self.table_loads = table_loads
 
     def _cleanup(self, db=False):
@@ -61,13 +61,13 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
         _prepared_tables = []
         for table in self.table_loads:
             # otherwise the generator is exahusted by the first table
             # TODO: nested generators, how expensive is this copy op?
-            _prepared_tables.extend(table.prepare(self.output_dir, entries=entries))
+            _prepared_tables.extend(table.prepare(self.tmp_dir, entries=entries))
 
         return iter(_prepared_tables)  # yield at the end vs yield per table
 
@@ -80,7 +80,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
             for table in table_entries:
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
-                fpath = self.output_dir / f"{name}.csv"
+                fpath = self.tmp_dir / f"{name}.csv"
                 file_size = fpath.stat().st_size  # total file size for progress logging
 
                 print(f"[{_ts()}] COPY FROM {fpath}")  # TODO: logging
@@ -131,7 +131,7 @@ class TableGenerator(ABC):
         pass
 
     @abstractmethod
-    def prepare(self, output_dir, **kwargs):
+    def prepare(self, tmp_dir, **kwargs):
         """Compute rows."""
         pass
 
@@ -144,7 +144,7 @@ class TableGenerator(ABC):
         for path, pk_func in self.pks:
             dict_set(data, path, pk_func(data))
 
-    def prepare(self, output_dir, entries, **kwargs):
+    def prepare(self, tmp_dir, entries, **kwargs):
         """Compute rows."""
         # use this context manager to close all opened files at once
         with contextlib.ExitStack() as stack:
@@ -154,7 +154,7 @@ class TableGenerator(ABC):
                 self._generate_pks(entry)
                 for entry in self._generate_rows(entry):
                     if entry._table_name not in out_files:
-                        fpath = output_dir / f"{entry._table_name}.csv"
+                        fpath = tmp_dir / f"{entry._table_name}.csv"
                         out_files[entry._table_name] = csv.writer(
                             stack.enter_context(open(fpath, "w+"))
                         )
