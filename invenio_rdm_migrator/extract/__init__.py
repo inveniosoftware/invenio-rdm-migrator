@@ -9,4 +9,4 @@
 
 from .base import Extract
 
-__all__ = "Extract"
+__all__ = ("Extract",)
