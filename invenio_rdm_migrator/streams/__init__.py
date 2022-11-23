@@ -7,6 +7,11 @@
 
 """Invenio RDM migration streams."""
 
-from .streams import Stream
+from .runner import Runner
+from .streams import Stream, StreamDefinition
 
-__all__ = "Stream"
+__all__ = (
+    "Runner",
+    "Stream",
+    "StreamDefinition",
+)
