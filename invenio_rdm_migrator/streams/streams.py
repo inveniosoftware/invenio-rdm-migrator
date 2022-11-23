@@ -11,11 +11,26 @@
 from datetime import datetime
 
 
+class StreamDefinition:
+    """ETL stream definition.
+
+    It defines the classes that will form the ETL stream.
+    """
+
+    def __init__(self, name, extract_cls, transform_cls, load_cls):
+        """Constructor."""
+        self.name = name
+        self.extract_cls = extract_cls
+        self.transform_cls = transform_cls
+        self.load_cls = load_cls
+
+
 class Stream:
     """ETL stream."""
 
-    def __init__(self, extract, transform, load):
+    def __init__(self, name, extract, transform, load):
         """Constructor."""
+        self.name = name
         self.extract = extract
         self.transform = transform
         self.load = load
