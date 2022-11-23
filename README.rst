@@ -50,45 +50,96 @@ How to run it
 
 To run the migration you need:
 
-- A running InvenioRDM instance. It is also required to run the setup step to have the vocabularies and other referenced items. For example `invenio-cli services setup --force --no-demo-data`.
-- Install the dependencies of the migration code:
+- A running InvenioRDM instance.
+- If your data contains references to other records (e.g. vocabularies),
+  then it is also required to run the setup step.
 
 .. code-block:: console
 
-    $ pip install -r migration/requirements.txt
+    invenio-cli services setup --force --no-demo-data
 
-- Edit the code where the db credentials are hardcoded (right now they are `zenodo:zenodo`, replace by your instances')
-- Run the migration ETL. In the existing case it requires JSONLines file with the records.
+- Install Invenio-RDM-Migrator, any other dependencies must be handled
+  in the Pipfile of your instance.
 
 .. code-block:: console
 
-    $ python run.py data/records-dump.jsonl
+    $ pip install invenio-rdm-migrator
 
-This will read from the jsonlines file, transform the entries to the RDM data model, output csv files with the data to load on the db (available in `/data/tables`), then perform a `COPY` operation to the DB. The created CSV files are suffixed with the timestamp, so there will be no clash between runs. However, if you wish to delete those files after running the migration, add the `--cleanup` flag to the run command from above.
+- Create/edit the configuration file on your instance, for example
+  `streams.yaml`:
+
+.. code-block:: yaml
+
+    records:
+        extract:
+            filename: /path/to/records.json
+        load:
+            db_uri: postgresql+psycopg2://inveniordm:inveniordm@localhost:5432/inveniordm
+            tmp_dir: /tmp/migrator
+
+
+- You will need to create a small python script
+  putting together the different blocks of the ETL. You can find an eample
+  at `my-site/site/my_site/migrator/__main__.py`.
+
+.. code-block:: python
+
+    from invenio_rdm_migrator.streams import StreamDefinition
+    from invenio_rdm_migrator.streams.records import RDMRecordCopyLoad
+
+    if __name__ == "__main__":
+        RecordStreamDefinition = StreamDefinition(
+            name="records",
+            extract_cls=JSONLExtract,
+            transform_cls=ZenodoToRDMRecordTransform,
+            load_cls=RDMRecordCopyLoad,
+        )
+
+        runner = Runner(
+            stream_definitions=[
+                RecordStreamDefinition,
+            ],
+            config_filepath="path/to/your/streams.yaml",
+        )
+        runner.run()
+
+- Finally, you can execute the above code. Since it is in the `__main__` file
+  of the python package, you can run it as a module:
+
+.. code-block:: console
+
+    $ python -m my_site.migrator
+
+- Once the migration has completed, in your instance you can reindex the data.
+  For example, for users and records it would look like:
+
+.. code-block:: console
+
+    $ invenio-cli pyshell
+
+    In [1]: from invenio_access.permissions import system_identity
+    In [2]: from invenio_rdm_records.proxies import current_rdm_records_service
+    In [3]: from invenio_users_resources.proxies import current_users_service
+
+    In [4]: current_users_service.rebuild_index(identity=system_identity)
+    In [5]: current_rdm_records_service.rebuild_index(identity=system_identity)
 
 Implement your {Extract/Transform/Load}
 =======================================
 
-The package contains 4 folders and one main python file. The `data` folder is meant to host your data and the output of the process (e.g. `tables/`) and it is not version controlled.
-
-The `run.py` file is where the ETL stream is defined and executed. You can hook in your custom extract, transform and load as long as they respect the contract for returning an iterator (so the `Stream.run` function works).
-
-Imagine you wish to read from an XML file and then transform it to RDM data model, so the load process stays the same.
-
-.. code-block:: python
-
-    stream = Stream(
-        extract=XMLExtract(filename),
-        transform=XMLToRDMRecordTransform(),
-        load=PostgreSQLCopyLoad(),
-    )
-
-How to define the `XMLExtract` and `XMLToRDMRecordTransform` classes is explained in the following sections:
+There are for packages in this module `extract`, `transform`, `load`, and
+`streams`. The first three correspond to the three steps of an ETL process.
+The `streams` package contains the logic to run the process and different
+stream-specific implementations of ETL classes (e.g. `records`).
 
 Extract
 -------
 
-The extract is the first part of the data processing stream. It's functionality is quite simple: return an iterator of records, where each record is a dictionary. For example, to implement the `XMLExtract` class:
+The extract is the first part of the data processing stream. It's
+functionality isquite simple: return an iterator (e.g. of records), where each
+yielded value is a dictionary. Note that the data in this step is _transformed_
+to an extent, but only in format (e.g. JSON, XML), not in content. For example,
+to implement a `XMLExtract` class:
 
 .. code-block:: python
 
@@ -100,14 +151,19 @@ The extract is the first part of the data processing stream. It's functionality 
                 for entry in file:
                     yield xml.loads(entry)
 
-It is up to discussion if the _transformation_ from XML/JSON string to dictionary should be part of the extract or is it a "pre-transform" step.
-
 Transform
 ---------
 
-The transformer has the biggest part of the code logic. It is in charge of making whatever entry it gets into something that can be imported into an RDM database (e.g. an RDMRecord). It's main functionality is to loop through the entries (i.e. the iterator returned by the extract class), transform and yield (e.g. the record). Diving more in the example of a record:
+The transformer is in charge of modifying the content to suit, in this case,
+the InvenioRDM data model (e.g. for records) so it can be imported in the DB.
+It's will loop through the entries (i.e. the iterator returned by the extract
+class), transform and yield (e.g. the record). Diving more in the example of
+a record:
 
-To transform something to an RDM record, you need to implement `transform/base:RDMRecordTransform`. For each record it will yield what is considered a semantically "full" record: the record itself, its parent, its draft in case it exists and the files related them.
+To transform something to an RDM record, you need to implement
+`streams/records/transform.py:RDMRecordTransform`. For each record it will
+yield what is considered a semantically "full" record: the record itself,
+its parent, its draft in case it exists and the files related them.
 
 .. code-block:: python
 
@@ -119,52 +175,79 @@ To transform something to an RDM record, you need to implement `transform/base:R
         "draft_files": self._draft_files(entry),
     }
 
-This means that you will need to implement the functions for each key. Note that, only `_record` and `_parent` should return content, the others can return `None`. In this case we will need to rethink which methods should be `abstractmethod` and which ones be defaulted to `None/{}/some other default` in the base). You can find an example implementation at `transform/zenodo:ZenodoToRDMRecordTransform`.
+This means that you will need to implement the functions for each key. Note
+that, only `_record` and `_parent` should return content, the others can return
+`None`. In this case we will need to re-think which methods should be
+`abstractmethod` and which ones be defaulted to `None/{}/some other default` in
+the base. You can find an example implementation at
+`zenodo-rdm/site/zenodo_rdm/migrator/transform.py:ZenodoToRDMRecordTransform`.
 
-Some of these functions can themselves use a `transform/base:Entry` transformer. An _entry_ transformer, is one layer deeper abstraction, to provide an interface with the methods needed to generate valid data. Following the record example, you can implement `transform/base:RDMRecordEntry`. Note that implementing this interface will produce valid _data_ for a record, however, the _metadata_ is not interfaced (It is an open question how much we should define this and avoid duplicating already existing Marshmallow schemas).
+Some of these functions can themselves use a `transform/base:Entry`
+transformer. An _entry_ transformer is a one layer deeper abstraction, to
+provide an interface with the methods needed to generate valid data for part of
+the `Transform` class. In the record example, you can implement
+`transform.base:RDMRecordEntry`, which can be used in the
+`RDMRecordTransform._record` function mentioned in the code snippet above. Note
+that implementing this interface will produce valid _data_ for a record.
+However, the _metadata_ is not interfaced. It is an open question how much we
+should define these interfaces and avoid duplicating already existing
+Marshmallow schemas.
 
-At this point you might be wondering "Why not Marshmallow then?". The answer is "separation of responsibilities, performance and simplicity". The later lays with the fact that most of the data transformation is custom, so we would end up with a schema full of `Method` fields, which does not differ much from what we have but would have an impact on performance (Marshmallow is slow...). Regarding the responsibilities part, validating - mostly referential, like vocabularies - can only be done on _load_ where RDM instance knowledge/appctx is available.
+At this point you might be wondering "Why not Marshmallow then?". The answer is
+"separation of responsibilities, performance and simplicity". The later lays
+with the fact that most of the data transformation is custom, so we would end
+up with a schema full of `Method` fields, which does not differ much from what
+we have but would have an impact on performance (Marshmallow is slow...).
+Regarding the responsibilities part, validating - mostly referential, like
+vocabularies - can only be done on _load_ where RDM instance knowledge/appctx
+is available.
 
-Note: there is an open question regarding a "soft/structural validation" step on the transformation. Right now this is forced because we access the fields with `[]` instead of allowing them not to be present like `.get(...)`.
+Note that no validation (not even structural) is done (at the moment) in this
+step.
 
 Load
 ----
 
-The final step to have the records available in the RDM instance is to load them. The available `load/postgresql:PostgreSQLCopyLoad` will carry out 2 steps:
+The final step to have the records available in the RDM instance is to load
+them. The available `load/postgresql:PostgreSQLCopyLoad` will carry out 2 steps:
 
-- 1. Prepare the inserts in one csv file per table.
+- 1. Prepare the data, writing one DB row per line in a csv file:
 
 .. code-block:: console
 
-    $ /migration/data/tables1668697280.943311
+    $ /path/to/data/tables1668697280.943311
         |
         | - pidstore_pid.csv
         | - rdm_parents_metadata.csv
         | - rdm_records_metadata.csv
         | - rdm_versions_state.csv
 
-2. Perform the actual loading, using `COPY`. Doing all rows at once is more efficient than performing one `INSERT` per row.
+2. Perform the actual loading, using `COPY`. Inserting all rows at once is more
+   efficient than performing one `INSERT` per row.
 
-Internally what is happening is that the `prepare` function makes use of `TableLoad` implementations and then yields the list of csv files. So the `load` only iterates through the filenames, not the actual entries.
+Internally what is happening is that the `prepare` function makes use of
+`TableGenerator` implementations and then yields the list of csv files.
+So the `load` only iterates through the filenames, not the actual entries.
 
-A `TableLoad` is an abstraction that for every entry will yield one or more "row" entries. For example for a record it will yield: record recid, DOI and OAI (PersistentIdentifiers), record and parent metadata, etc.
+A `TableGenerator` will, for each value in the received iterator, yield one
+or more rows (lines to be written to the a csv file). For example for a record
+it will yield: recid, DOI and OAI (PersistentIdentifiers), record and parent
+metadata, etc.
 
 Notes
 =====
 
 **Infrastructure**
 
-While now we are simply running one after the other in the `run.py`, the idea is that all three steps will pull/push to/from queues so they can be deployed in different parts of the system (e.g. the load part in the worker nodes).
-
-**Code**
-Take into account that the code inside the `/migration` folder is placed under `zenodo-rdm` temporarily. Therefore, you can simply have:
-
-- Your InvenioRDM instance running
-- Execute code inside this folder as if it was any other pure Python package. The Invenio dependencies do not require an app context (e.g. db models)
-
-There is an open discussion on where to place this code.
+While now we are chaining the iterator from one step into the other in the
+streams, the idea is that all three steps will pull/push to/from queues so
+they can be deployed in different parts of the system (e.g. the load part
+in the worker nodes).
 
 **Others**
 
-- Using generators instead of lists, allows us to iterate through the data only once and perform the E-T-L steps on them. Instead of loop for E, loop for T, loop for L. In addition, this allows us to have the csv files open during the writing and closing them at the end (open/close is an expensive op when done 3M times).
-- Naming is far from ideal, open to suggestions (e.g. ETL vs Stream, Load vs Stream - then TableLoad would be TableStream).
+- Using generators instead of lists, allows us to iterate through the data
+  only once and perform the E-T-L steps on them. Instead of loop for E, loop
+  for T, loop for L. In addition, this allows us to have the csv files open
+  during the writing and closing them at the end (open/close is an expensive
+  op when done 3M times).
