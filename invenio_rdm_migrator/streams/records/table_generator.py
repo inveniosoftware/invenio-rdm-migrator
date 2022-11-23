@@ -34,9 +34,9 @@ class RDMVersionStateComputedTable(TableGenerator):
             next_draft_id=None,
         )
 
-    def prepare(self, output_dir, entries, **kwargs):
+    def prepare(self, tmp_dir, entries, **kwargs):
         """Overwrite entries with parent cache entries."""
-        return super().prepare(output_dir, self.parent_cache.values(), **kwargs)
+        return super().prepare(tmp_dir, self.parent_cache.values(), **kwargs)
 
     def cleanup(self, **kwargs):
         """Cleanup."""
@@ -206,7 +206,7 @@ class RDMRecordTableLoad(TableGenerator):
         # FIXME: tables does not return the name correct
         # delegate to table_loads?
         # for table in self.tables:
-        #     fpath = self.output_dir / f"{table._table_name}.csv"
+        #     fpath = self.tmp_dir / f"{table._table_name}.csv"
         #     print(f"Checking {fpath}")
         #     if fpath.exists():
         #         print(f"Deleting {fpath}")
