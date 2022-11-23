@@ -25,15 +25,22 @@ class RDMVersionStateComputedTable(TableGenerator):
         super().__init__(tables=[RDMVersionState])
         self.parent_cache = parent_cache
 
-    def _generate_rows(self, **kwargs):
-        for parent_state in self.parent_cache.values():
-            # Version state to be populated in the end from the final state
-            yield RDMVersionState(
-                latest_index=parent_state["version"]["latest_index"],
-                parent_id=parent_state["id"],
-                latest_id=parent_state["version"]["latest_id"],
-                next_draft_id=None,
-            )
+    def _generate_rows(self, parent_entry, **kwargs):
+        # Version state to be populated in the end from the final state
+        yield RDMVersionState(
+            latest_index=parent_entry["version"]["latest_index"],
+            parent_id=parent_entry["id"],
+            latest_id=parent_entry["version"]["latest_id"],
+            next_draft_id=None,
+        )
+
+    def prepare(self, output_dir, entries, **kwargs):
+        """Overwrite entries with parent cache entries."""
+        return super().prepare(output_dir, self.parent_cache.values(), **kwargs)
+
+    def cleanup(self, **kwargs):
+        """Cleanup."""
+        pass
 
 
 # keep track of generated PKs, since there's a chance they collide
