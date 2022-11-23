@@ -126,16 +126,6 @@ class TableGenerator(ABC):
         self.pks = pks or []
 
     @abstractmethod
-    def _cleanup_db(self):
-        """Cleanup DB after load."""
-        pass
-
-    @abstractmethod
-    def _cleanup_files(self):
-        """Cleanup files after load."""
-        pass
-
-    @abstractmethod
     def _generate_rows(self, **kwargs):
         """Yield generated rows."""
         pass
@@ -145,12 +135,10 @@ class TableGenerator(ABC):
         """Compute rows."""
         pass
 
-    def cleanup(self, db, **kwargs):
+    @abstractmethod
+    def cleanup(self, **kwargs):
         """Cleanup."""
-        self._cleanup_files()
-
-        if db:  # DB cleanup is not always desired
-            self._cleanup_db()
+        pass
 
     def _generate_pks(self, data):
         for path, pk_func in self.pks:
