@@ -77,7 +77,10 @@ class UserEntry(Entry):
 
     @abstractmethod
     def _version_id(self, entry):
-        """Returns the version id."""
+        """Returns the version id.
+
+        {Elastic,Open}search will fail with values lower than 1.
+        """
         pass
 
     @abstractmethod
