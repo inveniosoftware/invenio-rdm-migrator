@@ -81,31 +81,38 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
                 fpath = self.tmp_dir / f"{name}.csv"
-                file_size = fpath.stat().st_size  # total file size for progress logging
+                if fpath.exists():
+                    # total file size for progress logging
+                    file_size = fpath.stat().st_size
 
-                print(f"[{_ts()}] COPY FROM {fpath}")  # TODO: logging
-                with contextlib.ExitStack() as stack:
-                    cur = stack.enter_context(conn.cursor())
-                    copy = stack.enter_context(
-                        cur.copy(f"COPY {name} ({cols}) FROM STDIN (FORMAT csv)")
-                    )
-                    fp = stack.enter_context(open(fpath, "r"))
+                    print(f"[{_ts()}] COPY FROM {fpath}")  # TODO: logging
+                    with contextlib.ExitStack() as stack:
+                        cur = stack.enter_context(conn.cursor())
+                        copy = stack.enter_context(
+                            cur.copy(f"COPY {name} ({cols}) FROM STDIN (FORMAT csv)")
+                        )
+                        fp = stack.enter_context(open(fpath, "r"))
 
-                    block_size = 8192
+                        block_size = 8192
 
-                    def _data_blocks(block_size=8192):
-                        data = fp.read(block_size)
-                        while data:
-                            yield data
+                        def _data_blocks(block_size=8192):
                             data = fp.read(block_size)
+                            while data:
+                                yield data
+                                data = fp.read(block_size)
 
-                    for idx, block in enumerate(_data_blocks(block_size)):
-                        if idx % 100:
-                            cur_bytes = idx * block_size
-                            percentage = (cur_bytes / file_size) * 100
-                            progress = f"{cur_bytes}/{file_size} ({percentage:.2f}%)"
-                            print(f"[{_ts()}] {name}: {progress}")
-                        copy.write(block)
+                        for idx, block in enumerate(_data_blocks(block_size)):
+                            if idx % 100:
+                                cur_bytes = idx * block_size
+                                percentage = (cur_bytes / file_size) * 100
+                                progress = (
+                                    f"{cur_bytes}/{file_size} ({percentage:.2f}%)"
+                                )
+                                print(f"[{_ts()}] {name}: {progress}")
+                            copy.write(block)
+                else:
+                    # FIXME: log a WARNING/ERROR
+                    print(f"[{_ts()}] {name}: no data to load")
                 conn.commit()
 
     def run(self, entries, cleanup=False):
