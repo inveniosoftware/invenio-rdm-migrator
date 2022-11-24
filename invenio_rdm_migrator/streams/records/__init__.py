@@ -6,3 +6,12 @@
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio RDM migration record stream."""
+
+from .load import RDMRecordCopyLoad
+from .transform import RDMRecordEntry, RDMRecordTransform
+
+__all__ = (
+    "RDMRecordCopyLoad",
+    "RDMRecordEntry",
+    "RDMRecordTransform",
+)
