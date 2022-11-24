@@ -17,7 +17,7 @@ from ...load.postgresql import TableGenerator
 from .models import RDMParentMetadata, RDMRecordMetadata, RDMVersionState
 
 
-class RDMVersionStateComputedTable(TableGenerator):
+class RDMVersionStateTableGenerator(TableGenerator):
     """RDM version state computed table."""
 
     def __init__(self, parent_cache):
@@ -69,7 +69,7 @@ def _generate_uuid(data):
     return str(uuid.uuid4())
 
 
-class RDMRecordTableLoad(TableGenerator):
+class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
     def __init__(self, parent_cache):
