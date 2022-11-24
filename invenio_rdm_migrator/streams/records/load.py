@@ -8,7 +8,7 @@
 """Invenio RDM migration record load module."""
 
 from ...load import PostgreSQLCopyLoad
-from .table_generator import RDMRecordTableLoad, RDMVersionStateComputedTable
+from .table_generator import RDMRecordTableGenerator, RDMVersionStateTableGenerator
 
 
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreSQL?
@@ -30,8 +30,8 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreS
             db_uri=db_uri,
             tmp_dir=tmp_dir,
             table_loads=[
-                RDMRecordTableLoad(self.parent_cache),
-                RDMVersionStateComputedTable(self.parent_cache),
+                RDMRecordTableGenerator(self.parent_cache),
+                RDMVersionStateTableGenerator(self.parent_cache),
             ],
         )
 
