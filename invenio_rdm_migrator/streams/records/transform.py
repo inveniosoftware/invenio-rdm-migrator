@@ -76,7 +76,10 @@ class RDMRecordEntry(Entry):
 
     @abstractmethod
     def _version_id(self, entry):
-        """Returns the version id of the record."""
+        """Returns the version id of the record.
+
+        {Elastic,Open}search will fail with values lower than 1.
+        """
         pass
 
     @abstractmethod
