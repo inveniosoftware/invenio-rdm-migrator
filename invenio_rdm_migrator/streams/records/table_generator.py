@@ -132,16 +132,17 @@ class RDMRecordTableGenerator(TableGenerator):
                 updated=now,
             )
         # OAI
-        yield PersistentIdentifier(
-            id=_pid_pk(),
-            pid_type="oai",
-            pid_value=rec["json"]["pids"]["oai"]["identifier"],
-            status="R",
-            object_type="rec",
-            object_uuid=rec["id"],
-            created=now,
-            updated=now,
-        )
+        if "oai" in rec["json"]["pids"]:
+            yield PersistentIdentifier(
+                id=_pid_pk(),
+                pid_type="oai",
+                pid_value=rec["json"]["pids"]["oai"]["identifier"],
+                status="R",
+                object_type="rec",
+                object_uuid=rec["id"],
+                created=now,
+                updated=now,
+            )
 
         # parent
         if parent["json"]["id"] not in self.parent_cache:
