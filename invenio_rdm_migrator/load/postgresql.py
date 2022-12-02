@@ -151,6 +151,10 @@ class TableGenerator(ABC):
         for path, pk_func in self.pks:
             dict_set(data, path, pk_func(data))
 
+    def _resolve_references(self, **kwargs):
+        """Resolve references e.g communities slug names."""
+        pass
+
     def prepare(self, tmp_dir, entries, **kwargs):
         """Compute rows."""
         # use this context manager to close all opened files at once
@@ -159,6 +163,8 @@ class TableGenerator(ABC):
             for entry in entries:
                 # is_db_empty would come in play and make _generate_pks optional
                 self._generate_pks(entry)
+                # resolve entry references
+                self._resolve_references(entry)
                 for entry in self._generate_rows(entry):
                     if entry._table_name not in out_files:
                         fpath = tmp_dir / f"{entry._table_name}.csv"

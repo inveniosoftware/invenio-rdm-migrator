@@ -14,7 +14,12 @@ from datetime import datetime
 
 from ...load.models import PersistentIdentifier
 from ...load.postgresql import TableGenerator
-from .models import RDMParentMetadata, RDMRecordMetadata, RDMVersionState
+from .models import (
+    RDMParentCommunityMetadata,
+    RDMParentMetadata,
+    RDMRecordMetadata,
+    RDMVersionState,
+)
 
 
 class RDMVersionStateTableGenerator(TableGenerator):
@@ -72,13 +77,14 @@ def _generate_uuid(data):
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parent_cache):
+    def __init__(self, parent_cache, communities_cache):
         """Constructor."""
         super().__init__(
             tables=[
                 PersistentIdentifier,
                 RDMParentMetadata,
                 RDMRecordMetadata,
+                RDMParentCommunityMetadata,
             ],
             pks=[
                 ("record.id", _generate_uuid),
@@ -89,6 +95,7 @@ class RDMRecordTableGenerator(TableGenerator):
             ],
         )
         self.parent_cache = parent_cache
+        self.communities_cache = communities_cache
 
     def _generate_rows(self, data, **kwargs):
         now = datetime.utcnow().isoformat()
@@ -170,6 +177,13 @@ class RDMRecordTableGenerator(TableGenerator):
                 created=now,
                 updated=now,
             )
+            # parent community
+            if "default" in parent["json"]["communities"]:
+                yield RDMParentCommunityMetadata(
+                    community_id=parent["json"]["communities"]["default"],
+                    record_id=parent["id"],
+                    request_id=None,
+                )
         else:
             # parent in cache - update version
             cached_parent = self.parent_cache[parent["json"]["id"]]
@@ -178,6 +192,31 @@ class RDMRecordTableGenerator(TableGenerator):
                 cached_parent["version"] = dict(
                     latest_index=rec["index"], latest_id=rec["id"]
                 )
+
+    def _resolve_references(self, data, **kwargs):
+        """Resolve references e.g communities slug names."""
+
+        def _resolve_communities(communities):
+            default_slug = communities.get("default")
+            default_id = self.communities_cache.get(default_slug)
+            if not default_id:
+                # TODO: maybe raise error without correct default community?
+                communities = {}
+            communities["default"] = default_id
+
+            communities_slugs = communities.get("ids", [])
+            _ids = []
+            for slug in communities_slugs:
+                _id = self.communities_cache.get(slug)
+                if _id:
+                    _ids.append(_id)
+            communities["ids"] = _ids
+
+        # resolve parent communities slug
+        parent = data["parent"]
+        communities = parent["json"].get("communities")
+        if communities:
+            _resolve_communities(communities)
 
     def _cleanup_db(self):
         """Cleanup DB after load."""
