@@ -31,11 +31,15 @@ Development
 Install
 -------
 
+Make sure that you have `libpq-dev` installed in your system. See
+`psycopg installation instructions <https://www.psycopg.org/install/>`_
+for more information.
+
 Choose a version of search and database, then run:
 
 .. code-block:: console
 
-    pipenv run pip install -e .
+    pip install -e .
 
 
 Tests
@@ -43,7 +47,7 @@ Tests
 
 .. code-block:: console
 
-    pipenv run ./run-tests.sh
+    ./run-tests.sh
 
 How to run it
 =============
