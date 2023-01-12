@@ -14,23 +14,15 @@ from .table_generator import RDMRecordTableGenerator, RDMVersionStateTableGenera
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreSQL?
     """PostgreSQL COPY load."""
 
-    def __init__(self, communities_cache, db_uri, tmp_dir):
+    def __init__(self, cache, db_uri, tmp_dir):
         """Constructor."""
-        # used to keep track of what Parent IDs we've already inserted in the PIDs table.
-        # {
-        #     '<parent_pid>': {
-        #         'id': <generated_parent_uuid>,
-        #         'version': {
-        #             'latest_index': 'record_index',
-        #             'latest_id': 'record id',
-        #         }
-        # }
-        self.parent_cache = {}
+        self.parent_cache = cache.get("parent", {})
+        self.communities_cache = cache.get("communities", {})
         super().__init__(
             db_uri=db_uri,
             tmp_dir=tmp_dir,
             table_loads=[
-                RDMRecordTableGenerator(self.parent_cache, communities_cache),
+                RDMRecordTableGenerator(self.parent_cache, self.communities_cache),
                 RDMVersionStateTableGenerator(self.parent_cache),
             ],
         )

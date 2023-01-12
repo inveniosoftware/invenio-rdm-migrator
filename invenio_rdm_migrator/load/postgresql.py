@@ -65,7 +65,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
 
         _prepared_tables = []
         for table in self.table_loads:
-            # otherwise the generator is exahusted by the first table
+            # otherwise the generator is exhausted by the first table
             # TODO: nested generators, how expensive is this copy op?
             _prepared_tables.extend(table.prepare(self.tmp_dir, entries=entries))
 
@@ -138,11 +138,6 @@ class TableGenerator(ABC):
         pass
 
     @abstractmethod
-    def prepare(self, tmp_dir, **kwargs):
-        """Compute rows."""
-        pass
-
-    @abstractmethod
     def cleanup(self, **kwargs):
         """Cleanup."""
         pass
@@ -151,7 +146,7 @@ class TableGenerator(ABC):
         for path, pk_func in self.pks:
             dict_set(data, path, pk_func(data))
 
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
         pass
 
