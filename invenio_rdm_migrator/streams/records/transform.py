@@ -117,6 +117,11 @@ class RDMRecordEntry(Entry):
         """
         pass
 
+    @abstractmethod
+    def _custom_fields(self, entry):
+        """Transform the custom fields of a record."""
+        pass
+
     def transform(self, entry):
         """Transform a record single entry."""
         return {
@@ -130,5 +135,6 @@ class RDMRecordEntry(Entry):
                 "files": self._files(entry),
                 "metadata": self._metadata(entry),
                 "access": self._access(entry),
+                "custom_fields": self._custom_fields(entry),
             },
         }
