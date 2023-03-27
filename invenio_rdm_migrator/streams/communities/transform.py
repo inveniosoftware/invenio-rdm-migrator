@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -164,4 +164,31 @@ class CommunityMemberEntry(Entry):
             "user_id": self._user_id(entry),
             "group_id": self._group_id(entry),
             "request_id": self._request_id(entry),
+        }
+
+
+class ParentCommunityEntry(Entry):
+    """Transform a single parent community entry."""
+
+    @abstractmethod
+    def _community(self, entry):
+        """Returns the community slug."""
+        pass
+
+    @abstractmethod
+    def _record(self, entry):
+        """Returns the record pid."""
+        pass
+
+    @abstractmethod
+    def _request(self, entry):
+        """Returns the request id."""
+        pass
+
+    def transform(self, entry):
+        """Transform a record single entry."""
+        return {
+            "community": self._community(entry),
+            "record": self._record(entry),
+            "request": self._request(entry),
         }

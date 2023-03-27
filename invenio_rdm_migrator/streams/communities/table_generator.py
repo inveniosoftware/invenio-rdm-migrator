@@ -1,25 +1,19 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio RDM migration user table load module."""
 
-import uuid
-
-from ...load.postgresql import TableGenerator
+from ...load.postgresql import TableGenerator, generate_uuid
 from .models import Community, CommunityMember
-
-
-def _generate_uuid(data):
-    return str(uuid.uuid4())
 
 
 def _generate_members_uuids(data):
     for member in data["community_members"]:
-        member["id"] = str(uuid.uuid4())
+        member["id"] = generate_uuid()
     return data["community_members"]
 
 
@@ -32,7 +26,7 @@ class CommunityTableGenerator(TableGenerator):
         super().__init__(
             tables=[Community, CommunityMember],
             pks=[
-                ("community.id", _generate_uuid),
+                ("community.id", generate_uuid),
                 ("community_members", _generate_members_uuids),
             ],
         )

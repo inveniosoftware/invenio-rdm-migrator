@@ -56,17 +56,6 @@ class RDMParentMetadata:
 
 
 @dataclass
-class RDMParentCommunityMetadata:
-    """RDM Community Parent Metadata dataclass model."""
-
-    community_id: str
-    record_id: str
-    request_id: str
-
-    _table_name: InitVar[str] = "rdm_parents_community"
-
-
-@dataclass
 class RDMVersionState:
     """RDM Version State dataclass model."""
 

@@ -9,17 +9,12 @@
 
 
 import random
-import uuid
 from datetime import datetime
 
 from ...load.models import PersistentIdentifier
-from ...load.postgresql import TableGenerator
-from .models import (
-    RDMParentCommunityMetadata,
-    RDMParentMetadata,
-    RDMRecordMetadata,
-    RDMVersionState,
-)
+from ...load.postgresql import TableGenerator, generate_uuid
+from ..communities.models import RDMParentCommunityMetadata
+from .models import RDMParentMetadata, RDMRecordMetadata, RDMVersionState
 
 
 class RDMVersionStateTableGenerator(TableGenerator):
@@ -70,10 +65,6 @@ def _generate_recid(data):
     }
 
 
-def _generate_uuid(data):
-    return str(uuid.uuid4())
-
-
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
@@ -87,8 +78,8 @@ class RDMRecordTableGenerator(TableGenerator):
                 RDMParentCommunityMetadata,
             ],
             pks=[
-                ("record.id", _generate_uuid),
-                ("parent.id", _generate_uuid),
+                ("record.id", generate_uuid),
+                ("parent.id", generate_uuid),
                 ("record.json.pid", _generate_recid),
                 ("parent.json.pid", _generate_recid),
                 ("record.parent_id", lambda d: d["parent"]["id"]),
