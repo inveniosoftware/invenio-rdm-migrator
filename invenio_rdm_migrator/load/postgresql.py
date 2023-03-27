@@ -11,11 +11,11 @@
 import contextlib
 import csv
 import json
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
+from uuid import UUID, uuid4
 
 import psycopg
 from invenio_records.dictutils import dict_set  # TODO: can we do without?
@@ -39,10 +39,15 @@ def as_csv_row(dc):
                 val = json.dumps(val)
             elif issubclass(f.type, (datetime,)):
                 val = val.isoformat()
-            elif issubclass(f.type, (uuid.UUID,)):
+            elif issubclass(f.type, (UUID,)):
                 val = str(val)
         row.append(val)
     return row
+
+
+def generate_uuid(data):
+    """Generate a UUID."""
+    return str(uuid4())
 
 
 class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
@@ -57,7 +62,7 @@ class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
     def _cleanup(self, db=False):
         """Cleanup csv files and DB after load."""
         for table in self.table_loads:
-            table.cleanup_files(db)
+            table.cleanup(db=db)
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
