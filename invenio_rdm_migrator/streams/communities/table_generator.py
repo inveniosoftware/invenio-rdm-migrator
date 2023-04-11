@@ -13,7 +13,7 @@ from .models import Community, CommunityMember
 
 def _generate_members_uuids(data):
     for member in data["community_members"]:
-        member["id"] = generate_uuid()
+        member["id"] = generate_uuid(data)
     return data["community_members"]
 
 
