@@ -11,6 +11,8 @@ import tempfile
 
 import pytest
 
+from invenio_rdm_migrator.streams.cache import ParentCache
+
 
 @pytest.fixture(scope="function")
 def tmp_dir():
@@ -26,7 +28,16 @@ def parent_cache():
 
     Keys are concept recids and values are UUIDs.
     """
-    return {"123456": "12345678-abcd-1a2b-3c4d-123abc456def"}
+    cache = ParentCache()
+    cache.add(
+        "123456",
+        {
+            "id": "1234abcd-1234-5678-abcd-123abc456def",
+            "latest_id": "12345678-abcd-1a2b-3c4d-123abc456def",
+            "latest_index": 1,
+        },
+    )
+    return cache
 
 
 @pytest.fixture(scope="module")

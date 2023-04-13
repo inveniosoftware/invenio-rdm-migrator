@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import psycopg
 from invenio_records.dictutils import dict_set  # TODO: can we do without?
@@ -45,36 +45,45 @@ def as_csv_row(dc):
     return row
 
 
-def generate_uuid(data):
-    """Generate a UUID."""
-    return str(uuid4())
-
-
-class PostgreSQLCopyLoad(Load):  # TODO: abstract SQL from PostgreSQL?
+class PostgreSQLCopyLoad(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, table_loads, tmp_dir):
+    def __init__(self, db_uri, table_generators, tmp_dir):
         """Constructor."""
         self.db_uri = db_uri
         self.tmp_dir = Path(tmp_dir) / f"tables{_ts(iso=False)}"
-        self.table_loads = table_loads
+        self.table_generators = table_generators
 
     def _cleanup(self, db=False):
         """Cleanup csv files and DB after load."""
-        for table in self.table_loads:
+        for table in self.table_generators:
             table.cleanup(db=db)
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
-        _prepared_tables = []
-        for table in self.table_loads:
-            # otherwise the generator is exhausted by the first table
-            # TODO: nested generators, how expensive is this copy op?
-            _prepared_tables.extend(table.prepare(self.tmp_dir, entries=entries))
+        # use this context manager to close all opened files at once
+        with contextlib.ExitStack() as stack:
+            output_files = {}
+            for entry in entries:
+                for tg in self.table_generators:
+                    tg.prepare(self.tmp_dir, entry, stack, output_files)
 
-        return iter(_prepared_tables)  # yield at the end vs yield per table
+            for tg in self.table_generators:
+                tg.post_prepare(self.tmp_dir, stack, output_files)
+
+        prepared_tables = []
+        # FIXME: needs to preserve order
+        # the logic is very inefficient, maybe and ordered-set
+        # or change the data structure of tables to keep order information
+        # and hten process it
+        for tg in self.table_generators:
+            for table in tg.tables:
+                if table not in prepared_tables:
+                    prepared_tables.append(table)
+
+        return iter(prepared_tables)  # yield at the end vs yield per table
 
     def _load(self, table_entries):
         """Bulk load CSV table files.
@@ -134,7 +143,7 @@ class TableGenerator(ABC):
 
     def __init__(self, tables, pks=None):
         """Constructor."""
-        self._tables = tables
+        self.tables = tables
         self.pks = pks or []
 
     @abstractmethod
@@ -147,31 +156,36 @@ class TableGenerator(ABC):
         """Cleanup."""
         pass
 
-    def _generate_pks(self, data):
+    def _generate_pks(self, data, create=False):
+        keys = data.keys()
         for path, pk_func in self.pks:
-            dict_set(data, path, pk_func(data))
+            try:
+                root = path.split(".")[0]
+                # avoids creating e.g. "record" in a draft and generating a recid + uuid
+                if create or root in keys:
+                    dict_set(data, path, pk_func(data))
+            except KeyError:
+                print(f"Path {path} not found on record")
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
         pass
 
-    def prepare(self, tmp_dir, entries, **kwargs):
+    def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
         """Compute rows."""
-        # use this context manager to close all opened files at once
-        with contextlib.ExitStack() as stack:
-            out_files = {}
-            for entry in entries:
-                # is_db_empty would come in play and make _generate_pks optional
-                self._generate_pks(entry)
-                # resolve entry references
-                self._resolve_references(entry)
-                for entry in self._generate_rows(entry):
-                    if entry._table_name not in out_files:
-                        fpath = tmp_dir / f"{entry._table_name}.csv"
-                        out_files[entry._table_name] = csv.writer(
-                            stack.enter_context(open(fpath, "w+"))
-                        )
-                    writer = out_files[entry._table_name]
-                    writer.writerow(as_csv_row(entry))
+        # is_db_empty would come in play and make _generate_pks optional
+        self._generate_pks(entry, kwargs.get("create", False))
+        # resolve entry references
+        self._resolve_references(entry)
+        for entry in self._generate_rows(entry):
+            if entry._table_name not in output_files:
+                fpath = tmp_dir / f"{entry._table_name}.csv"
+                output_files[entry._table_name] = csv.writer(
+                    stack.enter_context(open(fpath, "w+"))
+                )
+            writer = output_files[entry._table_name]
+            writer.writerow(as_csv_row(entry))
 
-        return self._tables
+    def post_prepare(self, tmp_dir, stack, output_files, **kwargs):
+        """Create rows after iterating over the entries."""
+        pass

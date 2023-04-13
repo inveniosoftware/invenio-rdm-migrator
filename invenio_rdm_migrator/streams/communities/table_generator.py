@@ -8,7 +8,8 @@
 """Invenio RDM migration user table load module."""
 import random
 
-from ...load.postgresql import TableGenerator, generate_uuid
+from ...load.ids import generate_uuid, pid_pk
+from ...load.postgresql import TableGenerator
 from .models import Community, CommunityMember, FeaturedCommunity
 
 
@@ -21,24 +22,7 @@ def _generate_members_uuids(data):
 def _generate_featured_community_id(data):
     if not data.get("featured_community"):
         return None
-    return _pid_pk(data)
-
-
-# keep track of generated PKs, since there's a chance they collide
-GENERATED_PID_PKS = set()
-
-
-def _pid_pk(data):
-    """Generates a random integer between 1M and 2B, avoiding duplication with previously generated numbers."""
-    lower_limit = 1_000_000
-    upper_limit = 2_147_483_647 - 1
-
-    while True:
-        # we start at 1M to avoid collisions with existing low-numbered PKs
-        val = random.randint(lower_limit, upper_limit)
-        if val not in GENERATED_PID_PKS:
-            GENERATED_PID_PKS.add(val)
-            return val
+    return pid_pk(data)
 
 
 class CommunityTableGenerator(TableGenerator):

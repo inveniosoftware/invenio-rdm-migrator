@@ -1,0 +1,38 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2023 CERN.
+#
+# Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
+# it under the terms of the MIT License; see LICENSE file for more details.
+
+"""Invenio RDM migration parent table load module."""
+
+from datetime import datetime
+
+from ....load.models import PersistentIdentifier
+from ..models import RDMParentMetadata
+
+
+def generate_parent_rows(parent):
+    """Generates rows for a parent record."""
+    now = datetime.utcnow().isoformat()
+    parent_pid = parent["json"]["pid"]
+    # parent record
+    yield RDMParentMetadata(
+        id=parent["id"],
+        json=parent["json"],
+        created=parent["created"],
+        updated=parent["updated"],
+        version_id=parent["version_id"],
+    )
+    # parent recid
+    yield PersistentIdentifier(
+        id=parent_pid["pk"],
+        pid_type=parent_pid["pid_type"],
+        pid_value=parent["json"]["id"],
+        status=parent_pid["status"],
+        object_type=parent_pid["obj_type"],
+        object_uuid=parent["id"],
+        created=now,
+        updated=now,
+    )

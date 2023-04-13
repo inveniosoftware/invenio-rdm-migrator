@@ -25,7 +25,7 @@ def files_copy_load(tmp_dir):
 
 
 @patch(
-    "invenio_rdm_migrator.load.postgresql.uuid4",
+    "invenio_rdm_migrator.load.ids.uuid4",
     lambda: "12345678-abcd-1a2b-3c4d-123abc456def",
 )
 def test_files_load_prepare(files_copy_load, transformed_files_entry):
