@@ -19,7 +19,7 @@ class CommunityCopyLoad(PostgreSQLCopyLoad):
         self.communities_cache = cache.get("communities", {})
         super().__init__(
             db_uri=db_uri,
-            table_loads=[
+            table_generators=[
                 CommunityTableGenerator(communities_cache=self.communities_cache),
             ],
             tmp_dir=tmp_dir,

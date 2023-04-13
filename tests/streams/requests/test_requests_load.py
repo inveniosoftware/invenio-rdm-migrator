@@ -25,7 +25,7 @@ def request_copy_load(cache, tmp_dir):
 
 
 @patch(
-    "invenio_rdm_migrator.load.postgresql.uuid4",
+    "invenio_rdm_migrator.load.ids.uuid4",
     lambda: "12345678-abcd-1a2b-3c4d-123abc456def",
 )
 def test_request_load_prepare(request_copy_load, transformed_incl_req_entry):

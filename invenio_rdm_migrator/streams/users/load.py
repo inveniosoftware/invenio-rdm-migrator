@@ -18,7 +18,7 @@ class UserCopyLoad(PostgreSQLCopyLoad):
         """Constructor."""
         super().__init__(
             db_uri=db_uri,
-            table_loads=[
+            table_generators=[
                 UserTableGenerator(),
             ],
             tmp_dir=tmp_dir,

@@ -18,7 +18,7 @@ class FilesCopyLoad(PostgreSQLCopyLoad):
         """Constructor."""
         super().__init__(
             db_uri=db_uri,
-            table_loads=[
+            table_generators=[
                 FilesTableGenerator(),
             ],
             tmp_dir=tmp_dir,

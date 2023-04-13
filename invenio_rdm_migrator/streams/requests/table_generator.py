@@ -7,7 +7,8 @@
 
 """Invenio RDM migration requests table load module."""
 
-from ...load.postgresql import TableGenerator, generate_uuid
+from ...load.ids import generate_uuid
+from ...load.postgresql import TableGenerator
 from .models import RequestMetadata
 
 
@@ -48,6 +49,10 @@ class RequestTableGenerator(TableGenerator):
         community_id = self.communities_cache[request_slug]
 
         data["json"]["receiver"]["community"] = community_id
+
+    def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
+        """Compute rows."""
+        super().prepare(tmp_dir, entry, stack, output_files, create=True, **kwargs)
 
     def cleanup(self, **kwargs):
         """Cleanup."""

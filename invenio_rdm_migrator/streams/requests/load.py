@@ -20,7 +20,7 @@ class RequestCopyLoad(PostgreSQLCopyLoad):
         super().__init__(
             db_uri=db_uri,
             tmp_dir=tmp_dir,
-            table_loads=[
+            table_generators=[
                 RequestTableGenerator(self.communities_cache),
             ],
         )
