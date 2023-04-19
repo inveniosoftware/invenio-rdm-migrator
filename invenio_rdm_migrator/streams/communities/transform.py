@@ -25,11 +25,17 @@ class CommunityTransform(Transform):
         """Transform the community members."""
         pass
 
+    @abstractmethod
+    def _featured_community(self, entry):
+        """Transform the featured community."""
+        pass
+
     def _transform(self, entry):
         """Transform a single entry."""
         return {
             "community": self._community(entry),
             "community_members": self._community_members(entry),
+            "featured_community": self._featured_community(entry),
         }
 
 
@@ -191,4 +197,31 @@ class ParentCommunityEntry(Entry):
             "community": self._community(entry),
             "record": self._record(entry),
             "request": self._request(entry),
+        }
+
+
+class FeaturedCommunityEntry(Entry):
+    """Transform a single featured community entry."""
+
+    @abstractmethod
+    def _created(self, entry):
+        """Returns the creation date."""
+        pass
+
+    @abstractmethod
+    def _updated(self, entry):
+        """Returns the update date."""
+        pass
+
+    @abstractmethod
+    def _start_date(self, entry):
+        """Returns the start date."""
+        pass
+
+    def transform(self, entry):
+        """Transform a featured community entry."""
+        return {
+            "created": self._created(entry),
+            "updated": self._updated(entry),
+            "start_date": self._start_date(entry),
         }

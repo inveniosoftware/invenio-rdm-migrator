@@ -54,3 +54,16 @@ class CommunityMember:
     request_id: int
 
     _table_name: InitVar[str] = "communities_members"
+
+
+@dataclass
+class FeaturedCommunity:
+    """Featured community dataclass model."""
+
+    community_id: str
+    id: str
+    created: str
+    updated: str
+    start_date: str
+
+    _table_name: InitVar[str] = "communities_featured"

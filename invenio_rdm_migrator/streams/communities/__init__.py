@@ -12,6 +12,7 @@ from .transform import (
     CommunityEntry,
     CommunityMemberEntry,
     CommunityTransform,
+    FeaturedCommunityEntry,
     ParentCommunityEntry,
 )
 
@@ -20,5 +21,6 @@ __all__ = (
     "CommunityEntry",
     "CommunityMemberEntry",
     "CommunityTransform",
+    "FeaturedCommunityEntry",
     "ParentCommunityEntry",
 )
