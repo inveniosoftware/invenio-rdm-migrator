@@ -138,3 +138,58 @@ class RDMRecordEntry(Entry):
                 "custom_fields": self._custom_fields(entry),
             },
         }
+
+
+class RDMRecordFileEntry(Entry):
+    """Transform a single record file entry.
+
+    Connects records with files.
+    """
+
+    @abstractmethod
+    def _created(self, entry):
+        """Returns the creation date."""
+        pass
+
+    @abstractmethod
+    def _updated(self, entry):
+        """Returns the update date."""
+        pass
+
+    @abstractmethod
+    def _json(self, entry):
+        """Returns the rdm record file metadata."""
+        pass
+
+    @abstractmethod
+    def _version_id(self, entry):
+        """Returns the rdm record file version id."""
+        pass
+
+    @abstractmethod
+    def _key(self, entry):
+        """Returns the rdm record file key name."""
+        pass
+
+    @abstractmethod
+    def _object_version_id(self, entry):
+        """Returns the associated file object version ID."""
+        pass
+
+    def transform(self, entry):
+        """Transform a single record files entry."""
+        return {
+            "created": self._created(entry),
+            "updated": self._updated(entry),
+            "json": self._json(entry),
+            "version_id": self._version_id(entry),
+            "key": self._key(entry),
+            "object_version_id": self._object_version_id(entry),
+        }
+
+
+class RDMDraftFileEntry(RDMRecordFileEntry):
+    """Transform a single record file entry.
+
+    Connects draft with files.
+    """
