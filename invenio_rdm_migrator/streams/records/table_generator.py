@@ -14,7 +14,7 @@ from datetime import datetime
 from ...load.models import PersistentIdentifier
 from ...load.postgresql import TableGenerator, generate_uuid
 from ..communities.models import RDMParentCommunityMetadata
-from .models import RDMParentMetadata, RDMRecordMetadata, RDMVersionState
+from .models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata, RDMVersionState
 
 
 class RDMVersionStateTableGenerator(TableGenerator):
@@ -65,6 +65,17 @@ def _generate_recid(data):
     }
 
 
+def generate_files_uuids(data):
+    """Generate uuid for every file in the list.
+
+    Return the transformed list with the generated ids.
+    """
+    _files = data["record_files"]
+    for _file in _files:
+        _file["id"] = generate_uuid({})
+    return _files
+
+
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
@@ -76,6 +87,7 @@ class RDMRecordTableGenerator(TableGenerator):
                 RDMParentMetadata,
                 RDMRecordMetadata,
                 RDMParentCommunityMetadata,
+                RDMRecordFile,
             ],
             pks=[
                 ("record.id", generate_uuid),
@@ -83,6 +95,7 @@ class RDMRecordTableGenerator(TableGenerator):
                 ("record.json.pid", _generate_recid),
                 ("parent.json.pid", _generate_recid),
                 ("record.parent_id", lambda d: d["parent"]["id"]),
+                ("record_files", generate_files_uuids),
             ],
         )
         self.parent_cache = parent_cache
@@ -183,6 +196,19 @@ class RDMRecordTableGenerator(TableGenerator):
                 cached_parent["version"] = dict(
                     latest_index=rec["index"], latest_id=rec["id"]
                 )
+        # record files
+        record_files = data["record_files"]
+        for _file in record_files:
+            yield RDMRecordFile(
+                id=_file["id"],
+                json=_file["json"],
+                created=_file["created"],
+                updated=_file["updated"],
+                version_id=_file["version_id"],
+                key=_file["key"],
+                record_id=rec["id"],
+                object_version_id=_file["object_version_id"],
+            )
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""

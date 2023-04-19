@@ -27,22 +27,6 @@ class RDMRecordMetadata:
 
 
 @dataclass
-class RDMRecordFile:
-    """RDM Record File dataclass model."""
-
-    id: str
-    json: dict
-    created: str
-    updated: str
-    version_id: int
-    key: str
-    record_id: str
-    object_version_id: str
-
-    _table_name: InitVar[str] = "rdm_records_files"
-
-
-@dataclass
 class RDMParentMetadata:
     """RDM Parent Metadata dataclass model."""
 
@@ -84,6 +68,22 @@ class RDMDraftMetadata:
     fork_version_id: int
 
     _table_name: InitVar[str] = "rdm_drafts_metadata"
+
+
+@dataclass
+class RDMRecordFile:
+    """RDM Record File dataclass model."""
+
+    id: str
+    json: dict
+    created: str
+    updated: str
+    version_id: int
+    key: str
+    record_id: str
+    object_version_id: str
+
+    _table_name: InitVar[str] = "rdm_records_files"
 
 
 @dataclass

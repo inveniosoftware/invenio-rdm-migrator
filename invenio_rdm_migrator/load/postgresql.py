@@ -18,7 +18,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 import psycopg
-from invenio_records.dictutils import dict_set  # TODO: can we do without?
+from invenio_records.dictutils import dict_lookup, dict_set  # TODO: can we do without?
 
 from .base import Load
 
