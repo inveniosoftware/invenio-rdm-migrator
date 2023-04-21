@@ -71,7 +71,7 @@ class CommunityTableGenerator(TableGenerator):
             yield CommunityMember(**member)
 
         featured_community = data["featured_community"]
-        if featured_community["id"]:
+        if featured_community.get("id"):
             featured_community["community_id"] = community_id
             yield FeaturedCommunity(**featured_community)
 
