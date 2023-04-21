@@ -148,7 +148,7 @@ class FilesObjectVersionEntry(Entry):
 
     @abstractmethod
     def _is_head(self, entry):
-        """Returns if the file bucket is head i.e the latest."""
+        """Returns if the file object version is head i.e the latest."""
         pass
 
     def transform(self, entry):
