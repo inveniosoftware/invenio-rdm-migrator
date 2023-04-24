@@ -76,6 +76,12 @@ def generate_files_uuids(data):
     return _files
 
 
+def generate_record_uuid(data):
+    """Generate record uuid if not present."""
+    _id = data.get("id")
+    return _id if _id else generate_uuid(None)
+
+
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
@@ -90,7 +96,7 @@ class RDMRecordTableGenerator(TableGenerator):
                 RDMRecordFile,
             ],
             pks=[
-                ("record.id", lambda d: d["id"] if "id" in d else generate_uuid(d)),
+                ("record.id", generate_record_uuid),
                 ("parent.id", generate_uuid),
                 ("record.json.pid", _generate_recid),
                 ("parent.json.pid", _generate_recid),
