@@ -90,7 +90,7 @@ class RDMRecordTableGenerator(TableGenerator):
                 RDMRecordFile,
             ],
             pks=[
-                ("record.id", generate_uuid),
+                ("record.id", lambda d: d["id"] if "id" in d else generate_uuid(d)),
                 ("parent.id", generate_uuid),
                 ("record.json.pid", _generate_recid),
                 ("parent.json.pid", _generate_recid),
