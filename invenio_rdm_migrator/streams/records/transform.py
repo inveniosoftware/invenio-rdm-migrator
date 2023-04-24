@@ -65,6 +65,11 @@ class RDMRecordEntry(Entry):
     """Transform a single record entry."""
 
     @abstractmethod
+    def _id(self, entry):
+        """Returns the rdm record uuid."""
+        pass
+
+    @abstractmethod
     def _created(self, entry):
         """Returns the creation date of the record."""
         pass
@@ -125,6 +130,7 @@ class RDMRecordEntry(Entry):
     def transform(self, entry):
         """Transform a record single entry."""
         return {
+            "id": self._id(entry),
             "created": self._created(entry),
             "updated": self._updated(entry),
             "version_id": self._version_id(entry),
