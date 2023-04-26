@@ -8,6 +8,7 @@
 """Invenio RDM migration record table load module."""
 
 from datetime import datetime
+from functools import partial
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
@@ -30,7 +31,7 @@ class RDMDraftTableGenerator(TableGenerator):
             pks=[
                 ("draft.id", generate_uuid),
                 ("parent.id", generate_uuid),
-                ("draft.json.pid", generate_recid),
+                ("draft.json.pid", partial(generate_recid, status="K")),
                 ("parent.json.pid", generate_recid),
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
@@ -55,7 +56,7 @@ class RDMDraftTableGenerator(TableGenerator):
                     "next_draft_id": draft["id"],
                 },
             )
-            yield from generate_parent_rows(parent)
+            yield from generate_parent_rows(parent)  # VERIFY THIS
         else:
             self.parent_cache.update(
                 parent["json"]["id"],
