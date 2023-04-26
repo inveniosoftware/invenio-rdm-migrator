@@ -46,12 +46,25 @@ class RDMDraftTableGenerator(TableGenerator):
         if not draft:
             return
 
-        record_pid = draft["json"]["pid"]
-        rec_parent_id = self.parent_cache.get(parent["json"]["id"]).get("id")
-
-        # FIXME: take into account draft position and add to next_draft_id
         if not self.parent_cache.get(parent["json"]["id"]):
+            self.parent_cache.add(
+                parent["json"]["id"],  # recid
+                {
+                    "id": parent["id"],
+                    "latest_draft_index": draft["index"],
+                    "next_draft_id": draft["id"],
+                },
+            )
             yield from generate_parent_rows(parent)
+        else:
+            self.parent_cache.update(
+                parent["json"]["id"],
+                {
+                    "id": parent["id"],
+                    "latest_draft_index": draft["index"],
+                    "next_draft_id": draft["id"],
+                },
+            )
 
         yield RDMDraftMetadata(
             id=draft["id"],
@@ -61,11 +74,12 @@ class RDMDraftTableGenerator(TableGenerator):
             version_id=draft["version_id"],
             index=draft["index"],
             bucket_id=draft.get("bucket_id"),
-            parent_id=rec_parent_id or draft["parent_id"],
+            parent_id=draft["parent_id"],
             expires_at=draft["expires_at"],
             fork_version_id=draft["fork_version_id"],
         )
         # recid
+        record_pid = draft["json"]["pid"]
         yield PersistentIdentifier(
             id=record_pid["pk"],
             pid_type=record_pid["pid_type"],  # FIXME: in rdm both are recid?
