@@ -87,14 +87,14 @@ class RDMRecordTableGenerator(TableGenerator):
                     request_id=None,
                 )
         else:
-            # parent in cache - update version
-            cached_parent = self.parent_cache[parent["json"]["id"]]
-            # check if current record is a new version of the cached one
-            if cached_parent["latest_index"] < record["index"]:
-                cached_parent["latest_index"] = record["index"]
-                cached_parent["latest_id"] = record["id"]
-                # if there is a larger version the draft is old
-                cached_parent["next_draft_id"] = None
+            self.parent_cache.update(
+                parent["json"]["id"],
+                {
+                    "id": parent["id"],
+                    "latest_index": record["index"],
+                    "latest_id": record["id"],
+                },
+            )
 
         # record
         yield RDMRecordMetadata(

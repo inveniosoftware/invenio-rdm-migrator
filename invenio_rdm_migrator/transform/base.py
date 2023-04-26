@@ -31,3 +31,14 @@ class Entry(ABC):
     def transform(self, entry):
         """Transform entry."""
         pass
+
+
+def drop_nones(data):
+    """Recursively drop Nones in dict d and return a new dictionary."""
+    dd = {}
+    for k, v in data.items():
+        if isinstance(v, dict) and v:  # second clause removes empty dicts
+            dd[k] = drop_nones(v)
+        elif v is not None:
+            dd[k] = v
+    return dd
