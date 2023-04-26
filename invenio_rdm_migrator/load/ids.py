@@ -30,11 +30,11 @@ def pid_pk():
             return val
 
 
-def generate_recid(data):
+def generate_recid(data, status="R"):
     """Generate a record id object."""
     return {
-        "pk": pid_pk(),
+        "pk": pid_pk(),  # not the pid_value, that comes from rec.json.id in the tg
         "obj_type": "rec",
         "pid_type": "recid",
-        "status": "R",
+        "status": status,
     }
