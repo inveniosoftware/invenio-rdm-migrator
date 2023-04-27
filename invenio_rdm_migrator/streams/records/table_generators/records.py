@@ -94,7 +94,6 @@ class RDMRecordTableGenerator(TableGenerator):
             self.parents_cache.update(
                 parent["json"]["id"],
                 {
-                    "id": parent["id"],
                     "latest_index": record["index"],
                     "latest_id": record["id"],
                 },
@@ -158,19 +157,19 @@ class RDMRecordTableGenerator(TableGenerator):
                 updated=now,
             )
 
-        # # record files
-        # record_files = data["record_files"]
-        # for _file in record_files:
-        #     yield RDMRecordFile(
-        #         id=_file["id"],
-        #         json=_file["json"],
-        #         created=_file["created"],
-        #         updated=_file["updated"],
-        #         version_id=_file["version_id"],
-        #         key=_file["key"],
-        #         record_id=record["id"],
-        #         object_version_id=_file["object_version_id"],
-        #     )
+        # record files
+        record_files = data["record_files"]
+        for _file in record_files:
+            yield RDMRecordFile(
+                id=_file["id"],
+                json=_file["json"],
+                created=_file["created"],
+                updated=_file["updated"],
+                version_id=_file["version_id"],
+                key=_file["key"],
+                record_id=record["id"],
+                object_version_id=_file["object_version_id"],
+            )
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
