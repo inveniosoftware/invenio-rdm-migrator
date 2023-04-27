@@ -12,7 +12,7 @@ from uuid import UUID
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
-from ....load.postgresql import TableGenerator
+from ....load.postgresql import TableGenerator, _ts
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
 from .parents import generate_parent_rows
@@ -105,15 +105,10 @@ class RDMRecordTableGenerator(TableGenerator):
                         request_id=None,
                     )
                 else:
-                    record_id = record_pid["pk"]
+                    record_id = record["json"]["id"]
                     print(
-                        f"Record parent community not migrated. Record pid: {record_id}. parent_comm_id: {parent_comm_id} , parent_def_id: {parent_def_id}"
+                        f"[{_ts()}] Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]"
                     )
-                yield RDMParentCommunityMetadata(
-                    community_id=parent["json"]["communities"]["default"],
-                    record_id=parent["id"],
-                    request_id=None,
-                )
         else:
             self.parents_cache.update(
                 parent["json"]["id"],
