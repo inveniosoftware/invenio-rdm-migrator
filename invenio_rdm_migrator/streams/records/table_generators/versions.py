@@ -37,7 +37,3 @@ class RDMVersionStateTableGenerator(TableGenerator):
         """Overwrite entries with parent cache entries."""
         for entry in self.parents_cache.all():
             super().prepare(tmp_dir, entry, stack, output_files, **kwargs)
-
-    def cleanup(self, **kwargs):
-        """Cleanup."""
-        pass

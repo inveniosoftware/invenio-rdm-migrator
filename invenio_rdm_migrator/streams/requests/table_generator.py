@@ -53,8 +53,3 @@ class RequestTableGenerator(TableGenerator):
     def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
         """Compute rows."""
         super().prepare(tmp_dir, entry, stack, output_files, create=True, **kwargs)
-
-    def cleanup(self, **kwargs):
-        """Cleanup."""
-        # TODO
-        pass

@@ -58,7 +58,3 @@ class CommunityTableGenerator(TableGenerator):
         if featured_community.get("id"):
             featured_community["community_id"] = community_id
             yield FeaturedCommunity(**featured_community)
-
-    def cleanup(self, **kwargs):
-        """Cleanup."""
-        pass

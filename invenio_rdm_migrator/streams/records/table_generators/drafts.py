@@ -154,6 +154,5 @@ class RDMDraftTableGenerator(TableGenerator):
         if communities:
             _resolve_communities(communities)
 
-    def cleanup(self, db, **kwargs):
-        """Cleanup."""
-        pass
+    # FIXME: deduplicate with records.py
+    # assumis records post load alters pidstore_pid_id_seq and pidstore_recid_recid_seq
