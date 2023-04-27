@@ -37,7 +37,7 @@ def generate_record_uuid(data):
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parent_cache, communities_cache):
+    def __init__(self, parents_cache, records_cache, communities_cache):
         """Constructor."""
         super().__init__(
             tables=[
@@ -56,7 +56,8 @@ class RDMRecordTableGenerator(TableGenerator):
                 ("record_files", generate_files_uuids),
             ],
         )
-        self.parent_cache = parent_cache
+        self.parents_cache = parents_cache
+        self.records_cache = records_cache
         self.communities_cache = communities_cache
 
     def _generate_rows(self, data, **kwargs):
@@ -64,13 +65,16 @@ class RDMRecordTableGenerator(TableGenerator):
         now = datetime.utcnow().isoformat()
         parent = data["parent"]
         record = data.get("record")
+
         if not record:
             return
 
         record_pid = record["json"]["pid"]
+
         # parent
-        if not self.parent_cache.get(parent["json"]["id"]):
-            self.parent_cache.add(
+        cached_parent = self.parents_cache.get(parent["json"]["id"])
+        if not cached_parent:
+            self.parents_cache.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
@@ -87,7 +91,7 @@ class RDMRecordTableGenerator(TableGenerator):
                     request_id=None,
                 )
         else:
-            self.parent_cache.update(
+            self.parents_cache.update(
                 parent["json"]["id"],
                 {
                     "id": parent["id"],
@@ -96,7 +100,18 @@ class RDMRecordTableGenerator(TableGenerator):
                 },
             )
 
+        parent_id = cached_parent["id"] if cached_parent else record["parent_id"]
         # record
+        self.records_cache.add(
+            record["json"]["id"],  # recid
+            {
+                "index": record["index"],
+                "id": record["id"],  # uuid
+                "parent_id": parent_id,  # parent uuid
+                "fork_version_id": record["version_id"],
+            },
+        )
+
         yield RDMRecordMetadata(
             id=record["id"],
             json=record["json"],
@@ -105,7 +120,7 @@ class RDMRecordTableGenerator(TableGenerator):
             version_id=record["version_id"],
             index=record["index"],
             bucket_id=record.get("bucket_id"),
-            parent_id=record["parent_id"],
+            parent_id=parent_id,
         )
         # recid
         yield PersistentIdentifier(
@@ -143,19 +158,19 @@ class RDMRecordTableGenerator(TableGenerator):
                 updated=now,
             )
 
-        # record files
-        record_files = data["record_files"]
-        for _file in record_files:
-            yield RDMRecordFile(
-                id=_file["id"],
-                json=_file["json"],
-                created=_file["created"],
-                updated=_file["updated"],
-                version_id=_file["version_id"],
-                key=_file["key"],
-                record_id=record["id"],
-                object_version_id=_file["object_version_id"],
-            )
+        # # record files
+        # record_files = data["record_files"]
+        # for _file in record_files:
+        #     yield RDMRecordFile(
+        #         id=_file["id"],
+        #         json=_file["json"],
+        #         created=_file["created"],
+        #         updated=_file["updated"],
+        #         version_id=_file["version_id"],
+        #         key=_file["key"],
+        #         record_id=record["id"],
+        #         object_version_id=_file["object_version_id"],
+        #     )
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""

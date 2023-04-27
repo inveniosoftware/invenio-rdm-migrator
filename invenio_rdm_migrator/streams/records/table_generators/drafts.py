@@ -20,7 +20,7 @@ from .parents import generate_parent_rows
 class RDMDraftTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parent_cache, communities_cache):
+    def __init__(self, parents_cache, records_cache, communities_cache):
         """Constructor."""
         super().__init__(
             tables=[
@@ -36,7 +36,8 @@ class RDMDraftTableGenerator(TableGenerator):
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
         )
-        self.parent_cache = parent_cache
+        self.parents_cache = parents_cache
+        self.records_cache = records_cache
         self.communities_cache = communities_cache
 
     def _generate_rows(self, data, **kwargs):
@@ -47,62 +48,84 @@ class RDMDraftTableGenerator(TableGenerator):
         if not draft:
             return
 
-        if not self.parent_cache.get(parent["json"]["id"]):
-            self.parent_cache.add(
+        # some legacy records have different pid value in deposit than record
+        # however _deposit.pid.value would contain the correct one
+        # if it is not legacy we get it from the current field (json.id)
+        recid = (
+            draft.get("_deposit", {}).get("pid", {}).get("value") or draft["json"]["id"]
+        )
+        forked_published = self.records_cache.get(recid)
+        cached_parent = self.parents_cache.get(parent["json"]["id"])
+        if not cached_parent:
+            self.parents_cache.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
-                    "latest_draft_index": draft["index"],
                     "next_draft_id": draft["id"],
                 },
             )
-            yield from generate_parent_rows(parent)  # VERIFY THIS
-        else:
-            self.parent_cache.update(
+            # drafts have a parent on save
+            # on the other hand there is no community parent/request
+            yield from generate_parent_rows(parent)
+        # if there is a parent (else) but there is no record it means that it is a
+        # draft of a new version
+        elif not forked_published:
+            self.parents_cache.update(
                 parent["json"]["id"],
                 {
-                    "id": parent["id"],
-                    "latest_draft_index": draft["index"],
                     "next_draft_id": draft["id"],
                 },
             )
 
+        # if its a draft of a published record, its parent should be parent id
+        # if its a new version, its parent should be the one of the previous version
+        # otherwise is a new parent (new record, new draft...)
+        parent_id = cached_parent["id"] if cached_parent else draft["parent_id"]
+        if forked_published:
+            parent_id = forked_published["parent_id"]
+
         yield RDMDraftMetadata(
-            id=draft["id"],
+            id=forked_published.get("id") or draft["id"],
             json=draft["json"],
             created=draft["created"],
             updated=draft["updated"],
             version_id=draft["version_id"],
-            index=draft["index"],
+            index=forked_published.get("index") or draft["index"],
             bucket_id=draft.get("bucket_id"),
-            parent_id=draft["parent_id"],
+            parent_id=parent_id,
             expires_at=draft["expires_at"],
-            fork_version_id=draft["fork_version_id"],
+            fork_version_id=forked_published.get("fork_version_id")
+            or draft["fork_version_id"],
         )
-        # recid
-        record_pid = draft["json"]["pid"]
-        yield PersistentIdentifier(
-            id=record_pid["pk"],
-            pid_type=record_pid["pid_type"],  # FIXME: in rdm both are recid?
-            pid_value=draft["json"]["id"],
-            status=record_pid["status"],
-            object_type=record_pid["obj_type"],
-            object_uuid=draft["id"],
-            created=now,
-            updated=now,
-        )
-        # DOI
-        if "doi" in draft["json"]["pids"]:
+
+        # if there is a record in the cache it means both recid and doi were already
+        # processed in the records table generator, a duplicate would violate unique
+        # constraints and cause the load to fail.
+        if not forked_published:
+            # recid
+            record_pid = draft["json"]["pid"]
             yield PersistentIdentifier(
-                id=pid_pk(),
-                pid_type="doi",
-                pid_value=draft["json"]["pids"]["doi"]["identifier"],
-                status="R",
-                object_type="rec",
+                id=record_pid["pk"],
+                pid_type=record_pid["pid_type"],  # FIXME: in rdm both are recid?
+                pid_value=draft["json"]["id"],
+                status=record_pid["status"],
+                object_type=record_pid["obj_type"],
                 object_uuid=draft["id"],
                 created=now,
                 updated=now,
             )
+            # DOI
+            if "doi" in draft["json"]["pids"]:
+                yield PersistentIdentifier(
+                    id=pid_pk(),
+                    pid_type="doi",
+                    pid_value=draft["json"]["pids"]["doi"]["identifier"],
+                    status="K",
+                    object_type="rec",
+                    object_uuid=draft["id"],
+                    created=now,
+                    updated=now,
+                )
 
     # FIXME: deduplicate with records.py
     def _resolve_references(self, data, **kwargs):
@@ -114,6 +137,7 @@ class RDMDraftTableGenerator(TableGenerator):
             if not default_id:
                 # TODO: maybe raise error without correct default community?
                 communities = {}
+
             communities["default"] = default_id
 
             communities_slugs = communities.get("ids", [])

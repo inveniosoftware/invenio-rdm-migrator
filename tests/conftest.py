@@ -11,7 +11,7 @@ import tempfile
 
 import pytest
 
-from invenio_rdm_migrator.streams.cache import ParentCache
+from invenio_rdm_migrator.streams.cache import ParentsCache
 
 
 @pytest.fixture(scope="function")
@@ -23,12 +23,12 @@ def tmp_dir():
 
 
 @pytest.fixture(scope="module")
-def parent_cache():
+def parents_cache():
     """Records parent cache.
 
     Keys are concept recids and values are UUIDs.
     """
-    cache = ParentCache()
+    cache = ParentsCache()
     cache.add(
         "123456",
         {
@@ -50,9 +50,9 @@ def communities_cache():
 
 
 @pytest.fixture(scope="module")
-def cache(parent_cache, communities_cache):
+def cache(parents_cache, communities_cache):
     """Global cache containing the other ones."""
     return {
-        "parents": parent_cache,
+        "parents": parents_cache,
         "communities": communities_cache,
     }

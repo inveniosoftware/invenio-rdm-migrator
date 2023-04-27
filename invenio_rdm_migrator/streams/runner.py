@@ -9,7 +9,7 @@
 
 import yaml
 
-from .cache import ParentCache
+from .cache import ParentsCache, RecordsCache
 from .streams import Stream
 
 
@@ -34,7 +34,8 @@ class Runner:
             #             'latest_id': 'record id',
             #         }
             # }
-            "parent": ParentCache(),
+            "parents": ParentsCache(),
+            "records": RecordsCache(),
             "communities": {},
         }
         config = self._read_config(config_filepath)

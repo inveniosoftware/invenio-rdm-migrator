@@ -14,10 +14,10 @@ from ..models import RDMVersionState
 class RDMVersionStateTableGenerator(TableGenerator):
     """RDM version state computed table."""
 
-    def __init__(self, parent_cache):
+    def __init__(self, parents_cache):
         """Constructor."""
         super().__init__(tables=[RDMVersionState])
-        self.parent_cache = parent_cache
+        self.parents_cache = parents_cache
 
     def _generate_rows(self, parent_entry, **kwargs):
         # Version state to be populated in the end from the final state
@@ -35,7 +35,7 @@ class RDMVersionStateTableGenerator(TableGenerator):
 
     def post_prepare(self, tmp_dir, stack, output_files, **kwargs):
         """Overwrite entries with parent cache entries."""
-        for entry in self.parent_cache.all():
+        for entry in self.parents_cache.all():
             super().prepare(tmp_dir, entry, stack, output_files, **kwargs)
 
     def cleanup(self, **kwargs):
