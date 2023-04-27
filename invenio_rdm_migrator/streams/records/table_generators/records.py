@@ -8,6 +8,7 @@
 """Invenio RDM migration record table load module."""
 
 from datetime import datetime
+from uuid import UUID
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
@@ -15,6 +16,14 @@ from ....load.postgresql import TableGenerator
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
 from .parents import generate_parent_rows
+
+
+def _is_valid_uuid(value):
+    try:
+        UUID(value)
+        return True
+    except:
+        return False
 
 
 def generate_files_uuids(data):
@@ -85,6 +94,21 @@ class RDMRecordTableGenerator(TableGenerator):
             yield from generate_parent_rows(parent)
             # parent community
             if "default" in parent["json"]["communities"]:
+                parent_def_id = parent["json"]["communities"]["default"]
+                parent_comm_id = parent["id"]
+                # TODO temporary fix for deleted communities. When a community is deleted, its id is the slug and fails on DB (foreign key expects uuid and not string)
+                # check uuid
+                if _is_valid_uuid(parent_def_id) and _is_valid_uuid(parent_comm_id):
+                    yield RDMParentCommunityMetadata(
+                        community_id=parent_def_id,
+                        record_id=parent_comm_id,
+                        request_id=None,
+                    )
+                else:
+                    record_id = record_pid["pk"]
+                    print(
+                        f"Record parent community not migrated. Record pid: {record_id}. parent_comm_id: {parent_comm_id} , parent_def_id: {parent_def_id}"
+                    )
                 yield RDMParentCommunityMetadata(
                     community_id=parent["json"]["communities"]["default"],
                     record_id=parent["id"],
