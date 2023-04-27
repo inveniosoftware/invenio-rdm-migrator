@@ -22,7 +22,7 @@ def _generate_members_uuids(data):
 def _generate_featured_community_id(data):
     if not data.get("featured_community"):
         return None
-    return pid_pk(data)
+    return pid_pk()
 
 
 class CommunityTableGenerator(TableGenerator):
