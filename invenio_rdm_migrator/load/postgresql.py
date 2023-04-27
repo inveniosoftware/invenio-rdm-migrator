@@ -129,6 +129,43 @@ class PostgreSQLCopyLoad(Load):
                     print(f"[{_ts()}] {name}: no data to load")
                 conn.commit()
 
+    def _post_load(self):
+        """Post load processing."""
+        tables = set()
+        for tg in self.table_generators:
+            tables = tables.join(set(tg.tables))
+
+        with psycopg.connect(self.db_uri) as conn:
+            sequences = conn.execute(
+                """
+                SELECT
+                    t.oid::regclass AS table_name,
+                    a.attname AS column_name,
+                    s.relname AS sequence_name
+                FROM pg_class AS t
+                    JOIN pg_attribute AS a ON a.attrelid = t.oid
+                    JOIN pg_depend AS d ON d.refobjid = t.oid AND d.refobjsubid = a.attnum
+                    JOIN pg_class AS s ON s.oid = d.objid
+                WHERE
+                    d.classid = 'pg_catalog.pg_class'::regclass
+                    AND d.refclassid = 'pg_catalog.pg_class'::regclass
+                    AND d.deptype IN ('i', 'a')
+                    AND t.relkind IN ('r', 'P')
+                    AND s.relkind = 'S';
+                """
+            )
+
+            for seq in sequences:
+                table_name, column, seq_name = seq
+                if table_name in tables:
+                    max_val = conn.execute(f"SELECT MAX({column}) FROM {table_name}")
+                    max_val = list(max_val)[0][0]  # get actual value from iterator
+                    if max_val:  # if no updates it returns None
+                        conn.execute(
+                            f"ALTER SEQUENCE {seq_name} RESTART WITH {max_val}"
+                        )
+                        # does not require commit as it is a ddl op
+
     def run(self, entries, cleanup=False):
         """Load entries."""
         table_entries = self._prepare(entries)
@@ -151,7 +188,6 @@ class TableGenerator(ABC):
         """Yield generated rows."""
         pass
 
-    @abstractmethod
     def cleanup(self, **kwargs):
         """Cleanup."""
         pass

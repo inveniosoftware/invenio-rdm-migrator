@@ -40,7 +40,3 @@ class UserTableGenerator(TableGenerator):
                 id_user=user["id"],
                 **identity,
             )
-
-    def cleanup(self, **kwargs):
-        """Cleanup."""
-        pass

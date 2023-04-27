@@ -32,7 +32,3 @@ class FilesTableGenerator(TableGenerator):
         yield FilesInstance(**file)
         yield FilesBucket(**bucket)
         yield FilesObjectVersion(**object_version)
-
-    def cleanup(self, **kwargs):
-        """Cleanup."""
-        pass
