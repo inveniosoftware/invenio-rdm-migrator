@@ -8,7 +8,7 @@
 """Invenio RDM migration record load module."""
 
 from ...load import PostgreSQLCopyLoad
-from ..cache import ParentCache
+from ..cache import ParentsCache, RecordsCache
 from .table_generators import (
     RDMDraftTableGenerator,
     RDMRecordTableGenerator,
@@ -21,15 +21,20 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreS
 
     def __init__(self, cache, db_uri, tmp_dir):
         """Constructor."""
-        self.parent_cache = cache.get("parent", ParentCache())
+        self.parents_cache = cache.get("parents", ParentsCache())
+        self.records_cache = cache.get("records", RecordsCache())
         self.communities_cache = cache.get("communities", {})
         super().__init__(
             db_uri=db_uri,
             tmp_dir=tmp_dir,
             table_generators=[
-                RDMRecordTableGenerator(self.parent_cache, self.communities_cache),
-                RDMDraftTableGenerator(self.parent_cache, self.communities_cache),
-                RDMVersionStateTableGenerator(self.parent_cache),
+                RDMRecordTableGenerator(
+                    self.parents_cache, self.records_cache, self.communities_cache
+                ),
+                RDMDraftTableGenerator(
+                    self.parents_cache, self.records_cache, self.communities_cache
+                ),
+                RDMVersionStateTableGenerator(self.parents_cache),
             ],
         )
 
