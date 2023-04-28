@@ -16,7 +16,7 @@ from .table_generators import (
 )
 
 
-class RDMRecordCopyLoad(PostgreSQLCopyLoad):  # TODO: abstract SQL from PostgreSQL?
+class RDMRecordCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
     def __init__(self, cache, db_uri, tmp_dir):
