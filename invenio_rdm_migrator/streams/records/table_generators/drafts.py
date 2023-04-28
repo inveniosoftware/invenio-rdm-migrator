@@ -31,7 +31,7 @@ class RDMDraftTableGenerator(TableGenerator):
             pks=[
                 ("draft.id", generate_uuid),
                 ("parent.id", generate_uuid),
-                ("draft.json.pid", partial(generate_recid, status="K")),
+                ("draft.json.pid", partial(generate_recid, status="N")),
                 ("parent.json.pid", generate_recid),
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
@@ -52,7 +52,9 @@ class RDMDraftTableGenerator(TableGenerator):
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
         recid = (
-            draft.get("_deposit", {}).get("pid", {}).get("value") or draft["json"]["id"]
+            # FIXME: this should be moved to the transformer
+            draft.get("_deposit", {}).get("pid", {}).get("value")
+            or draft["json"]["id"]
         )
         forked_published = self.records_cache.get(recid)
         cached_parent = self.parents_cache.get(parent["json"]["id"])
@@ -120,7 +122,7 @@ class RDMDraftTableGenerator(TableGenerator):
                     id=pid_pk(),
                     pid_type="doi",
                     pid_value=draft["json"]["pids"]["doi"]["identifier"],
-                    status="K",
+                    status="N",
                     object_type="rec",
                     object_uuid=draft["id"],
                     created=now,

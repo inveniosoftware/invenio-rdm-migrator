@@ -11,7 +11,7 @@ import tempfile
 
 import pytest
 
-from invenio_rdm_migrator.streams.cache import ParentsCache
+from invenio_rdm_migrator.streams.cache import ParentsCache, RecordsCache
 
 
 @pytest.fixture(scope="function")
@@ -22,11 +22,11 @@ def tmp_dir():
     tmp_dir.cleanup()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def parents_cache():
     """Records parent cache.
 
-    Keys are concept recids and values are UUIDs.
+    Keys are concept recids and values are dictionaries.
     """
     cache = ParentsCache()
     cache.add(
@@ -40,19 +40,33 @@ def parents_cache():
     return cache
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
+def records_cache():
+    """Records cache.
+
+    Keys are recids and values are dictionaries.
+    """
+    cache = RecordsCache()
+    return cache
+
+
+@pytest.fixture(scope="function")
 def communities_cache():
     """Communities cache.
 
     Keys are community slugs and values are UUIDs.
     """
-    return {"comm": "12345678-abcd-1a2b-3c4d-123abc456def"}
+    return {
+        "comm": "12345678-abcd-1a2b-3c4d-123abc456def",
+        "other-comm": "12345678-abcd-1a2b-3c4d-123abc123abc",
+    }
 
 
-@pytest.fixture(scope="module")
-def cache(parents_cache, communities_cache):
+@pytest.fixture(scope="function")
+def cache(parents_cache, records_cache, communities_cache):
     """Global cache containing the other ones."""
     return {
         "parents": parents_cache,
+        "records": records_cache,
         "communities": communities_cache,
     }
