@@ -51,11 +51,7 @@ class RDMDraftTableGenerator(TableGenerator):
         # some legacy records have different pid value in deposit than record
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
-        recid = (
-            # FIXME: this should be moved to the transformer
-            draft.get("_deposit", {}).get("pid", {}).get("value")
-            or draft["json"]["id"]
-        )
+        recid = draft["json"]["id"]
         forked_published = self.records_cache.get(recid)
         cached_parent = self.parents_cache.get(parent["json"]["id"])
         if not cached_parent:
