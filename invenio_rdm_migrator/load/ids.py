@@ -7,7 +7,6 @@
 
 """Identifiers generators module."""
 
-import random
 from uuid import uuid4
 
 
@@ -16,18 +15,13 @@ def generate_uuid(data):
     return str(uuid4())
 
 
-# keep track of generated PKs, since there's a chance they collide
-GENERATED_PID_PKS = set()
-
-
 def pid_pk():
-    """Generate a numeric primary key."""
-    while True:
-        # we start at 1M to avoid collisions with existing low-numbered PKs
-        val = random.randint(1_000_000, 2_147_483_647 - 1)
-        if val not in GENERATED_PID_PKS:
-            GENERATED_PID_PKS.add(val)
-            return val
+    """Generate an autoincrementing numeric primary key."""
+    if not hasattr(pid_pk, "value"):
+        pid_pk.value = 1_000_000
+    else:
+        pid_pk.value += 1
+    return pid_pk.value
 
 
 def generate_recid(data, status="R"):
