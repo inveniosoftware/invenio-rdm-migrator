@@ -23,9 +23,11 @@ from invenio_records.dictutils import dict_set  # TODO: can we do without?
 from .base import Load
 
 
-def _ts(iso=True):
+def _ts(iso=True, fmt=None):
     """Current timestamp string."""
     dt = datetime.now()
+    if fmt:
+        return dt.strftime(fmt)
     return dt.isoformat() if iso else dt.timestamp()
 
 
@@ -51,7 +53,7 @@ class PostgreSQLCopyLoad(Load):
     def __init__(self, db_uri, table_generators, tmp_dir):
         """Constructor."""
         self.db_uri = db_uri
-        self.tmp_dir = Path(tmp_dir) / f"tables{_ts(iso=False)}"
+        self.tmp_dir = Path(tmp_dir) / f"tables-{_ts(fmt='%Y-%m-%dT%H%M%S')}"
         self.table_generators = table_generators
 
     def _cleanup(self, db=False):
