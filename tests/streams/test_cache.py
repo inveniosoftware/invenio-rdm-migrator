@@ -11,6 +11,10 @@ import pytest
 
 from invenio_rdm_migrator.streams.cache import Cache, ParentsCache, RecordsCache
 
+###
+# Parent Cache
+###
+
 
 @pytest.fixture(scope="function")
 def parents_cache():
@@ -103,3 +107,56 @@ def test_parent_cache_invalid_entries(parents_cache):
 
     for entry in invalid:
         pytest.raises(AssertionError, parents_cache.add, "123", entry)
+
+
+###
+# Record Cache
+###
+
+
+@pytest.fixture(scope="function")
+def records_cache():
+    """Records cache."""
+    return RecordsCache()
+
+
+def test_record_cache_record_entry(records_cache):
+    records_cache.add(
+        "123",
+        {
+            "index": 1,
+            "id": "record-uuid",
+            "parent_id": "parent-uuid",
+            "fork_version_id": 1,
+        },
+    )
+    assert records_cache.get("123")
+    assert records_cache.get(123)  # test num to string conversion
+
+
+def test_record_cache_invalid_entries(records_cache):
+    invalid = [
+        {
+            "id": "record-uuid",
+            "parent_id": "parent-uuid",
+            "fork_version_id": 1,
+        },
+        {
+            "index": 1,
+            "parent_id": "parent-uuid",
+            "fork_version_id": 1,
+        },
+        {
+            "index": 1,
+            "id": "record-uuid",
+            "fork_version_id": 1,
+        },
+        {
+            "index": 1,
+            "id": "record-uuid",
+            "parent_id": "parent-uuid",
+        },
+    ]
+
+    for entry in invalid:
+        pytest.raises(AssertionError, records_cache.add, "123", entry)
