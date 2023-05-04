@@ -10,6 +10,26 @@
 
 from datetime import datetime
 
+from ..extract import Extract
+from ..transform import Transform
+
+
+class NoExtract(Extract):
+    """Dummy class to satisfy the `invenio_rdm_mirgator.Extract` interface."""
+
+    def run(self):
+        """Yield one element at a time."""
+        # yield a dummy value
+        yield
+
+
+class NoTransform(Transform):
+    """Dummy class to satisfy the `invenio_rdm_mirgator.Transform` interface."""
+
+    def _transform(self, entry):
+        """Transform entry."""
+        yield entry
+
 
 class StreamDefinition:
     """ETL stream definition.
@@ -20,8 +40,8 @@ class StreamDefinition:
     def __init__(self, name, extract_cls, transform_cls, load_cls):
         """Constructor."""
         self.name = name
-        self.extract_cls = extract_cls
-        self.transform_cls = transform_cls
+        self.extract_cls = extract_cls or NoExtract
+        self.transform_cls = transform_cls or NoTransform
         self.load_cls = load_cls
 
 
