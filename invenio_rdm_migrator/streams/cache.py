@@ -7,15 +7,29 @@
 
 """Cache module."""
 
+import json
 from abc import ABC, abstractmethod
 
 
 class Cache(ABC):
     """Cache interface."""
 
-    def __init__(self):
+    def __init__(self, filepath=None, validate=False):
         """Constructor."""
         self._data = {}
+
+        if filepath:  # load cache from file
+            with open(filepath, "r") as file:
+                self._data = json.loads(file.read())
+
+            if validate:
+                for _, entry in self._data.items():
+                    self._validate(entry)
+
+    def dump(self, filepath):
+        """Dump cache data into a json file."""
+        with open(filepath, "w") as outfile:
+            outfile.write(json.dumps(self._data))
 
     def get(self, key):
         """Get data from the cache."""

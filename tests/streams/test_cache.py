@@ -7,6 +7,8 @@
 
 """Cache tests."""
 
+import json
+
 import pytest
 
 from invenio_rdm_migrator.streams.cache import Cache, ParentsCache, RecordsCache
@@ -160,3 +162,58 @@ def test_record_cache_invalid_entries(records_cache):
 
     for entry in invalid:
         pytest.raises(AssertionError, records_cache.add, "123", entry)
+
+
+###
+# Cache
+###
+
+
+class MockCache(Cache):
+    """Mock Cache."""
+
+    def _validate(self, data):
+        """Validate data value is not 2."""
+        assert not data["value"] == 2
+
+
+@pytest.fixture(scope="function")
+def data_file(tmp_dir):
+    """Cache data filepath."""
+    filepath = f"{tmp_dir.name}/data.json"
+    with open(filepath, "w") as file:
+        file.write(json.dumps({"one": {"value": 1}, "two": {"value": 2}}))
+
+    return filepath
+
+
+def test_cache_from_source_data_no_validation(data_file):
+    """Test creating a cache with initial data."""
+    cache = MockCache(data_file)
+
+    assert cache.get("one")
+    assert cache.get("two")
+    assert len(cache.all()) == 2
+
+
+def test_cache_from_source_data_with_validation(data_file):
+    """Test creating a cache with initial data."""
+    with pytest.raises(AssertionError):
+        _ = MockCache(data_file, validate=True)
+
+
+def test_cache_dump_data(tmp_dir):
+    """Test dumping the data of the cache."""
+    cache = MockCache()
+
+    cache.add("one", {"value": 1})
+    cache.add("three", {"value": 3})
+    cache.add("four", {"value": 4})
+
+    filepath = f"{tmp_dir.name}/dump.json"
+    cache.dump(filepath)
+
+    with open(filepath, "r") as file:
+        expected = '{"one": {"value": 1}, "three": {"value": 3}, "four": {"value": 4}}'
+        content = file.read()
+        assert content == expected
