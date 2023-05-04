@@ -20,15 +20,8 @@ from uuid import UUID
 import psycopg
 from invenio_records.dictutils import dict_set  # TODO: can we do without?
 
+from ..utils import ts
 from .base import Load
-
-
-def _ts(iso=True, fmt=None):
-    """Current timestamp string."""
-    dt = datetime.now()
-    if fmt:
-        return dt.strftime(fmt)
-    return dt.isoformat() if iso else dt.timestamp()
 
 
 def as_csv_row(dc):
@@ -53,7 +46,7 @@ class PostgreSQLCopyLoad(Load):
     def __init__(self, db_uri, table_generators, tmp_dir):
         """Constructor."""
         self.db_uri = db_uri
-        self.tmp_dir = Path(tmp_dir) / f"tables-{_ts(fmt='%Y-%m-%dT%H%M%S')}"
+        self.tmp_dir = Path(tmp_dir) / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
         self.table_generators = table_generators
 
     def _cleanup(self, db=False):
@@ -101,7 +94,7 @@ class PostgreSQLCopyLoad(Load):
                     # total file size for progress logging
                     file_size = fpath.stat().st_size
 
-                    print(f"[{_ts()}] COPY FROM {fpath}")  # TODO: logging
+                    print(f"[{ts()}] COPY FROM {fpath}")  # TODO: logging
                     with contextlib.ExitStack() as stack:
                         cur = stack.enter_context(conn.cursor())
                         copy = stack.enter_context(
@@ -124,11 +117,11 @@ class PostgreSQLCopyLoad(Load):
                                 progress = (
                                     f"{cur_bytes}/{file_size} ({percentage:.2f}%)"
                                 )
-                                print(f"[{_ts()}] {name}: {progress}")
+                                print(f"[{ts()}] {name}: {progress}")
                             copy.write(block)
                 else:
                     # FIXME: log a WARNING/ERROR
-                    print(f"[{_ts()}] {name}: no data to load")
+                    print(f"[{ts()}] {name}: no data to load")
                 conn.commit()
 
     def _post_load(self):

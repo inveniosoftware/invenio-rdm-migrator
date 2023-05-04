@@ -18,7 +18,7 @@ class Cache(ABC):
         """Constructor."""
         self._data = {}
 
-        if filepath:  # load cache from file
+        if filepath and filepath.exists():  # load cache from file
             with open(filepath, "r") as file:
                 self._data = json.loads(file.read())
 

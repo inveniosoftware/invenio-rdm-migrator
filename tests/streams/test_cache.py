@@ -8,6 +8,7 @@
 """Cache tests."""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -180,7 +181,7 @@ class MockCache(Cache):
 @pytest.fixture(scope="function")
 def data_file(tmp_dir):
     """Cache data filepath."""
-    filepath = f"{tmp_dir.name}/data.json"
+    filepath = Path(f"{tmp_dir.name}/data.json")
     with open(filepath, "w") as file:
         file.write(json.dumps({"one": {"value": 1}, "two": {"value": 2}}))
 
