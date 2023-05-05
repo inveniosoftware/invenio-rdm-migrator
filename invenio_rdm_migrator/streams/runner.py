@@ -42,6 +42,7 @@ class Runner:
             fh.setLevel(logging.ERROR)
             logger.addHandler(fh)
 
+        self.db_uri = config.get("db_uri")
         self.streams = []
         self.cache = {
             "parents": ParentsCache(filepath=self.cache_dir / "parents.json"),
@@ -61,9 +62,10 @@ class Runner:
                         definition.extract_cls(**stream_config.get("extract", {})),
                         definition.transform_cls(**stream_config.get("transform", {})),
                         definition.load_cls(
-                            **stream_config.get("load", {}),
                             cache=self.cache,
                             tmp_dir=self.tmp_dir,
+                            db_uri=self.db_uri,
+                            **stream_config.get("load", {}),
                         ),
                         logger=logger,
                     )
