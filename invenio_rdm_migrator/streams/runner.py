@@ -7,6 +7,7 @@
 
 """InvenioRDM migration streams runner."""
 
+import logging
 from pathlib import Path
 
 import yaml
@@ -31,6 +32,15 @@ class Runner:
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir = Path(config.get("cache_dir"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        log_dir = Path(config["log_dir"]) if config.get("log_dir") else None
+        logger = None
+        if log_dir:
+            log_dir.mkdir(parents=True, exist_ok=True)
+            logger = logging.getLogger("migration")
+            logger.setLevel(logging.ERROR)
+            fh = logging.FileHandler(log_dir / "error.log")
+            fh.setLevel(logging.ERROR)
+            logger.addHandler(fh)
 
         self.streams = []
         self.cache = {
@@ -55,6 +65,7 @@ class Runner:
                             cache=self.cache,
                             tmp_dir=self.tmp_dir,
                         ),
+                        logger=logger,
                     )
                 )
 
@@ -63,9 +74,12 @@ class Runner:
         for stream in self.streams:
             try:
                 stream.run()
-            finally:
+                # sucessfully finished stream run, now we can dump that stream cache
                 for name, cache in self.cache.items():
                     if name == "communities":  # FIXME: implement communities cache
                         continue
                     cache_file = self.cache_dir / f"{name}.json"
                     cache.dump(cache_file)
+            except Exception as exc:
+                print(exc)
+                continue
