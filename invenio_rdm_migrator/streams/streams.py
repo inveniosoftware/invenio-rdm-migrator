@@ -48,12 +48,13 @@ class StreamDefinition:
 class Stream:
     """ETL stream."""
 
-    def __init__(self, name, extract, transform, load):
+    def __init__(self, name, extract, transform, load, logger=None):
         """Constructor."""
         self.name = name
         self.extract = extract
         self.transform = transform
         self.load = load
+        self.logger = logger
 
     def run(self, cleanup=False):
         """Run ETL stream."""
@@ -61,7 +62,7 @@ class Stream:
         print(f"Stream started {start_time.isoformat()}")
 
         extract_gen = self.extract.run()
-        transform_gen = self.transform.run(extract_gen)
+        transform_gen = self.transform.run(extract_gen, self.logger)
         self.load.run(transform_gen, cleanup=cleanup)
 
         end_time = datetime.now()

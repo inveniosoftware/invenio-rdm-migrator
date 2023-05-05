@@ -55,10 +55,15 @@ class RDMRecordTransform(Transform):
             "draft_files": self._draft_files(entry),
         }
 
-    def run(self, entries):
+    def run(self, entries, logger=None):
         """Transform and yield one element at a time."""
         for entry in entries:
-            yield self._transform(entry)
+            try:
+                yield self._transform(entry)
+            except:
+                if logger:
+                    logger.error(entry)
+                continue
 
 
 class RDMRecordEntry(Entry):
