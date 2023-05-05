@@ -11,6 +11,9 @@ import json
 from abc import ABC, abstractmethod
 
 
+from ..utils import ts
+
+
 class Cache(ABC):
     """Cache interface."""
 
@@ -19,17 +22,31 @@ class Cache(ABC):
         self._data = {}
 
         if filepath and filepath.exists():  # load cache from file
+            start = ts(iso=False)
+            print(f"Loading cache from {filepath} {ts()}")
             with open(filepath, "r") as file:
                 self._data = json.loads(file.read())
 
+            print(f"Finished loading cache {ts()}")
             if validate:
+                print(f"Validating cache {ts()}")
                 for _, entry in self._data.items():
                     self._validate(entry)
+                print(f"Finished validating cache {ts()}")
+            end = ts(iso=False)
+            print(f"Cache loading took {end-start} seconds.")
 
     def dump(self, filepath):
         """Dump cache data into a json file."""
+        print(f"Dumping cache to {filepath} {ts()}")
+        start = ts(iso=False)
+
         with open(filepath, "w") as outfile:
             outfile.write(json.dumps(self._data))
+
+        end = ts(iso=False)
+        print(f"Finished dumping cache {ts()}")
+        print(f"Cache dumping took {end-start} seconds.")
 
     def get(self, key):
         """Get data from the cache."""
