@@ -51,25 +51,43 @@ class Runner:
         }
 
         for definition in stream_definitions:
-            stream_config = config.get(definition.name)
-            if stream_config is not None:
-                # merge cache objects from stream definition config
-                stream_cache = stream_config.get("load", {}).pop("cache", {})
-                self.cache.update(stream_cache)
-                self.streams.append(
-                    Stream(
-                        definition.name,
-                        definition.extract_cls(**stream_config.get("extract", {})),
-                        definition.transform_cls(**stream_config.get("transform", {})),
-                        definition.load_cls(
-                            cache=self.cache,
-                            tmp_dir=self.tmp_dir,
-                            db_uri=self.db_uri,
-                            **stream_config.get("load", {}),
-                        ),
-                        logger=logger,
+            if definition.name in config:
+                stream_config = config.get(definition.name)
+                if stream_config is not None:
+                    # merge cache objects from stream definition config
+                    stream_cache = stream_config.get("load", {}).pop("cache", {})
+                    self.cache.update(stream_cache)
+                    self.streams.append(
+                        Stream(
+                            definition.name,
+                            definition.extract_cls(**stream_config.get("extract", {})),
+                            definition.transform_cls(
+                                **stream_config.get("transform", {})
+                            ),
+                            definition.load_cls(
+                                cache=self.cache,
+                                tmp_dir=self.tmp_dir,
+                                db_uri=self.db_uri,
+                                **stream_config.get("load", {}),
+                            ),
+                            logger=logger,
+                        )
                     )
-                )
+                else:
+                    # stream is not based on config
+                    self.streams.append(
+                        Stream(
+                            definition.name,
+                            definition.extract_cls(),
+                            definition.transform_cls(),
+                            definition.load_cls(
+                                cache=self.cache,
+                                tmp_dir=self.tmp_dir,
+                                db_uri=self.db_uri,
+                            ),
+                            logger=logger,
+                        )
+                    )
 
     def run(self):
         """Run ETL streams."""
