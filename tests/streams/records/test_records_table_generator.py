@@ -10,7 +10,6 @@
 from copy import deepcopy
 from unittest.mock import patch
 
-import dictdiffer
 import pytest
 
 from invenio_rdm_migrator.load.models import PersistentIdentifier
