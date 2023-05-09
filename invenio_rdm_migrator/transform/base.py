@@ -23,9 +23,9 @@ class Transform(ABC):
         for entry in entries:
             try:
                 yield self._transform(entry)
-            except:
+            except Exception:
                 if logger:
-                    logger.error(f"Stream {self.__class__}: Failed ", entry)
+                    logger.error(entry, exc_info=1)
                 continue
 
 

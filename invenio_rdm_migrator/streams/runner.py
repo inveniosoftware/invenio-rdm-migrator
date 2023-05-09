@@ -33,14 +33,14 @@ class Runner:
         self.cache_dir = Path(config.get("cache_dir"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         log_dir = Path(config["log_dir"]) if config.get("log_dir") else None
-        logger = None
+        self.logger = None
         if log_dir:
             log_dir.mkdir(parents=True, exist_ok=True)
-            logger = logging.getLogger("migration")
-            logger.setLevel(logging.ERROR)
+            self.logger = logging.getLogger("migration")
+            self.logger.setLevel(logging.ERROR)
             fh = logging.FileHandler(log_dir / "error.log")
             fh.setLevel(logging.ERROR)
-            logger.addHandler(fh)
+            self.logger.addHandler(fh)
 
         self.db_uri = config.get("db_uri")
         self.streams = []
@@ -70,7 +70,7 @@ class Runner:
                                 db_uri=self.db_uri,
                                 **stream_config.get("load", {}),
                             ),
-                            logger=logger,
+                            logger=self.logger,
                         )
                     )
                 else:
@@ -85,7 +85,7 @@ class Runner:
                                 tmp_dir=self.tmp_dir,
                                 db_uri=self.db_uri,
                             ),
-                            logger=logger,
+                            logger=self.logger,
                         )
                     )
 
@@ -100,6 +100,6 @@ class Runner:
                         continue
                     cache_file = self.cache_dir / f"{name}.json"
                     cache.dump(cache_file)
-            except Exception as exc:
-                print(exc)
+            except Exception:
+                self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue

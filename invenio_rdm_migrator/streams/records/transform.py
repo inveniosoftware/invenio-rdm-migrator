@@ -60,9 +60,9 @@ class RDMRecordTransform(Transform):
         for entry in entries:
             try:
                 yield self._transform(entry)
-            except:
+            except Exception:
                 if logger:
-                    logger.error(entry)
+                    logger.error(entry, exc_info=1)
                 continue
 
 

@@ -254,9 +254,8 @@ def test_single_draft_generate_rows(cache, restart_pid_pk, transformed_draft_ent
                 },
                 "pids": {
                     "doi": {
-                        "client": "datacite",
-                        "provider": "datacite",
-                        "identifier": "10.5281/zenodo.12345678",
+                        "provider": "external",
+                        "identifier": "10.1234/foo",
                     },
                 },
             },
@@ -273,16 +272,6 @@ def test_single_draft_generate_rows(cache, restart_pid_pk, transformed_draft_ent
             id="10123",
             pid_type="recid",
             pid_value="12345678",
-            status="N",
-            object_type="rec",
-            object_uuid="2d6970ea-602d-4e8b-a918-063a59823386",
-            created="2023-04-01 12:00:00.00000",
-            updated="2023-04-01 12:00:00.00000",
-        ),
-        PersistentIdentifier(  # doi
-            id="10124",
-            pid_type="doi",
-            pid_value="10.5281/zenodo.12345678",
             status="N",
             object_type="rec",
             object_uuid="2d6970ea-602d-4e8b-a918-063a59823386",
@@ -427,9 +416,8 @@ def test_record_versions_and_old_draft_generate_rows(
                 },
                 "pids": {
                     "doi": {
-                        "client": "datacite",
-                        "provider": "datacite",
-                        "identifier": "10.5281/zenodo.12345678",
+                        "provider": "external",
+                        "identifier": "10.1234/foo",
                     },
                 },
             },
@@ -500,7 +488,7 @@ def test_record_and_new_version_draft_generate_rows(
     d_v3["draft"]["id"] = "2d6970ea-602d-4e8b-a918-063a59823389"
     d_v3["draft"]["json"]["id"] = "12345680"
     d_v3["draft"]["json"]["pid"]["pk"] = "10128"  # pk, not pid value, same as v1
-    d_v3["draft"]["json"]["pids"]["doi"]["identifier"] = "10.5281/zenodo.12345680"
+    d_v3["draft"]["json"]["pids"]["doi"]["identifier"] = "10.1234/bar"
 
     rows = []
     for entry in [v1, v2, d_v3]:
@@ -520,9 +508,8 @@ def test_record_and_new_version_draft_generate_rows(
                 },
                 "pids": {
                     "doi": {
-                        "client": "datacite",
-                        "provider": "datacite",
-                        "identifier": "10.5281/zenodo.12345680",
+                        "provider": "external",
+                        "identifier": "10.1234/bar",
                     },
                 },
             },
@@ -545,22 +532,13 @@ def test_record_and_new_version_draft_generate_rows(
             created="2023-04-01 12:00:00.00000",
             updated="2023-04-01 12:00:00.00000",
         ),
-        PersistentIdentifier(  # doi
-            id="10128",
-            pid_type="doi",
-            pid_value="10.5281/zenodo.12345680",
-            status="N",
-            object_type="rec",
-            object_uuid="2d6970ea-602d-4e8b-a918-063a59823389",
-            created="2023-04-01 12:00:00.00000",
-            updated="2023-04-01 12:00:00.00000",
-        ),
     ]
 
-    assert len(rows) == 14
+    assert len(rows) == 13
+
     # v1 rows not asserted since they are checked at test_single_record_generate_rows
     # v2 rows not asserted since they are checked at test_record_versions_and_old_draft_generate_rows
-    assert rows[11:14] == expected_rows_d_v3
+    assert rows[11:13] == expected_rows_d_v3
 
     assert len(cache["parents"].all()) == 2  # pre-existing and new
     assert len(cache["records"].all()) == 2  # two added records
