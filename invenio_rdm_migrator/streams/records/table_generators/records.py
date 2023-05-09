@@ -40,7 +40,7 @@ def generate_files_uuids(data):
 
 def generate_record_uuid(data):
     """Generate record uuid if not present."""
-    _id = data.get("id")
+    _id = data["record"].get("id")
     return _id if _id else generate_uuid(None)
 
 
