@@ -128,6 +128,7 @@ class RDMRecordTableGenerator(TableGenerator):
                 "id": record["id"],  # uuid
                 "parent_id": parent_id,  # parent uuid
                 "fork_version_id": record["version_id"],
+                "pids": record["json"]["pids"],
             },
         )
 

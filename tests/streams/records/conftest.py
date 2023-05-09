@@ -105,9 +105,8 @@ def transformed_draft_entry():
                 "id": "12345678",
                 "pids": {
                     "doi": {
-                        "client": "datacite",
-                        "provider": "datacite",
-                        "identifier": "10.5281/zenodo.12345678",
+                        "provider": "external",
+                        "identifier": "10.1234/foo",
                     },
                 },
             },

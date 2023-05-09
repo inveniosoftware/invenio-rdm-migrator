@@ -112,18 +112,8 @@ class RDMDraftTableGenerator(TableGenerator):
                 created=now,
                 updated=now,
             )
-            # DOI
-            if "doi" in draft["json"]["pids"]:
-                yield PersistentIdentifier(
-                    id=pid_pk(),
-                    pid_type="doi",
-                    pid_value=draft["json"]["pids"]["doi"]["identifier"],
-                    status="N",
-                    object_type="rec",
-                    object_uuid=draft["id"],
-                    created=now,
-                    updated=now,
-                )
+        # we don't emit doi Persistentidentifier for drafts as either they have already
+        # one from records or have an external doi that is registered on publish
 
     # FIXME: deduplicate with records.py
     def _resolve_references(self, data, **kwargs):
@@ -146,11 +136,35 @@ class RDMDraftTableGenerator(TableGenerator):
                     _ids.append(_id)
             communities["ids"] = _ids
 
+        def _resolve_pids(draft):
+            """Enforce record pids to draft."""
+            if not draft:
+                return
+
+            # some legacy records have different pid value in deposit than record
+            # however _deposit.pid.value would contain the correct one
+            # if it is not legacy we get it from the current field (json.id)
+            recid = draft["json"]["id"]
+            forked_published = self.records_cache.get(recid)
+            if forked_published:
+                pids = draft["json"]["pids"]
+                has_draft_external_doi = (
+                    pids.get("doi", {}).get("provider") == "external"
+                )
+                if has_draft_external_doi:
+                    # then keep the draft external value as it might be there for
+                    # updating the existing value. Update the draft only with `oai`
+                    pids["oai"] = forked_published["pids"]["oai"]
+                else:
+                    # enfore published record pids to draft
+                    pids = forked_published["pids"]
+
         # resolve parent communities slug
         parent = data["parent"]
         communities = parent["json"].get("communities")
         if communities:
             _resolve_communities(communities)
+        _resolve_pids(data.get("draft"))
 
     # FIXME: deduplicate with records.py
     # assumis records post load alters pidstore_pid_id_seq and pidstore_recid_recid_seq
