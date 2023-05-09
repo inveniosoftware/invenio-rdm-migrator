@@ -8,6 +8,6 @@
 """InvenioRDM module for data migration."""
 
 
-__version__ = "1.0.0a8"
+__version__ = "1.0.0a9"
 
 __all__ = ("__version__",)
