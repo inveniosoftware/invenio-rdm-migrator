@@ -12,8 +12,9 @@ from pathlib import Path
 
 import yaml
 
+from ..load.ids import pid_pk
 from ..utils import ts
-from .cache import ParentsCache, RecordsCache
+from .cache import ParentsCache, PIDMaxPKCache, RecordsCache
 from .streams import Stream
 
 
@@ -48,6 +49,12 @@ class Runner:
             "parents": ParentsCache(filepath=self.cache_dir / "parents.json"),
             "records": RecordsCache(filepath=self.cache_dir / "records.json"),
             "communities": {},
+            "max_pid": PIDMaxPKCache(
+                filepath=self.cache_dir / "max_pid.json",
+                initial_data={
+                    "max_value": 1_000_000
+                },  # initial value that will be overriden if cache exists
+            ),
         }
 
         for definition in stream_definitions:
@@ -96,10 +103,20 @@ class Runner:
                 stream.run()
                 # sucessfully finished stream run, now we can dump that stream cache
                 for name, cache in self.cache.items():
-                    if name == "communities":  # FIXME: implement communities cache
+                    if (
+                        name == "communities" or name == "max_pid"
+                    ):  # FIXME: implement communities cache
                         continue
                     cache_file = self.cache_dir / f"{name}.json"
                     cache.dump(cache_file)
             except Exception:
                 self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue
+        # dump the max pid generated in pids cache
+        pid_cache = self.cache.get("max_pid")
+        # call global pid_pk to update the cache with the max value
+        max_pid_value = pid_pk()
+        print("Max pid value", max_pid_value)
+        pid_cache.update("max_value", max_pid_value)
+        cache_file = self.cache_dir / "max_pid.json"
+        pid_cache.dump(cache_file)

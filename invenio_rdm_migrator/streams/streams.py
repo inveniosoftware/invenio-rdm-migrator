@@ -59,7 +59,7 @@ class Stream:
     def run(self, cleanup=False):
         """Run ETL stream."""
         start_time = datetime.now()
-        print(f"Stream started {start_time.isoformat()}")
+        print(f"Stream {self.name} started {start_time.isoformat()}")
 
         extract_gen = self.extract.run()
         transform_gen = self.transform.run(extract_gen, self.logger)
