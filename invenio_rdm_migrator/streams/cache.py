@@ -16,9 +16,9 @@ from ..utils import ts
 class Cache(ABC):
     """Cache interface."""
 
-    def __init__(self, filepath=None, validate=False):
+    def __init__(self, filepath=None, validate=False, initial_data=None):
         """Constructor."""
-        self._data = {}
+        self._data = initial_data if initial_data is not None else {}
 
         if filepath and filepath.exists():  # load cache from file
             start = ts(iso=False)
@@ -128,3 +128,11 @@ class RecordsCache(Cache):
         keys = data.keys()
         for value in ["index", "id", "parent_id", "fork_version_id"]:
             assert value in keys
+
+
+class PIDMaxPKCache(Cache):
+    """PID max pk count cache."""
+
+    def _validate(self, data):
+        """Validate data entry."""
+        assert isinstance(data, int)
