@@ -43,6 +43,38 @@ def transformed_community_entry():
             }
         ],
         "featured_community": {},
+        "community_files": {
+            "file": {
+                "created": "2023-01-01 12:00:00.00000",
+                "updated": "2023-01-31 12:00:00.00000",
+                "id": "1",
+                "json": {},
+                "version_id": 1,
+                "key": "logo",
+            },
+            "bucket": {
+                "created": "2023-01-01 12:00:00.00000",
+                "updated": "2023-01-31 12:00:00.00000",
+                "default_location": None,
+                "default_storage_class": "L",
+                "size": 0,
+                "quota_size": 0,
+                "max_file_size": 0,
+                "locked": False,
+                "deleted": False,
+                "id": 1,
+            },
+            "file_object": {
+                "created": "2023-01-01 12:00:00.00000",
+                "updated": "2023-01-31 12:00:00.00000",
+                "bucket_id": 1,
+                "version_id": 1,
+                "key": "logo",
+                "file_id": 1,
+                "_mimetype": None,
+                "is_head": True,
+            },
+        },
     }
 
 

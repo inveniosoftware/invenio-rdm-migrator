@@ -10,6 +10,7 @@
 from .load import CommunityCopyLoad
 from .transform import (
     CommunityEntry,
+    CommunityFileEntry,
     CommunityMemberEntry,
     CommunityTransform,
     FeaturedCommunityEntry,
@@ -21,6 +22,7 @@ __all__ = (
     "CommunityEntry",
     "CommunityMemberEntry",
     "CommunityTransform",
+    "CommunityFileEntry",
     "FeaturedCommunityEntry",
     "ParentCommunityEntry",
 )

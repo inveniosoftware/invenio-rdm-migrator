@@ -27,6 +27,13 @@ class MockCommunityTransform(CommunityTransform):
         """Transform the featured community."""
         return {"key": "value"}
 
+    def _community_files(self, entry):
+        return {
+            "file": {"key": "value"},
+            "bucket": {"key": "value"},
+            "file_object": {"key": "value"},
+        }
+
 
 def test_community_transform():
     """Test the full community transformation."""
@@ -35,6 +42,11 @@ def test_community_transform():
         "community": {"key": "value"},
         "community_members": {"key": "value"},
         "featured_community": {"key": "value"},
+        "community_files": {
+            "file": {"key": "value"},
+            "bucket": {"key": "value"},
+            "file_object": {"key": "value"},
+        },
     }
     assert not list(dictdiffer.diff(result, expected))
 

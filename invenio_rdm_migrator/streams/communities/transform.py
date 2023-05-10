@@ -30,10 +30,16 @@ class CommunityTransform(Transform):
         """Transform the featured community."""
         pass
 
+    @abstractmethod
+    def _community_files(self, entry):
+        """Transform the community files."""
+        pass
+
     def _transform(self, entry):
         """Transform a single entry."""
         return {
             "community": self._community(entry),
+            "community_files": self._community_files(entry),
             "community_members": self._community_members(entry),
             "featured_community": self._featured_community(entry),
         }
@@ -224,4 +230,49 @@ class FeaturedCommunityEntry(Entry):
             "created": self._created(entry),
             "updated": self._updated(entry),
             "start_date": self._start_date(entry),
+        }
+
+
+class CommunityFileEntry(Entry):
+    """Transform a community file entry."""
+
+    @abstractmethod
+    def _created(self, entry):
+        """Returns the creation date."""
+        pass
+
+    @abstractmethod
+    def _updated(self, entry):
+        """Returns the update date."""
+        pass
+
+    @abstractmethod
+    def _id(self, entry):
+        """Returns the file id."""
+        pass
+
+    @abstractmethod
+    def _json(self, entry):
+        """Returns the file metadata."""
+        pass
+
+    @abstractmethod
+    def _version_id(self, entry):
+        """Returns the version id."""
+        pass
+
+    @abstractmethod
+    def _key(self, entry):
+        """Return the filepath."""
+        pass
+
+    def transform(self, entry):
+        """Transforms a community file entry."""
+        return {
+            "id": self._id(entry),
+            "json": self._json(entry),
+            "version_id": self._version_id(entry),
+            "key": self._key(entry),
+            "created": self._created(entry),
+            "updated": self._updated(entry),
         }
