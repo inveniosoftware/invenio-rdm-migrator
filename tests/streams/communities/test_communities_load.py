@@ -33,27 +33,30 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
     tables = list(community_copy_load._prepare([transformed_community_entry]))
 
     # assert tables
-    # it has three tables: communities, parent communities and members
+    # it has four tables: communities, parent communities, communities_files and members
     expected_table_names = [
         "community_metadata",
         "communities_members",
         "rdm_parents_community",
+        "communities_files",
+        "files_object",
+        "files_bucket",
     ]
     table_names = [table._table_name for table in tables]
     assert len(tables) == len(expected_table_names)
     assert any([e_table in table_names for e_table in expected_table_names])
 
     # assert files were created and have the content
-    # two files are created: one for the communities and another for members
+    # five files are created: one for the communities, members, files, files bucket, files object
     files = list(os.scandir(community_copy_load.tmp_dir))
-    assert len(files) == 2
+    assert len(files) == 5
 
     # assert communities metadata content
     with open(f"{community_copy_load.tmp_dir}/communities_metadata.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "12345678-abcd-1a2b-3c4d-123abc456def,"
-            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"": ""Migrator community"", ""description"": ""Migrator testing community"", ""page"": """", ""curation_policy"": """"}",1,migrator,1\n'
+            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"": ""Migrator community"", ""description"": ""Migrator testing community"", ""page"": """", ""curation_policy"": """"}",1,migrator,12345678-abcd-1a2b-3c4d-123abc456def\n'
         )
         content = file.read()
         assert content == expected

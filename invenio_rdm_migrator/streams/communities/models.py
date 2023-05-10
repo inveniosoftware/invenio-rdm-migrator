@@ -67,3 +67,19 @@ class FeaturedCommunity:
     start_date: str
 
     _table_name: InitVar[str] = "communities_featured"
+
+
+@dataclass
+class CommunityFile:
+    """Community file dataclass model."""
+
+    created: str
+    updated: str
+    id: str
+    json: dict
+    version_id: str
+    key: str
+    record_id: str
+    object_version_id: str
+
+    _table_name: InitVar[str] = "communities_files"
