@@ -20,11 +20,8 @@ from .parents import generate_parent_rows
 class RDMDraftTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parents_cache, records_cache, communities_cache, max_pid_cache):
+    def __init__(self, parents_cache, records_cache, communities_cache):
         """Constructor."""
-        self._generate_recid = partial(
-            generate_recid, initial_pid=max_pid_cache.get("max_value")
-        )
         super().__init__(
             tables=[
                 RDMDraftMetadata,
@@ -34,8 +31,8 @@ class RDMDraftTableGenerator(TableGenerator):
             pks=[
                 ("draft.id", generate_uuid),
                 ("parent.id", generate_uuid),
-                ("draft.json.pid", partial(self._generate_recid, status="N")),
-                ("parent.json.pid", self._generate_recid),
+                ("draft.json.pid", partial(generate_recid, status="N")),
+                ("parent.json.pid", generate_recid),
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
         )

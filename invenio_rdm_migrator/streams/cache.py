@@ -16,9 +16,9 @@ from ..utils import ts
 class Cache(ABC):
     """Cache interface."""
 
-    def __init__(self, filepath=None, validate=False, initial_data=None):
+    def __init__(self, filepath=None, validate=False):
         """Constructor."""
-        self._data = initial_data if initial_data is not None else {}
+        self._data = {}
 
         if filepath and filepath.exists():  # load cache from file
             start = ts(iso=False)
