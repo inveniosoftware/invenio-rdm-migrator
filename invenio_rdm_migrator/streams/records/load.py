@@ -19,27 +19,29 @@ from .table_generators import (
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, cache, db_uri, tmp_dir):
+    def __init__(self, cache, db_uri, tmp_dir, versioning=True):
         """Constructor."""
         self.parents_cache = cache.get("parents", ParentsCache())
         self.records_cache = cache.get("records", RecordsCache())
         self.communities_cache = cache.get("communities", {})
+        table_generators = [
+            RDMRecordTableGenerator(
+                self.parents_cache,
+                self.records_cache,
+                self.communities_cache,
+            ),
+            RDMDraftTableGenerator(
+                self.parents_cache,
+                self.records_cache,
+                self.communities_cache,
+            ),
+        ]
+
+        if versioning:
+            table_generators.append(RDMVersionStateTableGenerator(self.parents_cache))
+
         super().__init__(
-            db_uri=db_uri,
-            tmp_dir=tmp_dir,
-            table_generators=[
-                RDMRecordTableGenerator(
-                    self.parents_cache,
-                    self.records_cache,
-                    self.communities_cache,
-                ),
-                RDMDraftTableGenerator(
-                    self.parents_cache,
-                    self.records_cache,
-                    self.communities_cache,
-                ),
-                RDMVersionStateTableGenerator(self.parents_cache),
-            ],
+            db_uri=db_uri, tmp_dir=tmp_dir, table_generators=table_generators
         )
 
     def _validate(self):
