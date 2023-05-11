@@ -19,7 +19,7 @@ from invenio_rdm_migrator.streams.files import FilesCopyLoad
 def files_copy_load(tmp_dir):
     """Request load instance."""
     # the db queries will be mocked
-    load = FilesCopyLoad(cache={}, db_uri="None", tmp_dir=tmp_dir.name)
+    load = FilesCopyLoad(db_uri="None", data_dir=tmp_dir.name)
     yield load
     load._cleanup()
 
@@ -39,11 +39,11 @@ def test_files_load_prepare(files_copy_load, transformed_files_entry):
     assert tables[2]._table_name == "files_object"
 
     # assert files were created and have the content
-    files = list(os.scandir(files_copy_load.tmp_dir))
+    files = list(os.scandir(files_copy_load.data_dir))
     assert len(files) == 3
 
     # assert files bucket content
-    with open(f"{files_copy_load.tmp_dir}/files_bucket.csv", "r") as file:
+    with open(f"{files_copy_load.data_dir}/files_bucket.csv", "r") as file:
         # id, created, updated, default_location, default_storage_class, size, quota_size, max_file_size,locked, deleted
         expected = (
             "1," "2023-04-19," "2023-04-19," "1," "L," "1234," "," "," "False," "False"
@@ -51,7 +51,7 @@ def test_files_load_prepare(files_copy_load, transformed_files_entry):
         content = file.read().rstrip()
         assert content == expected
     # assert files object version content
-    with open(f"{files_copy_load.tmp_dir}/files_files.csv", "r") as file:
+    with open(f"{files_copy_load.data_dir}/files_files.csv", "r") as file:
         # id, created, updated, uri, storage_class, size, checksum, readable, writable, last_check_at, last_check
         expected = (
             "3,"
@@ -69,7 +69,7 @@ def test_files_load_prepare(files_copy_load, transformed_files_entry):
         content = file.read().rstrip()
         assert content == expected
     # assert files instance content
-    with open(f"{files_copy_load.tmp_dir}/files_object.csv", "r") as file:
+    with open(f"{files_copy_load.data_dir}/files_object.csv", "r") as file:
         #  version_id, created, updated, key, bucket_id, file_id, _mimetype, is_head
         expected = "2," "2023-04-19," "2023-04-19," "file.txt," "1," "3," "," "True"
         content = file.read().rstrip()

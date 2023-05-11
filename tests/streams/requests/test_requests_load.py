@@ -19,7 +19,7 @@ from invenio_rdm_migrator.streams.requests import RequestCopyLoad
 def request_copy_load(cache, tmp_dir):
     """Request load instance."""
     # the db queries will be mocked
-    load = RequestCopyLoad(cache, "None", tmp_dir.name)
+    load = RequestCopyLoad("None", tmp_dir.name, cache)
     yield load
     load._cleanup()
 
@@ -37,11 +37,11 @@ def test_request_load_prepare(request_copy_load, transformed_incl_req_entry):
     assert tables[0]._table_name == "request_metadata"
 
     # assert files were created and have the content
-    files = list(os.scandir(request_copy_load.tmp_dir))
+    files = list(os.scandir(request_copy_load.data_dir))
     assert len(files) == 1
 
     # assert request metadata content
-    with open(f"{request_copy_load.tmp_dir}/request_metadata.csv", "r") as file:
+    with open(f"{request_copy_load.data_dir}/request_metadata.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "12345678-abcd-1a2b-3c4d-123abc456def,"

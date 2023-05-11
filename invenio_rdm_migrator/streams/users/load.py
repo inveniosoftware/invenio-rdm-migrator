@@ -14,14 +14,15 @@ from .table_generator import UserTableGenerator
 class UserCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL users COPY load."""
 
-    def __init__(self, db_uri=None, tmp_dir=None, cache=None):
+    def __init__(self, db_uri, data_dir, **kwargs):
         """Constructor."""
         super().__init__(
             db_uri=db_uri,
+            data_dir=data_dir,
             table_generators=[
                 UserTableGenerator(),
             ],
-            tmp_dir=tmp_dir,
+            **kwargs,
         )
 
     def _validate(self):

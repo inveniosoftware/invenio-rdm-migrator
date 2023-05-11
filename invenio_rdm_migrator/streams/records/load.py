@@ -19,7 +19,7 @@ from .table_generators import (
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, cache, db_uri, tmp_dir, versioning=True):
+    def __init__(self, db_uri, data_dir, cache, versioning=True, **kwargs):
         """Constructor."""
         self.parents_cache = cache.get("parents", ParentsCache())
         self.records_cache = cache.get("records", RecordsCache())
@@ -41,7 +41,10 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):
             table_generators.append(RDMVersionStateTableGenerator(self.parents_cache))
 
         super().__init__(
-            db_uri=db_uri, tmp_dir=tmp_dir, table_generators=table_generators
+            db_uri=db_uri,
+            data_dir=data_dir,
+            table_generators=table_generators,
+            **kwargs
         )
 
     def _validate(self):

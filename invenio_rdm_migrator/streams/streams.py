@@ -14,8 +14,8 @@ from ..extract import Extract
 from ..transform import Transform
 
 
-class NoExtract(Extract):
-    """Dummy class to satisfy the `invenio_rdm_mirgator.Extract` interface."""
+class IdentityExtract(Extract):
+    """Extract class to not read input data."""
 
     def run(self):
         """Yield one element at a time."""
@@ -23,8 +23,8 @@ class NoExtract(Extract):
         yield
 
 
-class NoTransform(Transform):
-    """Dummy class to satisfy the `invenio_rdm_mirgator.Transform` interface."""
+class IdentityTransform(Transform):
+    """Transform class to yield the received item without change."""
 
     def _transform(self, entry):
         """Transform entry."""
@@ -40,8 +40,8 @@ class StreamDefinition:
     def __init__(self, name, extract_cls, transform_cls, load_cls):
         """Constructor."""
         self.name = name
-        self.extract_cls = extract_cls or NoExtract
-        self.transform_cls = transform_cls or NoTransform
+        self.extract_cls = extract_cls
+        self.transform_cls = transform_cls
         self.load_cls = load_cls
 
 
@@ -51,8 +51,8 @@ class Stream:
     def __init__(self, name, extract, transform, load, logger=None):
         """Constructor."""
         self.name = name
-        self.extract = extract
-        self.transform = transform
+        self.extract = extract or IdentityExtract()
+        self.transform = transform or IdentityTransform()
         self.load = load
         self.logger = logger
 
