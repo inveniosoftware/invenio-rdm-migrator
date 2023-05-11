@@ -53,8 +53,11 @@ class PostgreSQLCopyLoad(Load):
         newly created csv files.
         """
         self.db_uri = db_uri
-        self.data_dir = Path(data_dir)
         self.table_generators = table_generators
+        # when loading existing data the tmp folder would be the root
+        # it is assumed that the csv files of a previous run have been placed there
+        self.existing_data = existing_data
+        self.data_dir = Path(data_dir)
 
         # when loading existing data the tmp folder would be the root
         # it is assumed that the csv files of a previous run have been placed there

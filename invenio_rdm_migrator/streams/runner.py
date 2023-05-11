@@ -43,7 +43,9 @@ class Runner:
         self.data_dir = Path(config.get("data_dir"))
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        self.tmp_dir = Path(config.get("tmp_dir"))
+        self.tmp_dir = (
+            Path(config.get("tmp_dir")) / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
+        )
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
         self.cache_dir = Path(config.get("cache_dir"))
@@ -90,7 +92,8 @@ class Runner:
                     transform = definition.transform_cls(
                         **stream_config.get("transform", {})
                     )
-                    stream_data_dir = self.tmp_dir
+                    stream_data_dir = self.tmp_dir / definition.name
+                    stream_data_dir.mkdir(parents=True, exist_ok=True)
 
                 self.streams.append(
                     Stream(
