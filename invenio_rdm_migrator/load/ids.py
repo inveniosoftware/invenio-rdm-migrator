@@ -15,21 +15,24 @@ def generate_uuid(data):
     return str(uuid4())
 
 
-def pid_pk(initial_pid=1_000_000):
+def initialize_pid_pk_value(value):
+    """Set the value for the initial pid_pk emitted."""
+    pid_pk.value = value
+
+
+def pid_pk():
     """Generate an autoincrementing numeric primary key."""
     if not hasattr(pid_pk, "value"):
-        pid_pk.value = initial_pid
+        pid_pk.value = 1_000_000
     else:
         pid_pk.value += 1
     return pid_pk.value
 
 
-def generate_recid(data, status="R", initial_pid=1_000_000):
+def generate_recid(data, status="R"):
     """Generate a record id object."""
     return {
-        "pk": pid_pk(
-            initial_pid
-        ),  # not the pid_value, that comes from rec.json.id in the tg
+        "pk": pid_pk(),  # not the pid_value, that comes from rec.json.id in the tg
         "obj_type": "rec",
         "pid_type": "recid",
         "status": status,

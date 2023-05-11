@@ -12,7 +12,7 @@ from pathlib import Path
 
 import yaml
 
-from ..load.ids import pid_pk
+from ..load.ids import initialize_pid_pk_value, pid_pk
 from ..utils import ts
 from .cache import ParentsCache, PIDMaxPKCache, RecordsCache
 from .streams import Stream
@@ -25,6 +25,16 @@ class Runner:
         """Read config from file."""
         with open(filepath) as f:
             return yaml.safe_load(f)
+
+    def _dump_max_pid_cache(self):
+        """Dump the max value of the generated pids to cache."""
+        max_pid_value = pid_pk.value if hasattr(pid_pk, "value") else pid_pk()
+        if self.max_pid_cache.get("max_value"):
+            self.max_pid_cache.update("max_value", max_pid_value)
+        else:
+            self.max_pid_cache.add("max_value", max_pid_value)
+        cache_file = self.cache_dir / "max_pid.json"
+        self.max_pid_cache.dump(cache_file)
 
     def __init__(self, stream_definitions, config_filepath):
         """Constructor."""
@@ -49,13 +59,15 @@ class Runner:
             "parents": ParentsCache(filepath=self.cache_dir / "parents.json"),
             "records": RecordsCache(filepath=self.cache_dir / "records.json"),
             "communities": {},
-            "max_pid": PIDMaxPKCache(
-                filepath=self.cache_dir / "max_pid.json",
-                initial_data={
-                    "max_value": 1_000_000
-                },  # initial value that will be overriden if cache exists
-            ),
         }
+        # local cache not shared
+        self.max_pid_cache = PIDMaxPKCache(filepath=self.cache_dir / "max_pid.json")
+
+        # check if max_pid cache is not empty
+        if self.max_pid_cache.get("max_value"):
+            # set the initial value of pid_pk() to the max_value cached
+            # i.e start generating pks from the cached value and beyond
+            initialize_pid_pk_value(self.max_pid_cache.get("max_value"))
 
         for definition in stream_definitions:
             if definition.name in config:
@@ -113,10 +125,5 @@ class Runner:
                 self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue
         # dump the max pid generated in pids cache
-        pid_cache = self.cache.get("max_pid")
         # call global pid_pk to update the cache with the max value
-        max_pid_value = pid_pk()
-        print("Max pid value", max_pid_value)
-        pid_cache.update("max_value", max_pid_value)
-        cache_file = self.cache_dir / "max_pid.json"
-        pid_cache.dump(cache_file)
+        self._dump_max_pid_cache()
