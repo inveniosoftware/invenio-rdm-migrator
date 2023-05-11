@@ -19,7 +19,7 @@ from invenio_rdm_migrator.streams.communities import CommunityCopyLoad
 def community_copy_load(cache, tmp_dir):
     """Community load instance."""
     # the db queries will be mocked
-    load = CommunityCopyLoad(cache, "None", tmp_dir.name)
+    load = CommunityCopyLoad("None", tmp_dir.name, cache)
     yield load
     load._cleanup()
 
@@ -48,11 +48,11 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
 
     # assert files were created and have the content
     # five files are created: one for the communities, members, files, files bucket, files object
-    files = list(os.scandir(community_copy_load.tmp_dir))
+    files = list(os.scandir(community_copy_load.data_dir))
     assert len(files) == 5
 
     # assert communities metadata content
-    with open(f"{community_copy_load.tmp_dir}/communities_metadata.csv", "r") as file:
+    with open(f"{community_copy_load.data_dir}/communities_metadata.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "12345678-abcd-1a2b-3c4d-123abc456def,"
@@ -62,7 +62,7 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
         assert content == expected
 
     # assert communities members content
-    with open(f"{community_copy_load.tmp_dir}/communities_members.csv", "r") as file:
+    with open(f"{community_copy_load.data_dir}/communities_members.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = "12345678-abcd-1a2b-3c4d-123abc456def,2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,{},1,owner,True,True,12345678-abcd-1a2b-3c4d-123abc456def,1,,\n"
         content = file.read()

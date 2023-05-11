@@ -14,15 +14,16 @@ from .table_generator import RequestTableGenerator
 class RequestCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, cache, db_uri, tmp_dir):
+    def __init__(self, db_uri, data_dir, cache, **kwargs):
         """Constructor."""
         self.communities_cache = cache.get("communities", {})
         super().__init__(
             db_uri=db_uri,
-            tmp_dir=tmp_dir,
+            data_dir=data_dir,
             table_generators=[
                 RequestTableGenerator(self.communities_cache),
             ],
+            **kwargs,
         )
 
     def _validate(self):

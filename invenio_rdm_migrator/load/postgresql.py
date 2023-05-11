@@ -43,11 +43,25 @@ def as_csv_row(dc):
 class PostgreSQLCopyLoad(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, table_generators, tmp_dir):
-        """Constructor."""
+    def __init__(
+        self, db_uri, data_dir, table_generators, existing_data=False, **kwargs
+    ):
+        """Constructor.
+
+        :param data_dir: if existing data is true this is the directory from which to
+        load the existing csv file, if it is false is the directory where to dump the
+        newly created csv files.
+        """
         self.db_uri = db_uri
-        self.tmp_dir = Path(tmp_dir) / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
+        self.data_dir = Path(data_dir)
         self.table_generators = table_generators
+
+        # when loading existing data the tmp folder would be the root
+        # it is assumed that the csv files of a previous run have been placed there
+        self.existing_data = existing_data
+        if not existing_data:
+            self.data_dir = self.data_dir / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
+            self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def _cleanup(self, db=False):
         """Cleanup csv files and DB after load."""
@@ -56,17 +70,16 @@ class PostgreSQLCopyLoad(Load):
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
-        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        if not self.existing_data:
+            # use this context manager to close all opened files at once
+            with contextlib.ExitStack() as stack:
+                output_files = {}
+                for entry in entries:
+                    for tg in self.table_generators:
+                        tg.prepare(self.data_dir, entry, stack, output_files)
 
-        # use this context manager to close all opened files at once
-        with contextlib.ExitStack() as stack:
-            output_files = {}
-            for entry in entries:
                 for tg in self.table_generators:
-                    tg.prepare(self.tmp_dir, entry, stack, output_files)
-
-            for tg in self.table_generators:
-                tg.post_prepare(self.tmp_dir, stack, output_files)
+                    tg.post_prepare(self.data_dir, stack, output_files)
 
         prepared_tables = []
         # FIXME: needs to preserve order
@@ -89,7 +102,7 @@ class PostgreSQLCopyLoad(Load):
             for table in table_entries:
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
-                fpath = self.tmp_dir / f"{name}.csv"
+                fpath = self.data_dir / f"{name}.csv"
                 if fpath.exists():
                     # total file size for progress logging
                     file_size = fpath.stat().st_size
