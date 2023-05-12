@@ -8,6 +8,7 @@
 """Invenio RDM migration users load module."""
 
 from ...load import PostgreSQLCopyLoad
+from ..cache import CommunitiesCache
 from .table_generator import CommunityTableGenerator
 
 
@@ -16,7 +17,7 @@ class CommunityCopyLoad(PostgreSQLCopyLoad):
 
     def __init__(self, db_uri, data_dir, cache, **kwargs):
         """Constructor."""
-        self.communities_cache = cache.get("communities", {})
+        self.communities_cache = cache.get("communities", CommunitiesCache())
         super().__init__(
             db_uri=db_uri,
             data_dir=data_dir,

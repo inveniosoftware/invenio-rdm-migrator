@@ -12,9 +12,8 @@ from pathlib import Path
 
 import yaml
 
-from ..load.ids import initialize_pid_pk_value, pid_pk
 from ..utils import ts
-from .cache import ParentsCache, PIDMaxPKCache, RecordsCache
+from .cache import CommunitiesCache, ParentsCache, PIDMaxPKCache, RecordsCache
 from .streams import Stream
 
 
@@ -25,16 +24,6 @@ class Runner:
         """Read config from file."""
         with open(filepath) as f:
             return yaml.safe_load(f)
-
-    def _dump_max_pid_cache(self):
-        """Dump the max value of the generated pids to cache."""
-        max_pid_value = pid_pk.value if hasattr(pid_pk, "value") else pid_pk()
-        if self.max_pid_cache.get("max_value"):
-            self.max_pid_cache.update("max_value", max_pid_value)
-        else:
-            self.max_pid_cache.add("max_value", max_pid_value)
-        cache_file = self.cache_dir / "max_pid.json"
-        self.max_pid_cache.dump(cache_file)
 
     def __init__(self, stream_definitions, config_filepath):
         """Constructor."""
@@ -65,16 +54,11 @@ class Runner:
         self.cache = {
             "parents": ParentsCache(filepath=self.cache_dir / "parents.json"),
             "records": RecordsCache(filepath=self.cache_dir / "records.json"),
-            "communities": {},
+            "communities": CommunitiesCache(
+                filepath=self.cache_dir / "communities.json"
+            ),
+            "max_pid": PIDMaxPKCache(filepath=self.cache_dir / "max_pid.json"),
         }
-        # local cache not shared
-        self.max_pid_cache = PIDMaxPKCache(filepath=self.cache_dir / "max_pid.json")
-
-        # check if max_pid cache is not empty
-        if self.max_pid_cache.get("max_value"):
-            # set the initial value of pid_pk() to the max_value cached
-            # i.e start generating pks from the cached value and beyond
-            initialize_pid_pk_value(self.max_pid_cache.get("max_value"))
 
         for definition in stream_definitions:
             if definition.name in config:
@@ -118,15 +102,8 @@ class Runner:
                 stream.run()
                 # sucessfully finished stream run, now we can dump that stream cache
                 for name, cache in self.cache.items():
-                    if (
-                        name == "communities" or name == "max_pid"
-                    ):  # FIXME: implement communities cache
-                        continue
                     cache_file = self.cache_dir / f"{name}.json"
                     cache.dump(cache_file)
             except Exception:
                 self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue
-        # dump the max pid generated in pids cache
-        # call global pid_pk to update the cache with the max value
-        self._dump_max_pid_cache()

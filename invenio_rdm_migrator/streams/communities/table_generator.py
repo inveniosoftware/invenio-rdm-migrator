@@ -6,7 +6,6 @@
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio RDM migration user table load module."""
-import random
 
 from invenio_rdm_migrator.streams.files.models import FilesBucket, FilesObjectVersion
 
@@ -58,8 +57,8 @@ class CommunityTableGenerator(TableGenerator):
         community_files = data["community_files"]
         bucket = community_files["bucket"]
 
-        if self.communities_cache.get(community_slug) is None:
-            self.communities_cache[community_slug] = community_id
+        if not self.communities_cache.get(community_slug):
+            self.communities_cache.add(community_slug, community_id)
 
         community["bucket_id"] = bucket["id"]
         yield FilesBucket(**bucket)
