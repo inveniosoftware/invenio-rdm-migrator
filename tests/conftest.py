@@ -11,7 +11,11 @@ import tempfile
 
 import pytest
 
-from invenio_rdm_migrator.streams.cache import ParentsCache, RecordsCache
+from invenio_rdm_migrator.streams.cache import (
+    CommunitiesCache,
+    ParentsCache,
+    RecordsCache,
+)
 
 
 @pytest.fixture(scope="function")
@@ -56,10 +60,11 @@ def communities_cache():
 
     Keys are community slugs and values are UUIDs.
     """
-    return {
-        "comm": "12345678-abcd-1a2b-3c4d-123abc456def",
-        "other-comm": "12345678-abcd-1a2b-3c4d-123abc123abc",
-    }
+    cache = CommunitiesCache()
+    cache.add("comm", "12345678-abcd-1a2b-3c4d-123abc456def")
+    cache.add("other-comm", "12345678-abcd-1a2b-3c4d-123abc123abc")
+
+    return cache
 
 
 @pytest.fixture(scope="function")

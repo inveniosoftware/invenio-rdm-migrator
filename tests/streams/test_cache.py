@@ -12,7 +12,14 @@ from pathlib import Path
 
 import pytest
 
-from invenio_rdm_migrator.streams.cache import Cache, ParentsCache, RecordsCache
+from invenio_rdm_migrator.load.ids import pid_pk
+from invenio_rdm_migrator.streams.cache import (
+    CommunitiesCache,
+    ParentsCache,
+    PIDMaxPKCache,
+    RecordsCache,
+)
+from invenio_rdm_migrator.streams.cache.base import Cache
 
 ###
 # Parent Cache
@@ -181,7 +188,7 @@ class MockCache(Cache):
 @pytest.fixture(scope="function")
 def data_file(tmp_dir):
     """Cache data filepath."""
-    filepath = Path(f"{tmp_dir.name}/data.json")
+    filepath = Path(tmp_dir.name) / "data.json"
     with open(filepath, "w") as file:
         file.write(json.dumps({"one": {"value": 1}, "two": {"value": 2}}))
 
@@ -211,10 +218,82 @@ def test_cache_dump_data(tmp_dir):
     cache.add("three", {"value": 3})
     cache.add("four", {"value": 4})
 
-    filepath = f"{tmp_dir.name}/dump.json"
+    filepath = Path(tmp_dir.name) / "dump.json"
     cache.dump(filepath)
 
     with open(filepath, "r") as file:
         expected = '{"one": {"value": 1}, "three": {"value": 3}, "four": {"value": 4}}'
         content = file.read()
         assert content == expected
+
+
+###
+# PIDMaxPK Cache
+###
+
+
+@pytest.fixture(scope="function")
+def pid_max_pk():
+    """Max PID PK cache."""
+    return PIDMaxPKCache()
+
+
+def test_pid_max_pk_cache_add(pid_max_pk):
+    pytest.raises(NotImplementedError, pid_max_pk.add, "key", "value")
+
+
+def test_pid_max_pk_cache_update(pid_max_pk):
+    pytest.raises(NotImplementedError, pid_max_pk.update, "max_value", "value")
+
+
+def test_pid_max_pk_cache_dump(tmp_dir, pid_max_pk):
+    filepath = Path(tmp_dir.name) / "dump.json"
+    pid_pk()
+    pid_max_pk.dump(filepath)
+
+    with open(filepath, "r") as file:
+        # f-string cannot have backslash needed for json dump
+        expected = '{"max_value": 1000000}'
+        content = file.read()
+        assert content == expected
+
+
+def test_pid_max_pk_cache_load(tmp_dir):
+    filepath = Path(tmp_dir.name) / "dump.json"
+    with open(filepath, "w") as file:
+        file.write(json.dumps({"max_value": 10}))
+
+    cache = PIDMaxPKCache(filepath, validate=True)
+    assert cache.get("max_value") == 10
+
+
+def test_pid_max_pk_cache_validation_no_int(tmp_dir):
+    # loading an int is tested implicitly in the previous test
+    filepath = Path(tmp_dir.name) / "dump.json"
+    with open(filepath, "w") as file:
+        file.write(json.dumps({"max_value": "10"}))
+
+    with pytest.raises(AssertionError):
+        PIDMaxPKCache(filepath, validate=True)
+
+
+###
+# Communities cache
+###
+
+
+def test_communities_cache_validation_no_uuid(tmp_dir):
+    filepath = Path(tmp_dir.name) / "dump.json"
+    with open(filepath, "w") as file:
+        file.write(json.dumps({"max_value": "10"}))
+
+    with pytest.raises(AssertionError):
+        CommunitiesCache(filepath, validate=True)
+
+
+def test_communities_cache_get():
+    cache = CommunitiesCache()
+    cache.add("exists", "12345678-abcd-1a2b-3c4d-123abc456def")
+
+    assert not cache.get("other")
+    assert cache.get("exists") == "12345678-abcd-1a2b-3c4d-123abc456def"
