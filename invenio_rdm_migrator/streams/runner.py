@@ -68,7 +68,7 @@ class Runner:
                 existing_data = stream_config.get("existing_data", {})
 
                 # if loading pass source data dir, else pass tmp to dump new csv files
-                stream_data_dir = self.data_dir
+                stream_data_dir = self.data_dir / definition.name
                 extract = None
                 transform = None
                 if not existing_data:
