@@ -181,6 +181,7 @@ class PostgreSQLCopyLoad(Load):
         """Load entries."""
         table_entries = self._prepare(entries)
         self._load(table_entries)
+        self._post_load()
 
         if cleanup:
             self._cleanup()
