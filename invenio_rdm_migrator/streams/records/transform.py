@@ -98,6 +98,11 @@ class RDMRecordEntry(Entry):
         pass
 
     @abstractmethod
+    def _bucket_id(self, entry):
+        """Returns the bucket id of the record."""
+        pass
+
+    @abstractmethod
     def _files(self, entry):
         """Transform the files of a record."""
         pass
@@ -130,6 +135,7 @@ class RDMRecordEntry(Entry):
             "updated": self._updated(entry),
             "version_id": self._version_id(entry),
             "index": self._index(entry),
+            "bucket_id": self._bucket_id(entry),
             "json": {
                 "id": self._recid(entry),
                 "pids": self._pids(entry),
@@ -187,10 +193,3 @@ class RDMRecordFileEntry(Entry):
             "key": self._key(entry),
             "object_version_id": self._object_version_id(entry),
         }
-
-
-class RDMDraftFileEntry(RDMRecordFileEntry):
-    """Transform a single record file entry.
-
-    Connects draft with files.
-    """
