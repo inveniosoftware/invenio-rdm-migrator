@@ -10,10 +10,13 @@
 from datetime import datetime
 from functools import partial
 
+import psycopg
+
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
 from ....load.postgresql import TableGenerator
-from ..models import RDMDraftMetadata, RDMParentMetadata
+from ...files.models import FilesObjectVersion
+from ..models import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
 from .parents import generate_parent_rows
 
 
@@ -28,6 +31,7 @@ class RDMDraftTableGenerator(TableGenerator):
                 RDMParentMetadata,
                 PersistentIdentifier,
             ],
+            post_load_hooks=[self.insert_draft_files],
             pks=[
                 ("draft.id", generate_uuid),
                 ("parent.id", generate_uuid),
@@ -89,7 +93,7 @@ class RDMDraftTableGenerator(TableGenerator):
             updated=draft["updated"],
             version_id=draft["version_id"],
             index=forked_published.get("index") or draft["index"],
-            bucket_id=draft.get("bucket_id"),
+            bucket_id=draft["bucket_id"],
             parent_id=parent_id,
             expires_at=draft["expires_at"],
             fork_version_id=forked_published.get("fork_version_id")
@@ -114,6 +118,7 @@ class RDMDraftTableGenerator(TableGenerator):
             )
         # we don't emit doi Persistentidentifier for drafts as either they have already
         # one from records or have an external doi that is registered on publish
+        # draft files are a post_hook
 
     # FIXME: deduplicate with records.py
     def _resolve_references(self, data, **kwargs):
@@ -166,5 +171,25 @@ class RDMDraftTableGenerator(TableGenerator):
             _resolve_communities(communities)
         _resolve_pids(data.get("draft"))
 
-    # FIXME: deduplicate with records.py
-    # assumis records post load alters pidstore_pid_id_seq and pidstore_recid_recid_seq
+    def insert_draft_files(self, db_uri=None):
+        """Inserts draft files from buckets and object version."""
+        assert db_uri  # should have come from kwargs
+
+        with psycopg.connect(db_uri) as conn:
+            # the query needs to be split in 3 parts because the empty jsonb dict
+            # would cause problems with the string formatting
+            insert = f"""
+                INSERT INTO {RDMDraftFile._table_name} (
+                    id, json, created, updated, version_id, key, record_id, object_version_id
+                )
+            """
+            select = "SELECT gen_random_uuid(), '{}'::jsonb, rdm.created, rdm.updated, 1, fo.key, rdm.id, fo.version_id"
+            from_and_join = f"""
+                FROM {RDMDraftMetadata._table_name} AS rdm
+                INNER JOIN {FilesObjectVersion._table_name} AS fo
+                ON rdm.bucket_id=fo.bucket_id AND fo.is_head='true'
+            """
+            # no return check, will raise if the sql statement fails
+            # id and json do not have defaults in DB even though if the programmatic
+            # models have them, so they need to be calculated
+            conn.execute(insert + select + from_and_join)

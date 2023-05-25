@@ -139,7 +139,7 @@ class RDMRecordTableGenerator(TableGenerator):
             updated=record["updated"],
             version_id=record["version_id"],
             index=record["index"],
-            bucket_id=record.get("bucket_id"),
+            bucket_id=record["bucket_id"],
             parent_id=parent_id,
         )
         # recid

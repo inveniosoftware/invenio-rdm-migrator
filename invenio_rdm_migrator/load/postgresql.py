@@ -144,7 +144,8 @@ class PostgreSQLCopyLoad(Load):
         """Post load processing."""
         tables = set()
         for tg in self.table_generators:
-            tables = tables.join(set(tg.tables))
+            tables = tables.union(set(tg.tables))
+            tg.post_load(db_uri=self.db_uri)
 
         with psycopg.connect(self.db_uri) as conn:
             sequences = conn.execute(
@@ -190,9 +191,10 @@ class PostgreSQLCopyLoad(Load):
 class TableGenerator(ABC):
     """Create CSV files with table create and inserts."""
 
-    def __init__(self, tables, pks=None):
+    def __init__(self, tables, pks=None, post_load_hooks=None):
         """Constructor."""
         self.tables = tables
+        self.post_load_hooks = post_load_hooks or []
         self.pks = pks or []
 
     @abstractmethod
@@ -237,3 +239,8 @@ class TableGenerator(ABC):
     def post_prepare(self, tmp_dir, stack, output_files, **kwargs):
         """Create rows after iterating over the entries."""
         pass
+
+    def post_load(self, **kwargs):
+        """Create rows after iterating over the entries."""
+        for hook in self.post_load_hooks:
+            hook(**kwargs)

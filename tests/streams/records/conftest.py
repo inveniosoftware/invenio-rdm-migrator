@@ -31,6 +31,7 @@ def transformed_record_entry():
             "updated": "2023-01-31 12:00:00.00000",
             "version_id": 1,
             "index": 1,
+            "bucket_id": "bur3c0rd-1234-abcd-1ab2-1234abcd56ef",
             "json": {
                 "id": "12345678",
                 "pids": {
@@ -101,6 +102,7 @@ def transformed_draft_entry():
             "updated": "2023-01-31 12:00:00.00000",
             "version_id": 1,
             "index": 1,
+            "bucket_id": "bud3p0s1-1234-abcd-1ab2-1234abcd56ef",
             "json": {
                 "id": "12345678",
                 "pids": {
@@ -113,7 +115,7 @@ def transformed_draft_entry():
             "expires_at": "2024-01-01 12:00:00.00000",
             "fork_version_id": None,
         },
-        "record_files": {},
+        "draft_files": {},
     }
 
 
