@@ -7,11 +7,11 @@
 
 """InvenioRDM migration streams runner."""
 
-import logging
 from pathlib import Path
 
 import yaml
 
+from ..logging import Logger
 from ..state import CommunitiesState, ParentsState, PIDMaxPKState, RecordsState
 from ..utils import ts
 from .streams import Stream
@@ -43,11 +43,7 @@ class Runner:
         self.log_dir = Path(config.get("log_dir"))
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        self.logger = logging.getLogger("migration")
-        self.logger.setLevel(logging.ERROR)
-        fh = logging.FileHandler(self.log_dir / "error.log")
-        fh.setLevel(logging.ERROR)
-        self.logger.addHandler(fh)
+        Logger.initialize(self.log_dir)
 
         self.db_uri = config.get("db_uri")
         self.streams = []
@@ -91,7 +87,6 @@ class Runner:
                             existing_data=existing_data,
                             **stream_config.get("load", {}),
                         ),
-                        logger=self.logger,
                     )
                 )
 
@@ -105,5 +100,5 @@ class Runner:
                     state_file = self.state_dir / f"{name}.json"
                     state.dump(state_file)
             except Exception:
-                self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
+                Logger.get_logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue

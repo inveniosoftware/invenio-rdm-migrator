@@ -7,12 +7,14 @@
 
 """Invenio RDM migration record table load module."""
 
+
 from datetime import datetime
 from uuid import UUID
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
 from ....load.postgresql import TableGenerator
+from ....logging import Logger
 from ....utils import ts
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
@@ -107,7 +109,8 @@ class RDMRecordTableGenerator(TableGenerator):
                     )
                 else:
                     record_id = record["json"]["id"]
-                    print(
+                    logger = Logger.get_logger()
+                    logger.error(
                         f"[{ts()}] Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]"
                     )
         else:

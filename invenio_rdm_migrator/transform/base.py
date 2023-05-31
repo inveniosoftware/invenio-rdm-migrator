@@ -9,6 +9,8 @@
 
 from abc import ABC, abstractmethod
 
+from ..logging import Logger
+
 
 class Transform(ABC):
     """Base class for data transformation."""
@@ -18,14 +20,14 @@ class Transform(ABC):
         """Transform entry."""
         pass
 
-    def run(self, entries, logger=None):
+    def run(self, entries):
         """Transform and yield one element at a time."""
         for entry in entries:
             try:
                 yield self._transform(entry)
             except Exception:
-                if logger:
-                    logger.error(entry, exc_info=1)
+                logger = Logger.get_logger()
+                logger.error(entry, exc_info=1)
                 continue
 
 
