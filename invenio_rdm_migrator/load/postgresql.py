@@ -20,6 +20,7 @@ from uuid import UUID
 import psycopg
 from invenio_records.dictutils import dict_set  # TODO: can we do without?
 
+from ..logging import Logger
 from ..utils import ts
 from .base import Load
 
@@ -101,6 +102,8 @@ class PostgreSQLCopyLoad(Load):
 
         Loads the tables in the order given by the generator.
         """
+        logger = Logger.get_logger()
+
         with psycopg.connect(self.db_uri) as conn:
             for table in table_entries:
                 name = table._table_name
@@ -110,7 +113,7 @@ class PostgreSQLCopyLoad(Load):
                     # total file size for progress logging
                     file_size = fpath.stat().st_size
 
-                    print(f"[{ts()}] COPY FROM {fpath}")  # TODO: logging
+                    logger.info(f"[{ts()}] COPY FROM {fpath}")
                     with contextlib.ExitStack() as stack:
                         cur = stack.enter_context(conn.cursor())
                         copy = stack.enter_context(
@@ -133,11 +136,10 @@ class PostgreSQLCopyLoad(Load):
                                 progress = (
                                     f"{cur_bytes}/{file_size} ({percentage:.2f}%)"
                                 )
-                                print(f"[{ts()}] {name}: {progress}")
+                                logger.info(f"[{ts()}] {name}: {progress}")
                             copy.write(block)
                 else:
-                    # FIXME: log a WARNING/ERROR
-                    print(f"[{ts()}] {name}: no data to load")
+                    logger.warning(f"[{ts()}] {name}: no data to load")
                 conn.commit()
 
     def _post_load(self):
@@ -213,7 +215,8 @@ class TableGenerator(ABC):
                 if create or root in keys:
                     dict_set(data, path, pk_func(data))
             except KeyError:
-                print(f"Path {path} not found on record")
+                logger = Logger.get_logger()
+                logger.error(f"Path {path} not found on record")
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""

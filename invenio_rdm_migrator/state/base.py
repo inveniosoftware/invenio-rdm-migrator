@@ -9,6 +9,7 @@
 import json
 from abc import ABC, abstractmethod
 
+from ..logging import Logger
 from ..utils import ts
 
 
@@ -18,33 +19,34 @@ class State(ABC):
     def __init__(self, filepath=None, validate=False):
         """Constructor."""
         self._data = {}
-
+        logger = Logger.get_logger()
         if filepath and filepath.exists():  # load state from file
             start = ts(iso=False)
-            print(f"Loading state from {filepath} {ts()}")
+            logger.info(f"Loading state from {filepath} {ts()}")
             with open(filepath, "r") as file:
                 self._data = json.loads(file.read())
 
-            print(f"Finished loading state {ts()}")
+            logger.info(f"Finished loading state {ts()}")
             if validate:
-                print(f"Validating state {ts()}")
+                logger.info(f"Validating state {ts()}")
                 for _, entry in self._data.items():
                     self._validate(entry)
-                print(f"Finished validating state {ts()}")
+                logger.info(f"Finished validating state {ts()}")
             end = ts(iso=False)
-            print(f"State loading took {end-start} seconds.")
+            logger.info(f"State loading took {end-start} seconds.")
 
     def dump(self, filepath):
         """Dump state data into a json file."""
-        print(f"Dumping state to {filepath} {ts()}")
+        logger = Logger.get_logger()
+        logger.info(f"Dumping state to {filepath} {ts()}")
         start = ts(iso=False)
 
         with open(filepath, "w") as outfile:
             outfile.write(json.dumps(self._data))
 
         end = ts(iso=False)
-        print(f"Finished dumping state {ts()}")
-        print(f"State dumping took {end-start} seconds.")
+        logger.info(f"Finished dumping state {ts()}")
+        logger.info(f"State dumping took {end-start} seconds.")
 
     def get(self, key):
         """Get data from the state."""

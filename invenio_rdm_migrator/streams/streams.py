@@ -7,10 +7,10 @@
 
 """Invenio RDM migration streams."""
 
-
 from datetime import datetime
 
 from ..extract import Extract
+from ..logging import Logger
 from ..transform import Transform
 
 
@@ -48,24 +48,25 @@ class StreamDefinition:
 class Stream:
     """ETL stream."""
 
-    def __init__(self, name, extract, transform, load, logger=None):
+    def __init__(self, name, extract, transform, load):
         """Constructor."""
         self.name = name
         self.extract = extract or IdentityExtract()
         self.transform = transform or IdentityTransform()
         self.load = load
-        self.logger = logger
 
     def run(self, cleanup=False):
         """Run ETL stream."""
+        logger = Logger.get_logger()
+
         start_time = datetime.now()
-        print(f"Stream {self.name} started {start_time.isoformat()}")
+        logger.info(f"Stream {self.name} started {start_time.isoformat()}")
 
         extract_gen = self.extract.run()
-        transform_gen = self.transform.run(extract_gen, self.logger)
+        transform_gen = self.transform.run(extract_gen)
         self.load.run(transform_gen, cleanup=cleanup)
 
         end_time = datetime.now()
-        print(f"Stream ended {end_time.isoformat()}")
+        logger.info(f"Stream ended {end_time.isoformat()}")
 
-        print(f"Execution time: {end_time - start_time}")
+        logger.info(f"Execution time: {end_time - start_time}")
