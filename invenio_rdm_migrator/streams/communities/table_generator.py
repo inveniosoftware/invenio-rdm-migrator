@@ -29,9 +29,9 @@ def _generate_featured_community_id(data):
 class CommunityTableGenerator(TableGenerator):
     """User and related tables load."""
 
-    def __init__(self, communities_cache):
+    def __init__(self, communities_state):
         """Constructor."""
-        self.communities_cache = communities_cache
+        self.communities_state = communities_state
         super().__init__(
             tables=[
                 Community,
@@ -57,8 +57,8 @@ class CommunityTableGenerator(TableGenerator):
         community_files = data["community_files"]
         bucket = community_files["bucket"]
 
-        if not self.communities_cache.get(community_slug):
-            self.communities_cache.add(community_slug, community_id)
+        if not self.communities_state.get(community_slug):
+            self.communities_state.add(community_slug, community_id)
 
         community["bucket_id"] = bucket["id"]
         yield FilesBucket(**bucket)

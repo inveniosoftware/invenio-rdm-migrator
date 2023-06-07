@@ -12,8 +12,8 @@ from pathlib import Path
 
 import yaml
 
+from ..state import CommunitiesState, ParentsState, PIDMaxPKState, RecordsState
 from ..utils import ts
-from .cache import CommunitiesCache, ParentsCache, PIDMaxPKCache, RecordsCache
 from .streams import Stream
 
 
@@ -37,8 +37,8 @@ class Runner:
         )
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
-        self.cache_dir = Path(config.get("cache_dir"))
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.state_dir = Path(config.get("state_dir"))
+        self.state_dir.mkdir(parents=True, exist_ok=True)
 
         self.log_dir = Path(config.get("log_dir"))
         self.log_dir.mkdir(parents=True, exist_ok=True)
@@ -51,20 +51,20 @@ class Runner:
 
         self.db_uri = config.get("db_uri")
         self.streams = []
-        self.cache = {
-            "parents": ParentsCache(filepath=self.cache_dir / "parents.json"),
-            "records": RecordsCache(filepath=self.cache_dir / "records.json"),
-            "communities": CommunitiesCache(
-                filepath=self.cache_dir / "communities.json"
+        self.state = {
+            "parents": ParentsState(filepath=self.state_dir / "parents.json"),
+            "records": RecordsState(filepath=self.state_dir / "records.json"),
+            "communities": CommunitiesState(
+                filepath=self.state_dir / "communities.json"
             ),
-            "max_pid": PIDMaxPKCache(filepath=self.cache_dir / "max_pid.json"),
+            "max_pid": PIDMaxPKState(filepath=self.state_dir / "max_pid.json"),
         }
 
         for definition in stream_definitions:
             if definition.name in config:
                 # get will return a None for e.g. files:
                 stream_config = config.get(definition.name) or {}
-                # merge cache objects from stream definition config
+                # merge state objects from stream definition config
                 existing_data = stream_config.get("existing_data", {})
 
                 # if loading pass source data dir, else pass tmp to dump new csv files
@@ -87,7 +87,7 @@ class Runner:
                         definition.load_cls(
                             db_uri=self.db_uri,
                             data_dir=stream_data_dir,
-                            cache=self.cache,
+                            state=self.state,
                             existing_data=existing_data,
                             **stream_config.get("load", {}),
                         ),
@@ -100,10 +100,10 @@ class Runner:
         for stream in self.streams:
             try:
                 stream.run()
-                # sucessfully finished stream run, now we can dump that stream cache
-                for name, cache in self.cache.items():
-                    cache_file = self.cache_dir / f"{name}.json"
-                    cache.dump(cache_file)
+                # sucessfully finished stream run, now we can dump that stream state
+                for name, state in self.state.items():
+                    state_file = self.state_dir / f"{name}.json"
+                    state.dump(state_file)
             except Exception:
                 self.logger.error(f"Stream {stream.name} failed.", exc_info=1)
                 continue

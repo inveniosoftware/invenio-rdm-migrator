@@ -8,7 +8,7 @@
 """Invenio RDM migration record load module."""
 
 from ...load import PostgreSQLCopyLoad
-from ..cache import CommunitiesCache, ParentsCache, RecordsCache
+from ...state import CommunitiesState, ParentsState, RecordsState
 from .table_generators import (
     RDMDraftTableGenerator,
     RDMRecordTableGenerator,
@@ -19,26 +19,26 @@ from .table_generators import (
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, data_dir, cache, versioning=True, **kwargs):
+    def __init__(self, db_uri, data_dir, state, versioning=True, **kwargs):
         """Constructor."""
-        self.parents_cache = cache.get("parents", ParentsCache())
-        self.records_cache = cache.get("records", RecordsCache())
-        self.communities_cache = cache.get("communities", CommunitiesCache())
+        self.parents_state = state.get("parents", ParentsState())
+        self.records_state = state.get("records", RecordsState())
+        self.communities_state = state.get("communities", CommunitiesState())
         table_generators = [
             RDMRecordTableGenerator(
-                self.parents_cache,
-                self.records_cache,
-                self.communities_cache,
+                self.parents_state,
+                self.records_state,
+                self.communities_state,
             ),
             RDMDraftTableGenerator(
-                self.parents_cache,
-                self.records_cache,
-                self.communities_cache,
+                self.parents_state,
+                self.records_state,
+                self.communities_state,
             ),
         ]
 
         if versioning:
-            table_generators.append(RDMVersionStateTableGenerator(self.parents_cache))
+            table_generators.append(RDMVersionStateTableGenerator(self.parents_state))
 
         super().__init__(
             db_uri=db_uri,
