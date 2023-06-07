@@ -8,7 +8,7 @@
 """Communities table generator tests."""
 
 
-from invenio_rdm_migrator.streams.cache import CommunitiesCache
+from invenio_rdm_migrator.state import CommunitiesState
 from invenio_rdm_migrator.streams.communities.load import CommunityTableGenerator
 from invenio_rdm_migrator.streams.communities.models import (
     Community,
@@ -20,7 +20,7 @@ from invenio_rdm_migrator.streams.files.models import FilesBucket, FilesObjectVe
 
 def test_generate_rows(transformed_community_entry_pks):
     """Test the row generation of the request table generator."""
-    tg = CommunityTableGenerator(CommunitiesCache())
+    tg = CommunityTableGenerator(CommunitiesState())
     rows = list(tg._generate_rows(transformed_community_entry_pks))
     expected_rows = [
         FilesBucket(

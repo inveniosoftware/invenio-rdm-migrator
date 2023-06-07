@@ -17,7 +17,7 @@ from invenio_rdm_migrator.streams.requests.models import RequestMetadata
 
 def test_generate_rows(transformed_incl_req_entry_pks):
     """Test the row generation of the request table generator."""
-    tg = RequestTableGenerator(None)  # no need for cache in this test
+    tg = RequestTableGenerator(None)  # no need for state in this test
     rows = list(tg._generate_rows(transformed_incl_req_entry_pks))
     expected_rows = [
         RequestMetadata(
@@ -42,12 +42,12 @@ def test_generate_rows(transformed_incl_req_entry_pks):
     assert rows == expected_rows
 
 
-def test_resolve_references(communities_cache, transformed_incl_req_entry_pks):
+def test_resolve_references(communities_state, transformed_incl_req_entry_pks):
     """Test the parent and community reference resolution."""
     expected = deepcopy(transformed_incl_req_entry_pks)
     expected["json"]["receiver"]["community"] = "12345678-abcd-1a2b-3c4d-123abc456def"
 
-    tg = RequestTableGenerator(communities_cache)
+    tg = RequestTableGenerator(communities_state)
     tg._resolve_references(transformed_incl_req_entry_pks)  # changes in place
 
     assert not list(dictdiffer.diff(transformed_incl_req_entry_pks, expected))

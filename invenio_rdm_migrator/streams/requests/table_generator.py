@@ -15,13 +15,13 @@ from .models import RequestMetadata
 class RequestTableGenerator(TableGenerator):
     """Requests and related tables load."""
 
-    def __init__(self, communities_cache):
+    def __init__(self, communities_state):
         """Constructor."""
         super().__init__(
             tables=[RequestMetadata],
             pks=[("id", generate_uuid)],
         )
-        self.communities_cache = communities_cache
+        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Yield requests metadata."""
@@ -42,11 +42,11 @@ class RequestTableGenerator(TableGenerator):
         Translates community slugs to uuids, and record parent pids to uuids. Both values
         are mandatory, therefore they are access as dict.
 
-        :raises: KeyError if the the parent or community are not found in the cache.
+        :raises: KeyError if the the parent or community are not found in the state.
         """
         # it assumes the data is transformed by an InclusionRequestEntry
         request_slug = data["json"]["receiver"]["community"]
-        community_id = self.communities_cache.get(request_slug)
+        community_id = self.communities_state.get(request_slug)
 
         data["json"]["receiver"]["community"] = community_id
 

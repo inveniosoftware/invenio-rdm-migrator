@@ -5,13 +5,13 @@
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Records cache module."""
+"""Records state module."""
 
-from .base import Cache
+from .base import State
 
 
-class ParentsCache(Cache):
-    """Parent record cache."""
+class ParentsState(State):
+    """Parent record state."""
 
     def _validate(self, data):
         """Validate data entry."""
@@ -21,7 +21,7 @@ class ParentsCache(Cache):
             assert data["latest_index"]
 
     def add(self, key, data):
-        """Add key to the cache.
+        """Add key to the state.
 
         :param key: the recid of the parent
         """
@@ -51,8 +51,8 @@ class ParentsCache(Cache):
             parent["next_draft_id"] = data["next_draft_id"]
 
 
-class RecordsCache(Cache):
-    """Record cache."""
+class RecordsState(State):
+    """Record state."""
 
     def _validate(self, data):
         """Validate data entry."""

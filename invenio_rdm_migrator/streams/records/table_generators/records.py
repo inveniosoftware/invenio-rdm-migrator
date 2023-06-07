@@ -47,7 +47,7 @@ def generate_record_uuid(data):
 class RDMRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parents_cache, records_cache, communities_cache):
+    def __init__(self, parents_state, records_state, communities_state):
         """Constructor."""
         super().__init__(
             tables=[
@@ -66,9 +66,9 @@ class RDMRecordTableGenerator(TableGenerator):
                 ("record_files", generate_files_uuids),
             ],
         )
-        self.parents_cache = parents_cache
-        self.records_cache = records_cache
-        self.communities_cache = communities_cache
+        self.parents_state = parents_state
+        self.records_state = records_state
+        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Generates rows for a record."""
@@ -82,9 +82,9 @@ class RDMRecordTableGenerator(TableGenerator):
         record_pid = record["json"]["pid"]
 
         # parent
-        cached_parent = self.parents_cache.get(parent["json"]["id"])
-        if not cached_parent:
-            self.parents_cache.add(
+        state_parent = self.parents_state.get(parent["json"]["id"])
+        if not state_parent:
+            self.parents_state.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
@@ -111,7 +111,7 @@ class RDMRecordTableGenerator(TableGenerator):
                         f"[{ts()}] Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]"
                     )
         else:
-            self.parents_cache.update(
+            self.parents_state.update(
                 parent["json"]["id"],
                 {
                     "latest_index": record["index"],
@@ -119,9 +119,9 @@ class RDMRecordTableGenerator(TableGenerator):
                 },
             )
 
-        parent_id = cached_parent["id"] if cached_parent else record["parent_id"]
+        parent_id = state_parent["id"] if state_parent else record["parent_id"]
         # record
-        self.records_cache.add(
+        self.records_state.add(
             record["json"]["id"],  # recid
             {
                 "index": record["index"],
@@ -197,7 +197,7 @@ class RDMRecordTableGenerator(TableGenerator):
 
         def _resolve_communities(communities):
             default_slug = communities.get("default")
-            default_id = self.communities_cache.get(default_slug)
+            default_id = self.communities_state.get(default_slug)
             if not default_id:
                 # TODO: maybe raise error without correct default community?
                 communities = {}
@@ -206,7 +206,7 @@ class RDMRecordTableGenerator(TableGenerator):
             communities_slugs = communities.get("ids", [])
             _ids = []
             for slug in communities_slugs:
-                _id = self.communities_cache.get(slug)
+                _id = self.communities_state.get(slug)
                 if _id:
                     _ids.append(_id)
             communities["ids"] = _ids

@@ -71,17 +71,17 @@ def mock_pid_pk():
     MockDateTime(),
 )
 def test_single_record_generate_rows(
-    cache, restart_pid_pk, transformed_record_entry_pks
+    state, restart_pid_pk, transformed_record_entry_pks
 ):
-    """A published record with a non cached parent.
+    """A published record with a non state parent.
 
-    It does not make sense to also test with a cached parent since that would mean
+    It does not make sense to also test with a state parent since that would mean
     there was a previous version of the record, which is tested separately in this module.
     """
     tg = RDMRecordTableGenerator(
-        parents_cache=cache["parents"],
-        records_cache=cache["records"],
-        communities_cache=cache["communities"],
+        parents_state=state["parents"],
+        records_state=state["records"],
+        communities_state=state["communities"],
     )
     rows = list(tg._generate_rows(transformed_record_entry_pks))
     expected_rows = [
@@ -185,8 +185,8 @@ def test_single_record_generate_rows(
 
     assert rows == expected_rows
 
-    assert len(cache["parents"].all()) == 2  # pre-existing and new
-    assert len(cache["records"].all()) == 1
+    assert len(state["parents"].all()) == 2  # pre-existing and new
+    assert len(state["records"].all()) == 1
 
 
 @patch(
@@ -200,12 +200,12 @@ def test_single_record_generate_rows(
     "invenio_rdm_migrator.streams.records.table_generators.parents.datetime",
     MockDateTime(),
 )
-def test_single_draft_generate_rows(cache, restart_pid_pk, transformed_draft_entry_pks):
+def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_entry_pks):
     """A new draft, not published."""
     tg = RDMDraftTableGenerator(
-        parents_cache=cache["parents"],
-        records_cache=cache["records"],
-        communities_cache=cache["communities"],
+        parents_state=state["parents"],
+        records_state=state["records"],
+        communities_state=state["communities"],
     )
     rows = list(tg._generate_rows(transformed_draft_entry_pks))
     expected_rows = [
@@ -281,8 +281,8 @@ def test_single_draft_generate_rows(cache, restart_pid_pk, transformed_draft_ent
 
     assert rows == expected_rows
 
-    assert len(cache["parents"].all()) == 2  # pre-existing and new
-    assert len(cache["records"].all()) == 0
+    assert len(state["parents"].all()) == 2  # pre-existing and new
+    assert len(state["records"].all()) == 0
 
 
 @patch(
@@ -304,19 +304,19 @@ def test_single_draft_generate_rows(cache, restart_pid_pk, transformed_draft_ent
     MockDateTime(),
 )
 def test_record_versions_and_old_draft_generate_rows(
-    cache, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
+    state, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
 ):
     """A record with two versions (v1, v2) and a draft of the first version (v1)."""
     tgs = [
         RDMRecordTableGenerator(
-            parents_cache=cache["parents"],
-            records_cache=cache["records"],
-            communities_cache=cache["communities"],
+            parents_state=state["parents"],
+            records_state=state["records"],
+            communities_state=state["communities"],
         ),
         RDMDraftTableGenerator(
-            parents_cache=cache["parents"],
-            records_cache=cache["records"],
-            communities_cache=cache["communities"],
+            parents_state=state["parents"],
+            records_state=state["records"],
+            communities_state=state["communities"],
         ),
     ]
 
@@ -436,8 +436,8 @@ def test_record_versions_and_old_draft_generate_rows(
     assert rows[7:11] == expected_rows_v2
     assert rows[11:12] == expected_rows_d_v1
 
-    assert len(cache["parents"].all()) == 2  # pre-existing and new
-    assert len(cache["records"].all()) == 2  # two added records
+    assert len(state["parents"].all()) == 2  # pre-existing and new
+    assert len(state["records"].all()) == 2  # two added records
 
 
 @patch(
@@ -459,19 +459,19 @@ def test_record_versions_and_old_draft_generate_rows(
     MockDateTime(),
 )
 def test_record_and_new_version_draft_generate_rows(
-    cache, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
+    state, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
 ):
     """A published record (v1) with a new version draft (v2)."""
     tgs = [
         RDMRecordTableGenerator(
-            parents_cache=cache["parents"],
-            records_cache=cache["records"],
-            communities_cache=cache["communities"],
+            parents_state=state["parents"],
+            records_state=state["records"],
+            communities_state=state["communities"],
         ),
         RDMDraftTableGenerator(
-            parents_cache=cache["parents"],
-            records_cache=cache["records"],
-            communities_cache=cache["communities"],
+            parents_state=state["parents"],
+            records_state=state["records"],
+            communities_state=state["communities"],
         ),
     ]
 
@@ -539,5 +539,5 @@ def test_record_and_new_version_draft_generate_rows(
     # v2 rows not asserted since they are checked at test_record_versions_and_old_draft_generate_rows
     assert rows[11:13] == expected_rows_d_v3
 
-    assert len(cache["parents"].all()) == 2  # pre-existing and new
-    assert len(cache["records"].all()) == 2  # two added records
+    assert len(state["parents"].all()) == 2  # pre-existing and new
+    assert len(state["records"].all()) == 2  # two added records

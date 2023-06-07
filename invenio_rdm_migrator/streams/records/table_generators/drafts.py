@@ -20,7 +20,7 @@ from .parents import generate_parent_rows
 class RDMDraftTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
-    def __init__(self, parents_cache, records_cache, communities_cache):
+    def __init__(self, parents_state, records_state, communities_state):
         """Constructor."""
         super().__init__(
             tables=[
@@ -36,9 +36,9 @@ class RDMDraftTableGenerator(TableGenerator):
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
         )
-        self.parents_cache = parents_cache
-        self.records_cache = records_cache
-        self.communities_cache = communities_cache
+        self.parents_state = parents_state
+        self.records_state = records_state
+        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Generates rows for a record."""
@@ -52,10 +52,10 @@ class RDMDraftTableGenerator(TableGenerator):
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
         recid = draft["json"]["id"]
-        forked_published = self.records_cache.get(recid)
-        cached_parent = self.parents_cache.get(parent["json"]["id"])
-        if not cached_parent:
-            self.parents_cache.add(
+        forked_published = self.records_state.get(recid)
+        state_parent = self.parents_state.get(parent["json"]["id"])
+        if not state_parent:
+            self.parents_state.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
@@ -68,7 +68,7 @@ class RDMDraftTableGenerator(TableGenerator):
         # if there is a parent (else) but there is no record it means that it is a
         # draft of a new version
         elif not forked_published:
-            self.parents_cache.update(
+            self.parents_state.update(
                 parent["json"]["id"],
                 {
                     "next_draft_id": draft["id"],
@@ -78,7 +78,7 @@ class RDMDraftTableGenerator(TableGenerator):
         # if its a draft of a published record, its parent should be parent id
         # if its a new version, its parent should be the one of the previous version
         # otherwise is a new parent (new record, new draft...)
-        parent_id = cached_parent["id"] if cached_parent else draft["parent_id"]
+        parent_id = state_parent["id"] if state_parent else draft["parent_id"]
         if forked_published:
             parent_id = forked_published["parent_id"]
 
@@ -96,7 +96,7 @@ class RDMDraftTableGenerator(TableGenerator):
             or draft["fork_version_id"],
         )
 
-        # if there is a record in the cache it means both recid and doi were already
+        # if there is a record in the state it means both recid and doi were already
         # processed in the records table generator, a duplicate would violate unique
         # constraints and cause the load to fail.
         if not forked_published:
@@ -121,7 +121,7 @@ class RDMDraftTableGenerator(TableGenerator):
 
         def _resolve_communities(communities):
             default_slug = communities.get("default")
-            default_id = self.communities_cache.get(default_slug)
+            default_id = self.communities_state.get(default_slug)
             if not default_id:
                 # TODO: maybe raise error without correct default community?
                 communities = {}
@@ -131,7 +131,7 @@ class RDMDraftTableGenerator(TableGenerator):
             communities_slugs = communities.get("ids", [])
             _ids = []
             for slug in communities_slugs:
-                _id = self.communities_cache.get(slug)
+                _id = self.communities_state.get(slug)
                 if _id:
                     _ids.append(_id)
             communities["ids"] = _ids
@@ -145,7 +145,7 @@ class RDMDraftTableGenerator(TableGenerator):
             # however _deposit.pid.value would contain the correct one
             # if it is not legacy we get it from the current field (json.id)
             recid = draft["json"]["id"]
-            forked_published = self.records_cache.get(recid)
+            forked_published = self.records_state.get(recid)
             if forked_published:
                 pids = draft["json"]["pids"]
                 has_draft_external_doi = (
