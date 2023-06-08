@@ -16,10 +16,10 @@ from invenio_rdm_migrator.streams.requests import RequestCopyLoad
 
 
 @pytest.fixture(scope="function")
-def request_copy_load(state, tmp_dir):
+def request_copy_load(communities_state, tmp_dir):
     """Request load instance."""
     # the db queries will be mocked
-    load = RequestCopyLoad("None", tmp_dir.name, state)
+    load = RequestCopyLoad("None", tmp_dir.name, {"communities": communities_state})
     yield load
     load._cleanup()
 

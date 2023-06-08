@@ -58,7 +58,7 @@ class CommunityTableGenerator(TableGenerator):
         bucket = community_files["bucket"]
 
         if not self.communities_state.get(community_slug):
-            self.communities_state.add(community_slug, community_id)
+            self.communities_state.add(community_slug, {"id": community_id})
 
         community["bucket_id"] = bucket["id"]
         yield FilesBucket(**bucket)

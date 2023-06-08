@@ -8,7 +8,6 @@
 """Invenio RDM migration users load module."""
 
 from ...load import PostgreSQLCopyLoad
-from ...state import CommunitiesState
 from .table_generator import CommunityTableGenerator
 
 
@@ -17,7 +16,7 @@ class CommunityCopyLoad(PostgreSQLCopyLoad):
 
     def __init__(self, db_uri, data_dir, state, **kwargs):
         """Constructor."""
-        self.communities_state = state.get("communities", CommunitiesState())
+        self.communities_state = state["communities"]
         super().__init__(
             db_uri=db_uri,
             data_dir=data_dir,

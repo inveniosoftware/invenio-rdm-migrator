@@ -10,8 +10,7 @@
 from copy import deepcopy
 from unittest.mock import patch
 
-import pytest
-
+from invenio_rdm_migrator.load.ids import pid_pk
 from invenio_rdm_migrator.load.models import PersistentIdentifier
 from invenio_rdm_migrator.streams.communities.models import RDMParentCommunityMetadata
 from invenio_rdm_migrator.streams.records.load import (
@@ -23,6 +22,10 @@ from invenio_rdm_migrator.streams.records.models import (
     RDMParentMetadata,
     RDMRecordMetadata,
 )
+
+# IMPORTANT NOTE: since the resolve references method would be called externally
+# (i.e. not by generate_rows) not all pid pk have consistent values coming from
+# pid_pk(). Therefore, some calls are made at the beginning of the tests.
 
 
 class MockUTCDate:
@@ -41,27 +44,6 @@ class MockDateTime:
         return MockUTCDate()
 
 
-INIT_PID_PK = 10123
-"""Initial value for PID primary key generation."""
-
-
-@pytest.fixture(scope="function")
-def restart_pid_pk():
-    """Restart counter."""
-    global INIT_PID_PK
-    INIT_PID_PK = 10123
-
-
-def mock_pid_pk():
-    """Mock pid pk generation."""
-    global INIT_PID_PK
-    INIT_PID_PK += 1
-    return str(INIT_PID_PK)
-
-
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.records.pid_pk", mock_pid_pk
-)
 @patch(
     "invenio_rdm_migrator.streams.records.table_generators.records.datetime",
     MockDateTime(),
@@ -71,18 +53,20 @@ def mock_pid_pk():
     MockDateTime(),
 )
 def test_single_record_generate_rows(
-    state, restart_pid_pk, transformed_record_entry_pks
+    global_state,
+    communities_state,
+    parents_state,
+    records_state,
+    transformed_record_entry_pks,
 ):
     """A published record with a non state parent.
 
     It does not make sense to also test with a state parent since that would mean
     there was a previous version of the record, which is tested separately in this module.
     """
-    tg = RDMRecordTableGenerator(
-        parents_state=state["parents"],
-        records_state=state["records"],
-        communities_state=state["communities"],
-    )
+    pid_1 = pid_pk()
+    pid_2 = pid_pk()
+    tg = RDMRecordTableGenerator(parents_state, records_state, communities_state)
     rows = list(tg._generate_rows(transformed_record_entry_pks))
     expected_rows = [
         RDMParentMetadata(  # parent record
@@ -90,7 +74,7 @@ def test_single_record_generate_rows(
             json={
                 "id": "12345677",
                 "pid": {
-                    "pk": "10122",
+                    "pk": pid_1,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",
@@ -108,7 +92,7 @@ def test_single_record_generate_rows(
             version_id=1,
         ),
         PersistentIdentifier(  # parent recid
-            id="10122",
+            id=pid_1,
             pid_type="recid",
             pid_value="12345677",
             status="R",
@@ -127,7 +111,7 @@ def test_single_record_generate_rows(
             json={
                 "id": "12345678",
                 "pid": {
-                    "pk": "10123",
+                    "pk": pid_2,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",
@@ -152,7 +136,7 @@ def test_single_record_generate_rows(
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
         ),
         PersistentIdentifier(  # recid
-            id="10123",
+            id=pid_2,
             pid_type="recid",
             pid_value="12345678",
             status="R",
@@ -162,7 +146,7 @@ def test_single_record_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # doi
-            id="10124",
+            id="1000002",
             pid_type="doi",
             pid_value="10.5281/zenodo.12345678",
             status="R",
@@ -172,7 +156,7 @@ def test_single_record_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # oai
-            id="10125",
+            id="1000003",
             pid_type="oai",
             pid_value="oai:zenodo.org:12345678",
             status="R",
@@ -185,13 +169,10 @@ def test_single_record_generate_rows(
 
     assert rows == expected_rows
 
-    assert len(state["parents"].all()) == 2  # pre-existing and new
-    assert len(state["records"].all()) == 1
+    assert len(list(parents_state.all())) == 2  # pre-existing and new
+    assert len(list(records_state.all())) == 1
 
 
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.drafts.pid_pk", mock_pid_pk
-)
 @patch(
     "invenio_rdm_migrator.streams.records.table_generators.drafts.datetime",
     MockDateTime(),
@@ -200,13 +181,17 @@ def test_single_record_generate_rows(
     "invenio_rdm_migrator.streams.records.table_generators.parents.datetime",
     MockDateTime(),
 )
-def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_entry_pks):
+def test_single_draft_generate_rows(
+    global_state,
+    communities_state,
+    parents_state,
+    records_state,
+    transformed_draft_entry_pks,
+):
     """A new draft, not published."""
-    tg = RDMDraftTableGenerator(
-        parents_state=state["parents"],
-        records_state=state["records"],
-        communities_state=state["communities"],
-    )
+    pid_1 = pid_pk()
+    pid_2 = pid_pk()
+    tg = RDMDraftTableGenerator(parents_state, records_state, communities_state)
     rows = list(tg._generate_rows(transformed_draft_entry_pks))
     expected_rows = [
         RDMParentMetadata(  # parent record
@@ -214,7 +199,7 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
             json={
                 "id": "12345677",
                 "pid": {
-                    "pk": "10122",
+                    "pk": pid_1,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "N",
@@ -232,7 +217,7 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
             version_id=1,
         ),
         PersistentIdentifier(  # parent recid
-            id="10122",
+            id=pid_1,
             pid_type="recid",
             pid_value="12345677",
             status="N",
@@ -246,7 +231,7 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
             json={
                 "id": "12345678",
                 "pid": {
-                    "pk": "10123",
+                    "pk": pid_2,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "N",
@@ -268,7 +253,7 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
             fork_version_id=None,
         ),
         PersistentIdentifier(  # recid
-            id="10123",
+            id=pid_2,
             pid_type="recid",
             pid_value="12345678",
             status="N",
@@ -281,16 +266,10 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
 
     assert rows == expected_rows
 
-    assert len(state["parents"].all()) == 2  # pre-existing and new
-    assert len(state["records"].all()) == 0
+    assert len(list(parents_state.all())) == 2  # pre-existing and new
+    assert len(list(records_state.all())) == 0
 
 
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.records.pid_pk", mock_pid_pk
-)
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.drafts.pid_pk", mock_pid_pk
-)
 @patch(
     "invenio_rdm_migrator.streams.records.table_generators.records.datetime",
     MockDateTime(),
@@ -304,20 +283,17 @@ def test_single_draft_generate_rows(state, restart_pid_pk, transformed_draft_ent
     MockDateTime(),
 )
 def test_record_versions_and_old_draft_generate_rows(
-    state, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
+    global_state,
+    communities_state,
+    parents_state,
+    records_state,
+    transformed_record_entry_pks,
+    transformed_draft_entry_pks,
 ):
     """A record with two versions (v1, v2) and a draft of the first version (v1)."""
     tgs = [
-        RDMRecordTableGenerator(
-            parents_state=state["parents"],
-            records_state=state["records"],
-            communities_state=state["communities"],
-        ),
-        RDMDraftTableGenerator(
-            parents_state=state["parents"],
-            records_state=state["records"],
-            communities_state=state["communities"],
-        ),
+        RDMRecordTableGenerator(parents_state, records_state, communities_state),
+        RDMDraftTableGenerator(parents_state, records_state, communities_state),
     ]
 
     v1 = transformed_record_entry_pks
@@ -325,11 +301,11 @@ def test_record_versions_and_old_draft_generate_rows(
     v2["record"]["id"] = "2d6970ea-602d-4e8b-a918-063a59823387"
     v2["record"]["index"] = 2
     v2["record"]["json"]["id"] = "12345679"
-    v2["record"]["json"]["pid"]["pk"] = "10126"  # pk, not pid value
+    v2["record"]["json"]["pid"]["pk"] = "1000002"  # pk, not pid value
     v2["record"]["json"]["pids"]["oai"]["identifier"] = "oai:zenodo.org:12345679"
     v2["record"]["json"]["pids"]["doi"]["identifier"] = "10.5281/zenodo.12345679"
     d_v1 = transformed_draft_entry_pks
-    d_v1["draft"]["json"]["pid"]["pk"] = "10123"  # pk, not pid value, same as v1
+    d_v1["draft"]["json"]["pid"]["pk"] = "1000002"  # pk, not pid value, same as v1
     d_v1["draft"]["json"]["pid"][
         "status"
     ] = "R"  # same as already R pid form the record
@@ -346,7 +322,7 @@ def test_record_versions_and_old_draft_generate_rows(
             json={
                 "id": "12345679",
                 "pid": {
-                    "pk": "10126",
+                    "pk": "1000002",
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",
@@ -371,7 +347,7 @@ def test_record_versions_and_old_draft_generate_rows(
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
         ),
         PersistentIdentifier(  # recid
-            id="10126",  # this called is mocked and will not increment the counter
+            id="1000002",  # this called is mocked and will not increment the counter
             pid_type="recid",
             pid_value="12345679",
             status="R",
@@ -381,7 +357,7 @@ def test_record_versions_and_old_draft_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # doi
-            id="10126",
+            id="1000002",
             pid_type="doi",
             pid_value="10.5281/zenodo.12345679",
             status="R",
@@ -391,7 +367,7 @@ def test_record_versions_and_old_draft_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # oai
-            id="10127",
+            id="1000003",
             pid_type="oai",
             pid_value="oai:zenodo.org:12345679",
             status="R",
@@ -408,7 +384,7 @@ def test_record_versions_and_old_draft_generate_rows(
             json={
                 "id": "12345678",
                 "pid": {
-                    "pk": "10123",
+                    "pk": "1000002",
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",
@@ -436,16 +412,10 @@ def test_record_versions_and_old_draft_generate_rows(
     assert rows[7:11] == expected_rows_v2
     assert rows[11:12] == expected_rows_d_v1
 
-    assert len(state["parents"].all()) == 2  # pre-existing and new
-    assert len(state["records"].all()) == 2  # two added records
+    assert len(list(parents_state.all())) == 2  # pre-existing and new
+    assert len(list(records_state.all())) == 2  # two added records
 
 
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.records.pid_pk", mock_pid_pk
-)
-@patch(
-    "invenio_rdm_migrator.streams.records.table_generators.drafts.pid_pk", mock_pid_pk
-)
 @patch(
     "invenio_rdm_migrator.streams.records.table_generators.records.datetime",
     MockDateTime(),
@@ -459,34 +429,33 @@ def test_record_versions_and_old_draft_generate_rows(
     MockDateTime(),
 )
 def test_record_and_new_version_draft_generate_rows(
-    state, restart_pid_pk, transformed_record_entry_pks, transformed_draft_entry_pks
+    global_state,
+    communities_state,
+    parents_state,
+    records_state,
+    transformed_record_entry_pks,
+    transformed_draft_entry_pks,
 ):
     """A published record (v1) with a new version draft (v2)."""
     tgs = [
-        RDMRecordTableGenerator(
-            parents_state=state["parents"],
-            records_state=state["records"],
-            communities_state=state["communities"],
-        ),
-        RDMDraftTableGenerator(
-            parents_state=state["parents"],
-            records_state=state["records"],
-            communities_state=state["communities"],
-        ),
+        RDMRecordTableGenerator(parents_state, records_state, communities_state),
+        RDMDraftTableGenerator(parents_state, records_state, communities_state),
     ]
 
+    pid_1 = pid_pk()
+    pid_2 = pid_pk()
     v1 = transformed_record_entry_pks
     v2 = deepcopy(transformed_record_entry_pks)
     v2["record"]["id"] = "2d6970ea-602d-4e8b-a918-063a59823387"
     v2["record"]["index"] = 2
     v2["record"]["json"]["id"] = "12345679"
-    v2["record"]["json"]["pid"]["pk"] = "10126"  # pk, not pid value
+    v2["record"]["json"]["pid"]["pk"] = pid_1  # pk, not pid value
     v2["record"]["json"]["pids"]["oai"]["identifier"] = "oai:zenodo.org:12345679"
     v2["record"]["json"]["pids"]["doi"]["identifier"] = "10.5281/zenodo.12345679"
     d_v3 = transformed_draft_entry_pks
     d_v3["draft"]["id"] = "2d6970ea-602d-4e8b-a918-063a59823389"
     d_v3["draft"]["json"]["id"] = "12345680"
-    d_v3["draft"]["json"]["pid"]["pk"] = "10128"  # pk, not pid value, same as v1
+    d_v3["draft"]["json"]["pid"]["pk"] = pid_2  # pk, not pid value, same as v1
     d_v3["draft"]["json"]["pids"]["doi"]["identifier"] = "10.1234/bar"
 
     rows = []
@@ -500,7 +469,7 @@ def test_record_and_new_version_draft_generate_rows(
             json={
                 "id": "12345680",
                 "pid": {
-                    "pk": "10128",
+                    "pk": pid_2,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "N",
@@ -522,7 +491,7 @@ def test_record_and_new_version_draft_generate_rows(
             fork_version_id=None,
         ),
         PersistentIdentifier(  # recid
-            id="10128",  # this called is mocked and will not increment the counter
+            id=pid_2,  # this called is mocked and will not increment the counter
             pid_type="recid",
             pid_value="12345680",
             status="N",
@@ -539,5 +508,5 @@ def test_record_and_new_version_draft_generate_rows(
     # v2 rows not asserted since they are checked at test_record_versions_and_old_draft_generate_rows
     assert rows[11:13] == expected_rows_d_v3
 
-    assert len(state["parents"].all()) == 2  # pre-existing and new
-    assert len(state["records"].all()) == 2  # two added records
+    assert len(list(parents_state.all())) == 2  # pre-existing and new
+    assert len(list(records_state.all())) == 2  # two added records

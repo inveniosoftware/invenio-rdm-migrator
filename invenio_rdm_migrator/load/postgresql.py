@@ -21,7 +21,7 @@ import psycopg
 from invenio_records.dictutils import dict_set  # TODO: can we do without?
 
 from ..logging import Logger
-from ..utils import ts
+from ..utils import JSONEncoder, ts
 from .base import Load
 
 
@@ -32,7 +32,7 @@ def as_csv_row(dc):
         val = getattr(dc, f.name)
         if val:
             if issubclass(f.type, (dict,)):
-                val = json.dumps(val)
+                val = json.dumps(val, cls=JSONEncoder)
             elif issubclass(f.type, (datetime,)):
                 val = val.isoformat()
             elif issubclass(f.type, (UUID,)):
@@ -113,7 +113,7 @@ class PostgreSQLCopyLoad(Load):
                     # total file size for progress logging
                     file_size = fpath.stat().st_size
 
-                    logger.info(f"[{ts()}] COPY FROM {fpath}")
+                    logger.info(f"COPY FROM {fpath}.")
                     with contextlib.ExitStack() as stack:
                         cur = stack.enter_context(conn.cursor())
                         copy = stack.enter_context(
@@ -136,10 +136,10 @@ class PostgreSQLCopyLoad(Load):
                                 progress = (
                                     f"{cur_bytes}/{file_size} ({percentage:.2f}%)"
                                 )
-                                logger.info(f"[{ts()}] {name}: {progress}")
+                                logger.info(f"{name}: {progress}")
                             copy.write(block)
                 else:
-                    logger.warning(f"[{ts()}] {name}: no data to load")
+                    logger.warning(f"{name}: no data to load.")
                 conn.commit()
 
     def _post_load(self):

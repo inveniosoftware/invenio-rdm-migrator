@@ -57,6 +57,7 @@ class RDMDraftTableGenerator(TableGenerator):
         # if it is not legacy we get it from the current field (json.id)
         recid = draft["json"]["id"]
         forked_published = self.records_state.get(recid)
+
         state_parent = self.parents_state.get(parent["json"]["id"])
         if not state_parent:
             self.parents_state.add(
@@ -72,6 +73,7 @@ class RDMDraftTableGenerator(TableGenerator):
         # if there is a parent (else) but there is no record it means that it is a
         # draft of a new version
         elif not forked_published:
+            assert not state_parent.get("next_draft_id")  # it can only happen once
             self.parents_state.update(
                 parent["json"]["id"],
                 {
@@ -108,7 +110,7 @@ class RDMDraftTableGenerator(TableGenerator):
             record_pid = draft["json"]["pid"]
             yield PersistentIdentifier(
                 id=record_pid["pk"],
-                pid_type=record_pid["pid_type"],  # FIXME: in rdm both are recid?
+                pid_type=record_pid["pid_type"],  # in drafts are recid
                 pid_value=draft["json"]["id"],
                 status=record_pid["status"],
                 object_type=record_pid["obj_type"],
@@ -126,7 +128,7 @@ class RDMDraftTableGenerator(TableGenerator):
 
         def _resolve_communities(communities):
             default_slug = communities.get("default")
-            default_id = self.communities_state.get(default_slug)
+            default_id = self.communities_state.get(default_slug).get("id")
             if not default_id:
                 # TODO: maybe raise error without correct default community?
                 communities = {}
@@ -136,7 +138,7 @@ class RDMDraftTableGenerator(TableGenerator):
             communities_slugs = communities.get("ids", [])
             _ids = []
             for slug in communities_slugs:
-                _id = self.communities_state.get(slug)
+                _id = self.communities_state.get(slug).get("id")
                 if _id:
                     _ids.append(_id)
             communities["ids"] = _ids

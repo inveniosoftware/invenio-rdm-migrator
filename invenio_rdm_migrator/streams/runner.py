@@ -12,8 +12,9 @@ from pathlib import Path
 import yaml
 
 from ..logging import Logger
-from ..state import CommunitiesState, ParentsState, PIDMaxPKState, RecordsState
+from ..state import GLOBAL, State, StateEntity
 from ..utils import ts
+from .records.state import ParentModelValidator
 from .streams import Stream
 
 
@@ -47,14 +48,16 @@ class Runner:
 
         self.db_uri = config.get("db_uri")
         self.streams = []
-        self.state = {
-            "parents": ParentsState(filepath=self.state_dir / "parents.json"),
-            "records": RecordsState(filepath=self.state_dir / "records.json"),
-            "communities": CommunitiesState(
-                filepath=self.state_dir / "communities.json"
-            ),
-            "max_pid": PIDMaxPKState(filepath=self.state_dir / "max_pid.json"),
+        self.state = State(
+            db_dir=self.state_dir, validators={"parents": ParentModelValidator}
+        )
+
+        self.state_entities = {
+            "parents": StateEntity(self.state, "parents", "recid"),
+            "records": StateEntity(self.state, "records", "recid"),
+            "communities": StateEntity(self.state, "communities", "slug"),
         }
+        GLOBAL.STATE = StateEntity(self.state, "global", "key")
 
         for definition in stream_definitions:
             if definition.name in config:
@@ -83,7 +86,7 @@ class Runner:
                         definition.load_cls(
                             db_uri=self.db_uri,
                             data_dir=stream_data_dir,
-                            state=self.state,
+                            state=self.state_entities,
                             existing_data=existing_data,
                             **stream_config.get("load", {}),
                         ),
@@ -95,10 +98,8 @@ class Runner:
         for stream in self.streams:
             try:
                 stream.run()
-                # sucessfully finished stream run, now we can dump that stream state
-                for name, state in self.state.items():
-                    state_file = self.state_dir / f"{name}.json"
-                    state.dump(state_file)
+                # on successful stream run, persist state
+                self.state.save(filename=f"{stream.name}.db")
             except Exception:
                 Logger.get_logger().error(f"Stream {stream.name} failed.", exc_info=1)
                 continue

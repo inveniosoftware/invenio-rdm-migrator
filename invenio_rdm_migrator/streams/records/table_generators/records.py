@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio RDM migration record table load module."""
-
 
 from datetime import datetime
 from uuid import UUID
@@ -15,7 +14,6 @@ from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
 from ....load.postgresql import TableGenerator
 from ....logging import Logger
-from ....utils import ts
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
 from .parents import generate_parent_rows
@@ -111,16 +109,17 @@ class RDMRecordTableGenerator(TableGenerator):
                     record_id = record["json"]["id"]
                     logger = Logger.get_logger()
                     logger.error(
-                        f"[{ts()}] Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]"
+                        f"Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]."
                     )
         else:
-            self.parents_state.update(
-                parent["json"]["id"],
-                {
-                    "latest_index": record["index"],
-                    "latest_id": record["id"],
-                },
-            )
+            if state_parent.get("latest_index") < record["index"]:
+                self.parents_state.update(
+                    parent["json"]["id"],
+                    {
+                        "latest_index": record["index"],
+                        "latest_id": record["id"],
+                    },
+                )
 
         parent_id = state_parent["id"] if state_parent else record["parent_id"]
         # record
@@ -200,7 +199,7 @@ class RDMRecordTableGenerator(TableGenerator):
 
         def _resolve_communities(communities):
             default_slug = communities.get("default")
-            default_id = self.communities_state.get(default_slug)
+            default_id = self.communities_state.get(default_slug).get("id")
             if not default_id:
                 # TODO: maybe raise error without correct default community?
                 communities = {}
@@ -209,7 +208,7 @@ class RDMRecordTableGenerator(TableGenerator):
             communities_slugs = communities.get("ids", [])
             _ids = []
             for slug in communities_slugs:
-                _id = self.communities_state.get(slug)
+                _id = self.communities_state.get(slug).get("id")
                 if _id:
                     _ids.append(_id)
             communities["ids"] = _ids
