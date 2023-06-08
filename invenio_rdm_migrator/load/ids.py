@@ -9,30 +9,33 @@
 
 from uuid import uuid4
 
+from ..state import GLOBAL
+
 
 def generate_uuid(data):
     """Generate a UUID."""
     return str(uuid4())
 
 
-def initialize_pid_pk_value(value):
-    """Set the value for the initial pid_pk emitted."""
-    pid_pk.value = value
-
-
 def pid_pk():
     """Generate an autoincrementing numeric primary key."""
-    if not hasattr(pid_pk, "value"):
-        pid_pk.value = 1_000_000
+    state = GLOBAL.STATE
+    state_value = state.get("max_pid_pk")
+    if not state_value:
+        value = 1000000
+        state.add("max_pid_pk", {"value": 1000000})
     else:
-        pid_pk.value += 1
-    return pid_pk.value
+        value = state_value["value"] + 1
+        state.update("max_pid_pk", {"value": value})
+
+    return str(value)
 
 
 def generate_recid(data, status="R"):
     """Generate a record id object."""
+    # pk is not the pid_value, that comes from rec.json.id in the tg
     return {
-        "pk": pid_pk(),  # not the pid_value, that comes from rec.json.id in the tg
+        "pk": pid_pk(),
         "obj_type": "rec",
         "pid_type": "recid",
         "status": status,

@@ -8,7 +8,6 @@
 """Invenio RDM migration record load module."""
 
 from ...load import PostgreSQLCopyLoad
-from ...state import CommunitiesState, ParentsState, RecordsState
 from .table_generators import (
     RDMDraftTableGenerator,
     RDMRecordTableGenerator,
@@ -21,9 +20,9 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):
 
     def __init__(self, db_uri, data_dir, state, versioning=True, **kwargs):
         """Constructor."""
-        self.parents_state = state.get("parents", ParentsState())
-        self.records_state = state.get("records", RecordsState())
-        self.communities_state = state.get("communities", CommunitiesState())
+        self.parents_state = state["parents"]
+        self.records_state = state["records"]
+        self.communities_state = state["communities"]
         table_generators = [
             RDMRecordTableGenerator(
                 self.parents_state,

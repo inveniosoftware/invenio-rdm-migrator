@@ -85,7 +85,7 @@ def transformed_community_entry_pks(transformed_community_entry):
     The last step would happen in the table_generator._prepare.
     """
     data = deepcopy(transformed_community_entry)
-    data["community"]["id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
+    data["community"]["id"] = "7357c033-abcd-1a2b-3c4d-123abc456def"
     data["community_members"][0]["id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
 
     return data

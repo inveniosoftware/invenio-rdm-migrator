@@ -16,17 +16,17 @@ from invenio_rdm_migrator.streams.communities import CommunityCopyLoad
 
 
 @pytest.fixture(scope="function")
-def community_copy_load(state, tmp_dir):
+def community_copy_load(communities_state, tmp_dir):
     """Community load instance."""
     # the db queries will be mocked
-    load = CommunityCopyLoad("None", tmp_dir.name, state)
+    load = CommunityCopyLoad("None", tmp_dir.name, {"communities": communities_state})
     yield load
     load._cleanup()
 
 
 @patch(
     "invenio_rdm_migrator.load.ids.uuid4",
-    lambda: "12345678-abcd-1a2b-3c4d-123abc456def",
+    lambda: "7357c033-abcd-1a2b-3c4d-123abc456def",
 )
 def test_community_load_prepare(community_copy_load, transformed_community_entry):
     """Test the table preparation (file creation)."""
@@ -55,8 +55,8 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
     with open(f"{community_copy_load.data_dir}/communities_metadata.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
-            "12345678-abcd-1a2b-3c4d-123abc456def,"
-            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"": ""Migrator community"", ""description"": ""Migrator testing community"", ""page"": """", ""curation_policy"": """"}",1,migrator,12345678-abcd-1a2b-3c4d-123abc456def\n'
+            "7357c033-abcd-1a2b-3c4d-123abc456def,"
+            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"": ""Migrator community"", ""description"": ""Migrator testing community"", ""page"": """", ""curation_policy"": """"}",1,migrator,7357c033-abcd-1a2b-3c4d-123abc456def\n'
         )
         content = file.read()
         assert content == expected
@@ -64,6 +64,6 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
     # assert communities members content
     with open(f"{community_copy_load.data_dir}/communities_members.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
-        expected = "12345678-abcd-1a2b-3c4d-123abc456def,2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,{},1,owner,True,True,12345678-abcd-1a2b-3c4d-123abc456def,1,,\n"
+        expected = "7357c033-abcd-1a2b-3c4d-123abc456def,2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,{},1,owner,True,True,7357c033-abcd-1a2b-3c4d-123abc456def,1,,\n"
         content = file.read()
         assert content == expected

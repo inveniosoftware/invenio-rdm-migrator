@@ -7,7 +7,9 @@
 
 """Utils module."""
 
+import json
 from datetime import datetime
+from uuid import UUID
 
 
 def ts(iso=True, fmt=None):
@@ -16,3 +18,14 @@ def ts(iso=True, fmt=None):
     if fmt:
         return dt.strftime(fmt)
     return dt.isoformat() if iso else dt.timestamp()
+
+
+class JSONEncoder(json.JSONEncoder):
+    """Ecoder to support UUID inside dictionaries."""
+
+    def default(self, o):
+        """Default encoding."""
+        if isinstance(o, UUID):
+            return str(o)
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, o)

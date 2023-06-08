@@ -10,6 +10,8 @@
 import logging
 import sys
 
+from .utils import ts
+
 
 class Logger:
     """Migrator logger."""
@@ -17,14 +19,19 @@ class Logger:
     @classmethod
     def initialize(cls, log_dir):
         """Constructor."""
+        formatter = logging.Formatter(
+            fmt="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
         logger = logging.getLogger("migrator")
-        logger.setLevel(logging.ERROR)
+        logger.setLevel(logging.INFO)
         # errors to file
         fh = logging.FileHandler(log_dir / "error.log")
         fh.setLevel(logging.ERROR)
+        fh.setFormatter(formatter)
         logger.addHandler(fh)
         # info to stream/stdout
-        sh = logging.StreamHandler(sys.stdout)
+        sh = logging.StreamHandler()
+        sh.setFormatter(formatter)
         sh.setLevel(logging.INFO)
         logger.addHandler(sh)
 

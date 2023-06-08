@@ -11,7 +11,8 @@ import tempfile
 
 import pytest
 
-from invenio_rdm_migrator.state import CommunitiesState, ParentsState, RecordsState
+from invenio_rdm_migrator.state import GLOBAL, State, StateEntity
+from invenio_rdm_migrator.streams.records.state import ParentModelValidator
 
 
 @pytest.fixture(scope="function")
@@ -23,12 +24,24 @@ def tmp_dir():
 
 
 @pytest.fixture(scope="function")
-def parents_state():
+def state(tmp_dir):
+    """Yields a state.
+
+    Do not call `save` on this fixture. The in memory database will be reset on each
+    function, therefore no information will be persisted from test to test.
+    """
+    state = State(db_dir=tmp_dir.name, validators={"parents": ParentModelValidator})
+
+    return state
+
+
+@pytest.fixture(scope="function")
+def parents_state(state):
     """Records parent state.
 
     Keys are concept recids and values are dictionaries.
     """
-    state = ParentsState()
+    state = StateEntity(state, "parents", "recid")
     state.add(
         "123456",
         {
@@ -41,33 +54,33 @@ def parents_state():
 
 
 @pytest.fixture(scope="function")
-def records_state():
+def records_state(state):
     """Records state.
 
     Keys are recids and values are dictionaries.
     """
-    state = RecordsState()
-    return state
+    return StateEntity(state, "records", "recid")
 
 
 @pytest.fixture(scope="function")
-def communities_state():
+def communities_state(state):
     """Communities state.
 
     Keys are community slugs and values are UUIDs.
     """
-    state = CommunitiesState()
-    state.add("comm", "12345678-abcd-1a2b-3c4d-123abc456def")
-    state.add("other-comm", "12345678-abcd-1a2b-3c4d-123abc123abc")
+    state = StateEntity(state, "communities", "slug")
+    state.add("comm", {"id": "12345678-abcd-1a2b-3c4d-123abc456def"})
 
     return state
 
 
 @pytest.fixture(scope="function")
-def state(parents_state, records_state, communities_state):
-    """Global state containing the other ones."""
-    return {
-        "parents": parents_state,
-        "records": records_state,
-        "communities": communities_state,
-    }
+def global_state(state):
+    """Records state.
+
+    Keys are recids and values are dictionaries.
+    """
+    sq = StateEntity(state, "global", "key")
+    GLOBAL.STATE = sq
+
+    return sq

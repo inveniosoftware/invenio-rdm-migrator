@@ -8,7 +8,6 @@
 """Communities table generator tests."""
 
 
-from invenio_rdm_migrator.state import CommunitiesState
 from invenio_rdm_migrator.streams.communities.load import CommunityTableGenerator
 from invenio_rdm_migrator.streams.communities.models import (
     Community,
@@ -18,9 +17,9 @@ from invenio_rdm_migrator.streams.communities.models import (
 from invenio_rdm_migrator.streams.files.models import FilesBucket, FilesObjectVersion
 
 
-def test_generate_rows(transformed_community_entry_pks):
+def test_generate_rows(communities_state, transformed_community_entry_pks):
     """Test the row generation of the request table generator."""
-    tg = CommunityTableGenerator(CommunitiesState())
+    tg = CommunityTableGenerator(communities_state)
     rows = list(tg._generate_rows(transformed_community_entry_pks))
     expected_rows = [
         FilesBucket(
@@ -36,7 +35,7 @@ def test_generate_rows(transformed_community_entry_pks):
             deleted=False,
         ),
         Community(
-            id="12345678-abcd-1a2b-3c4d-123abc456def",
+            id="7357c033-abcd-1a2b-3c4d-123abc456def",
             created="2023-01-01 12:00:00.00000",
             updated="2023-01-31 12:00:00.00000",
             json={
@@ -58,7 +57,7 @@ def test_generate_rows(transformed_community_entry_pks):
             role="owner",
             visible=True,
             active=True,
-            community_id="12345678-abcd-1a2b-3c4d-123abc456def",
+            community_id="7357c033-abcd-1a2b-3c4d-123abc456def",
             user_id=1,
             group_id=None,
             request_id=None,
@@ -80,7 +79,7 @@ def test_generate_rows(transformed_community_entry_pks):
             json={},
             version_id=1,
             key="logo",
-            record_id="12345678-abcd-1a2b-3c4d-123abc456def",
+            record_id="7357c033-abcd-1a2b-3c4d-123abc456def",
             object_version_id=1,
         ),
     ]
