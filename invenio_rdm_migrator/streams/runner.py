@@ -100,5 +100,5 @@ class Runner:
                     state_file = self.state_dir / f"{name}.json"
                     state.dump(state_file)
             except Exception:
-                Logger.get_logger.error(f"Stream {stream.name} failed.", exc_info=1)
+                Logger.get_logger().error(f"Stream {stream.name} failed.", exc_info=1)
                 continue
