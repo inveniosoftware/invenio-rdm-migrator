@@ -17,6 +17,7 @@ from ....logging import Logger
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
 from .parents import generate_parent_rows
+from .references import CommunitiesReferencesMixin
 
 
 def _is_valid_uuid(value):
@@ -44,7 +45,7 @@ def generate_record_uuid(data):
     return _id if _id else generate_uuid(None)
 
 
-class RDMRecordTableGenerator(TableGenerator):
+class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
     """RDM Record and related tables load."""
 
     def __init__(self, parents_state, records_state, communities_state):
@@ -196,25 +197,8 @@ class RDMRecordTableGenerator(TableGenerator):
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
-
-        def _resolve_communities(communities):
-            default_slug = communities.get("default")
-            default_id = self.communities_state.get(default_slug).get("id")
-            if not default_id:
-                # TODO: maybe raise error without correct default community?
-                communities = {}
-            communities["default"] = default_id
-
-            communities_slugs = communities.get("ids", [])
-            _ids = []
-            for slug in communities_slugs:
-                _id = self.communities_state.get(slug).get("id")
-                if _id:
-                    _ids.append(_id)
-            communities["ids"] = _ids
-
         # resolve parent communities slug
         parent = data["parent"]
         communities = parent["json"].get("communities")
         if communities:
-            _resolve_communities(communities)
+            self.resolve_communities(communities)
