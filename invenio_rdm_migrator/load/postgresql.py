@@ -108,6 +108,10 @@ class PostgreSQLCopyLoad(Load):
             for table in table_entries:
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
+                # FIXME: we will need to adapt this to go through different folders
+                # or distinguish filename with update_/delete_/insert_
+                # maybe it should be `load` who does this, since after
+                # there will be not only a COPY but more SQL stmts executed on up/delete
                 fpath = self.data_dir / f"{name}.csv"
                 if fpath.exists():
                     # total file size for progress logging
@@ -230,7 +234,9 @@ class TableGenerator(ABC):
         self._generate_pks(entry, kwargs.get("create", False))
         # resolve entry references
         self._resolve_references(entry)
-        for entry in self._generate_rows(entry):
+        for action, entry in self._generate_rows(entry):
+            # FIXME: needs split per action on the csv file
+            # in the file name? or in the path?
             if entry._table_name not in output_files:
                 fpath = tmp_dir / f"{entry._table_name}.csv"
                 output_files[entry._table_name] = csv.writer(

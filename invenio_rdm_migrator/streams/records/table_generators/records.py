@@ -13,6 +13,7 @@ from uuid import UUID
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
 from ....load.postgresql import TableGenerator
+from ....load.statements import Statement
 from ....logging import Logger
 from ...communities.models import RDMParentCommunityMetadata
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
@@ -124,75 +125,108 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
 
         parent_id = state_parent["id"] if state_parent else record["parent_id"]
         # record
-        self.records_state.add(
-            record["json"]["id"],  # recid
-            {
-                "index": record["index"],
-                "id": record["id"],  # uuid
-                "parent_id": parent_id,  # parent uuid
-                "fork_version_id": record["version_id"],
-                "pids": record["json"]["pids"],
-            },
-        )
+        state_record = self.records_state.get(record["json"]["id"])
+        action = None
+        if not state_record:
+            action = Statement.INSERT
+            self.records_state.add(
+                record["json"]["id"],  # recid
+                {
+                    "index": record["index"],
+                    "id": record["id"],  # uuid
+                    "parent_id": parent_id,  # parent uuid
+                    "fork_version_id": record["version_id"],
+                    "pids": record["json"]["pids"],
+                },
+            )
+        else:
+            action = Statement.UPDATE
+            self.records_state.update(
+                record["json"]["id"],  # recid
+                {
+                    "index": record["index"],
+                    "id": record["id"],  # uuid
+                    "parent_id": parent_id,  # parent uuid
+                    "fork_version_id": record["version_id"],
+                    "pids": record["json"]["pids"],
+                },
+            )
 
-        yield RDMRecordMetadata(
-            id=record["id"],
-            json=record["json"],
-            created=record["created"],
-            updated=record["updated"],
-            version_id=record["version_id"],
-            index=record["index"],
-            bucket_id=record["bucket_id"],
-            parent_id=parent_id,
+        assert action  # make sure we have an action/statement type defined
+
+        yield (  # FIXME: this is just a POC of how we could distinguish in the load step.
+            action,
+            RDMRecordMetadata(
+                id=record["id"],
+                json=record["json"],
+                created=record["created"],
+                updated=record["updated"],
+                version_id=record["version_id"],
+                index=record["index"],
+                bucket_id=record["bucket_id"],
+                parent_id=parent_id,
+            ),
         )
         # recid
-        yield PersistentIdentifier(
-            id=record_pid["pk"],
-            pid_type=record_pid["pid_type"],
-            pid_value=record["json"]["id"],
-            status=record_pid["status"],
-            object_type=record_pid["obj_type"],
-            object_uuid=record["id"],
-            created=now,
-            updated=now,
+        yield (
+            action,
+            PersistentIdentifier(
+                id=record_pid["pk"],
+                pid_type=record_pid["pid_type"],
+                pid_value=record["json"]["id"],
+                status=record_pid["status"],
+                object_type=record_pid["obj_type"],
+                object_uuid=record["id"],
+                created=now,
+                updated=now,
+            ),
         )
         # DOI
-        if "doi" in record["json"]["pids"]:
-            yield PersistentIdentifier(
-                id=pid_pk(),
-                pid_type="doi",
-                pid_value=record["json"]["pids"]["doi"]["identifier"],
-                status="R",
-                object_type="rec",
-                object_uuid=record["id"],
-                created=now,
-                updated=now,
+        if "doi" in record["json"]["pids"] and action != Statement.INSERT:
+            yield (
+                action,
+                PersistentIdentifier(
+                    id=pid_pk(),
+                    pid_type="doi",
+                    pid_value=record["json"]["pids"]["doi"]["identifier"],
+                    status="R",
+                    object_type="rec",
+                    object_uuid=record["id"],
+                    created=now,
+                    updated=now,
+                ),
             )
         # OAI
-        if "oai" in record["json"]["pids"]:
-            yield PersistentIdentifier(
-                id=pid_pk(),
-                pid_type="oai",
-                pid_value=record["json"]["pids"]["oai"]["identifier"],
-                status="R",
-                object_type="rec",
-                object_uuid=record["id"],
-                created=now,
-                updated=now,
+        if "oai" in record["json"]["pids"] and action != Statement.INSERT:
+            yield (
+                action,
+                PersistentIdentifier(
+                    id=pid_pk(),
+                    pid_type="oai",
+                    pid_value=record["json"]["pids"]["oai"]["identifier"],
+                    status="R",
+                    object_type="rec",
+                    object_uuid=record["id"],
+                    created=now,
+                    updated=now,
+                ),
             )
 
         # record files
         record_files = data["record_files"]
         for _file in record_files:
-            yield RDMRecordFile(
-                id=_file["id"],
-                json=_file["json"],
-                created=_file["created"],
-                updated=_file["updated"],
-                version_id=_file["version_id"],
-                key=_file["key"],
-                record_id=record["id"],
-                object_version_id=_file["object_version_id"],
+            yield (
+                action,  # update and delete can happen if a supported did it
+                RDMRecordFile(
+                    id=_file["id"],
+                    json=_file["json"],
+                    created=_file["created"],
+                    updated=_file["updated"],
+                    version_id=_file["version_id"],
+                    key=_file["key"],
+                    record_id=record["id"],
+                    object_version_id=_file["object_version_id"],
+                ),
             )
 
     def _resolve_references(self, data, **kwargs):
