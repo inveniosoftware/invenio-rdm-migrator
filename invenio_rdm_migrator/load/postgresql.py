@@ -268,3 +268,18 @@ class ExistingDataTableGenerator(TableGenerator):
         # entry modifications by ref resolving and pk generation.
         # This func wont be called.
         pass
+
+
+class IdentityTableGenerator(TableGenerator):
+    """Yields one row of the specified model per entry."""
+
+    def __init__(self, table, pks=None, post_load_hooks=None):
+        """Constructor."""
+        assert not isinstance(table, list)
+
+        super().__init__(tables=[table], pks=pks, post_load_hooks=post_load_hooks)
+
+    def _generate_rows(self, data, **kwargs):
+        """Yield generated rows."""
+        table = self.tables[0]
+        yield table(**data)
