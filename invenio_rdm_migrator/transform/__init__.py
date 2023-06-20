@@ -8,10 +8,12 @@
 """Invenio RDM migration transform module."""
 
 from .base import Entry, Transform, drop_nones
+from .encrypt import EncryptMixin
 from .identity import IdentityDictKeyMixin, IdentityTransform
 
 __all__ = (
     "drop_nones",
+    "EncryptMixin",
     "Entry",
     "IdentityDictKeyMixin",
     "IdentityTransform",
