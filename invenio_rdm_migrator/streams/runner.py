@@ -57,6 +57,17 @@ class Runner:
         }
         GLOBAL.STATE = StateEntity(self.state, "global", "key")
 
+        # set up secret keys
+        GLOBAL.STATE.add(
+            "old_secret_key",
+            {"value": bytes(config.get("old_secret_key"), "utf-8")},
+        )
+        GLOBAL.STATE.add(
+            "new_secret_key",
+            {"value": bytes(config.get("new_secret_key"), "utf-8")},
+        )
+
+        # start processing streams
         for definition in stream_definitions:
             if definition.name in config:
                 # get will return a None for e.g. files:
