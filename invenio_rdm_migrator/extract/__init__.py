@@ -8,5 +8,9 @@
 """Invenio RDM migration extract module."""
 
 from .base import Extract
+from .identity import IdentityExtract
 
-__all__ = ("Extract",)
+__all__ = (
+    "Extract",
+    "IdentityExtract",
+)

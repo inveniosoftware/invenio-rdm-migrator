@@ -9,26 +9,8 @@
 
 from datetime import datetime
 
-from ..extract import Extract
 from ..logging import Logger
 from ..transform import Transform
-
-
-class IdentityExtract(Extract):
-    """Extract class to not read input data."""
-
-    def run(self):
-        """Yield one element at a time."""
-        # yield a dummy value
-        yield
-
-
-class IdentityTransform(Transform):
-    """Transform class to yield the received item without change."""
-
-    def _transform(self, entry):
-        """Transform entry."""
-        yield entry
 
 
 class StreamDefinition:
