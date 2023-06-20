@@ -8,9 +8,10 @@
 """Invenio RDM migration load module."""
 
 from .base import Load
-from .postgresql import PostgreSQLCopyLoad, TableGenerator
+from .postgresql import ExistingDataTableGenerator, PostgreSQLCopyLoad, TableGenerator
 
 __all__ = (
+    "ExistingDataTableGenerator",
     "Load",
     "PostgreSQLCopyLoad",
     "TableGenerator",
