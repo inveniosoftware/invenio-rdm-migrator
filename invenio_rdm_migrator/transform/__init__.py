@@ -8,9 +8,11 @@
 """Invenio RDM migration transform module."""
 
 from .base import Entry, Transform, drop_nones
+from .identity import IdentityTransform
 
 __all__ = (
     "drop_nones",
     "Entry",
+    "IdentityTransform",
     "Transform",
 )
