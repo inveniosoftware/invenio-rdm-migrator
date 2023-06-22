@@ -19,7 +19,9 @@ from invenio_rdm_migrator.streams.requests import RequestCopyLoad
 def request_copy_load(communities_state, tmp_dir):
     """Request load instance."""
     # the db queries will be mocked
-    load = RequestCopyLoad("None", tmp_dir.name, {"communities": communities_state})
+    load = RequestCopyLoad(
+        db_uri="None", tmp_dir=tmp_dir.name, state={"communities": communities_state}
+    )
     yield load
     load._cleanup()
 
@@ -30,18 +32,20 @@ def request_copy_load(communities_state, tmp_dir):
 )
 def test_request_load_prepare(request_copy_load, transformed_incl_req_entry):
     """Test the table preparation (file creation)."""
-    tables = list(request_copy_load._prepare([transformed_incl_req_entry]))
+    tables = [
+        table for _, table in request_copy_load._prepare([transformed_incl_req_entry])
+    ]
 
     # assert tables
     assert len(tables) == 1
     assert tables[0]._table_name == "request_metadata"
 
     # assert files were created and have the content
-    files = list(os.scandir(request_copy_load.data_dir))
+    files = list(os.scandir(request_copy_load.tmp_dir))
     assert len(files) == 1
 
     # assert request metadata content
-    with open(f"{request_copy_load.data_dir}/request_metadata.csv", "r") as file:
+    with open(f"{request_copy_load.tmp_dir}/request_metadata.csv", "r") as file:
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "12345678-abcd-1a2b-3c4d-123abc456def,"

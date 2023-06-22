@@ -18,7 +18,7 @@ from .table_generators import (
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, data_dir, state, versioning=True, **kwargs):
+    def __init__(self, state, versioning=True, **kwargs):
         """Constructor."""
         self.parents_state = state["parents"]
         self.records_state = state["records"]
@@ -39,12 +39,7 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):
         if versioning:
             table_generators.append(RDMVersionStateTableGenerator(self.parents_state))
 
-        super().__init__(
-            db_uri=db_uri,
-            data_dir=data_dir,
-            table_generators=table_generators,
-            **kwargs
-        )
+        super().__init__(table_generators=table_generators, **kwargs)
 
     def _validate(self):
         """Validate data before loading."""
