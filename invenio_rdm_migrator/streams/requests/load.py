@@ -14,12 +14,10 @@ from .table_generator import RequestTableGenerator
 class RequestCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, data_dir, state, **kwargs):
+    def __init__(self, state, **kwargs):
         """Constructor."""
         self.communities_state = state["communities"]
         super().__init__(
-            db_uri=db_uri,
-            data_dir=data_dir,
             table_generators=[
                 RequestTableGenerator(self.communities_state),
             ],

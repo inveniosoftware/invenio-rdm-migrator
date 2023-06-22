@@ -33,9 +33,7 @@ class Runner:
         self.data_dir = Path(config.get("data_dir"))
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        self.tmp_dir = (
-            Path(config.get("tmp_dir")) / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
-        )
+        self.tmp_dir = Path(config.get("tmp_dir"))
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
         self.state_dir = Path(config.get("state_dir"))
@@ -67,7 +65,8 @@ class Runner:
                 existing_data = stream_config.get("existing_data", {})
 
                 # if loading pass source data dir, else pass tmp to dump new csv files
-                stream_data_dir = self.data_dir / definition.name
+                data_dir = self.data_dir
+                tmp_dir = self.tmp_dir / definition.name
                 extract = None
                 transform = None
                 if not existing_data:
@@ -75,8 +74,6 @@ class Runner:
                     transform = definition.transform_cls(
                         **stream_config.get("transform", {})
                     )
-                    stream_data_dir = self.tmp_dir / definition.name
-                    stream_data_dir.mkdir(parents=True, exist_ok=True)
 
                 self.streams.append(
                     Stream(
@@ -85,7 +82,8 @@ class Runner:
                         transform,
                         definition.load_cls(
                             db_uri=self.db_uri,
-                            data_dir=stream_data_dir,
+                            data_dir=data_dir,
+                            tmp_dir=tmp_dir,
                             state=self.state_entities,
                             existing_data=existing_data,
                             **stream_config.get("load", {}),

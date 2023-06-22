@@ -45,7 +45,13 @@ class PostgreSQLCopyLoad(Load):
     """PostgreSQL COPY load."""
 
     def __init__(
-        self, db_uri, data_dir, table_generators, existing_data=False, **kwargs
+        self,
+        db_uri,
+        table_generators,
+        tmp_dir=None,
+        data_dir=None,
+        existing_data=False,
+        **kwargs,
     ):
         """Constructor.
 
@@ -58,42 +64,51 @@ class PostgreSQLCopyLoad(Load):
         # when loading existing data the tmp folder would be the root
         # it is assumed that the csv files of a previous run have been placed there
         self.existing_data = existing_data
-        self.data_dir = Path(data_dir)
+        self.data_dir = None
+        self.tmp_dir = None
+        if existing_data:
+            assert data_dir
 
-        # when loading existing data the tmp folder would be the root
-        # it is assumed that the csv files of a previous run have been placed there
-        self.existing_data = existing_data
-        if not existing_data:
-            self.data_dir = self.data_dir / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
-            self.data_dir.mkdir(parents=True, exist_ok=True)
+        assert data_dir or tmp_dir
+
+        if data_dir:
+            self.data_dir = Path(data_dir)
+
+        if tmp_dir:
+            self.tmp_dir = Path(tmp_dir) / f"tables-{ts(fmt='%Y-%m-%dT%H%M%S')}"
 
     def _cleanup(self, db=False):
         """Cleanup csv files and DB after load."""
         for table in self.table_generators:
             table.cleanup(db=db)
 
+    def _save_to_csv(self, entries):
+        """Save the entries to a csv file."""
+        # use this context manager to close all opened files at once
+        with contextlib.ExitStack() as stack:
+            output_files = {}
+            for entry in entries:
+                for tg in self.table_generators:
+                    tg.prepare(self.tmp_dir, entry, stack, output_files)
+
+            for tg in self.table_generators:
+                tg.post_prepare(self.tmp_dir, stack, output_files)
+
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
+        # global overwrite for existing data, e.g. when running a previously run stream
         if not self.existing_data:
-            # use this context manager to close all opened files at once
-            with contextlib.ExitStack() as stack:
-                output_files = {}
-                for entry in entries:
-                    for tg in self.table_generators:
-                        tg.prepare(self.data_dir, entry, stack, output_files)
-
-                for tg in self.table_generators:
-                    tg.post_prepare(self.data_dir, stack, output_files)
+            self._save_to_csv(entries)
 
         prepared_tables = []
-        # FIXME: needs to preserve order
-        # the logic is very inefficient, maybe and ordered-set
-        # or change the data structure of tables to keep order information
-        # and hten process it
+        # Needs to preserve order. This logic is very inefficient, maybe and ordered-set
+        # or change the data structure of the tables to keep order information and then
+        # process it
         for tg in self.table_generators:
             for table in tg.tables:
+                existing_data = tg.existing_data or self.existing_data
                 if table not in prepared_tables:
-                    prepared_tables.append(table)
+                    prepared_tables.append((existing_data, table))
 
         return iter(prepared_tables)  # yield at the end vs yield per table
 
@@ -105,10 +120,14 @@ class PostgreSQLCopyLoad(Load):
         logger = Logger.get_logger()
 
         with psycopg.connect(self.db_uri) as conn:
-            for table in table_entries:
+            for existing_data, table in table_entries:
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
-                fpath = self.data_dir / f"{name}.csv"
+                # local overwrite for existing data
+                # e.g. when a table does not need transformation and is already in csv
+                fpath = self.data_dir if existing_data else self.tmp_dir
+                fpath = fpath / f"{name}.csv"
+
                 if fpath.exists():
                     # total file size for progress logging
                     file_size = fpath.stat().st_size
@@ -193,16 +212,18 @@ class PostgreSQLCopyLoad(Load):
 class TableGenerator(ABC):
     """Create CSV files with table create and inserts."""
 
-    def __init__(self, tables, pks=None, post_load_hooks=None):
+    def __init__(self, tables, pks=None, post_load_hooks=None, existing_data=False):
         """Constructor."""
         self.tables = tables
+        self.existing_data = existing_data
         self.post_load_hooks = post_load_hooks or []
         self.pks = pks or []
 
-    @abstractmethod
     def _generate_rows(self, **kwargs):
         """Yield generated rows."""
-        pass
+        # raises an error but does not force an implementation
+        # e.g. when `prepare` is overwritten, _generate_rows is not required
+        raise NotImplementedError
 
     def cleanup(self, **kwargs):
         """Cleanup."""
@@ -226,18 +247,21 @@ class TableGenerator(ABC):
 
     def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
         """Compute rows."""
-        # is_db_empty would come in play and make _generate_pks optional
-        self._generate_pks(entry, kwargs.get("create", False))
-        # resolve entry references
-        self._resolve_references(entry)
-        for entry in self._generate_rows(entry):
-            if entry._table_name not in output_files:
-                fpath = tmp_dir / f"{entry._table_name}.csv"
-                output_files[entry._table_name] = csv.writer(
-                    stack.enter_context(open(fpath, "w+"))
-                )
-            writer = output_files[entry._table_name]
-            writer.writerow(as_csv_row(entry))
+        if not self.existing_data:
+            # is_db_empty would come in play and make _generate_pks optional
+            self._generate_pks(entry, kwargs.get("create", False))
+            # resolve entry references
+            self._resolve_references(entry)
+
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            for entry in self._generate_rows(entry):
+                if entry._table_name not in output_files:
+                    fpath = tmp_dir / f"{entry._table_name}.csv"
+                    output_files[entry._table_name] = csv.writer(
+                        stack.enter_context(open(fpath, "w+"))
+                    )
+                writer = output_files[entry._table_name]
+                writer.writerow(as_csv_row(entry))
 
     def post_prepare(self, tmp_dir, stack, output_files, **kwargs):
         """Create rows after iterating over the entries."""
@@ -257,25 +281,17 @@ class ExistingDataTableGenerator(TableGenerator):
     this table generator the Extract and Transform steps can be skipped.
     """
 
-    def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
-        """Nullify the data file creation, since they already exists."""
-        pass
-
-    def _generate_rows(self, **kwargs):
-        """Yield generated rows."""
-        # Implemented to satisfy the abstract class.
-        # However, passing in `prepare` skips more steps and prevents unintentional
-        # entry modifications by ref resolving and pk generation.
-        # This func wont be called.
-        pass
+    def __init__(self, tables, pks=None, post_load_hooks=None):
+        """Constructor."""
+        super().__init__(tables, pks=None, post_load_hooks=None, existing_data=True)
 
 
-class IdentityTableGenerator(TableGenerator):
+class SingleTableGenerator(TableGenerator):
     """Yields one row of the specified model per entry."""
 
     def __init__(self, table, pks=None, post_load_hooks=None):
         """Constructor."""
-        assert not isinstance(table, list)
+        assert not isinstance(table, (list, dict))
 
         super().__init__(tables=[table], pks=pks, post_load_hooks=post_load_hooks)
 
