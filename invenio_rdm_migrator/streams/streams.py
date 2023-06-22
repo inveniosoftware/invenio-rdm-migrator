@@ -9,8 +9,9 @@
 
 from datetime import datetime
 
+from ..extract import NullExtract
 from ..logging import Logger
-from ..transform import Transform
+from ..transform import IdentityTransform
 
 
 class StreamDefinition:
@@ -33,7 +34,7 @@ class Stream:
     def __init__(self, name, extract, transform, load):
         """Constructor."""
         self.name = name
-        self.extract = extract or IdentityExtract()
+        self.extract = extract or NullExtract()
         self.transform = transform or IdentityTransform()
         self.load = load
 

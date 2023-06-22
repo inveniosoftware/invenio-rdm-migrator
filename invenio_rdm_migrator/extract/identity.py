@@ -10,10 +10,10 @@
 from .base import Extract
 
 
-class IdentityExtract(Extract):
+class NullExtract(Extract):
     """Extract class to not read input data."""
 
     def run(self):
         """Yield one element at a time."""
-        # yield a dummy value
+        # yield a None value
         yield
