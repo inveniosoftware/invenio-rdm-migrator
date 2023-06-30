@@ -7,7 +7,7 @@
 
 """Invenio RDM migration requests load module."""
 
-from ...load import PostgreSQLCopyLoad
+from ...load.postgresql.bulk import PostgreSQLCopyLoad
 from .table_generator import RequestTableGenerator
 
 

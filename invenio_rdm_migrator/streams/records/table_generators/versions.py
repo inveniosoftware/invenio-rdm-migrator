@@ -7,7 +7,7 @@
 
 """Invenio RDM migration record table load module."""
 
-from ....load.postgresql import TableGenerator
+from ....load.postgresql.bulk.generators import TableGenerator
 from ..models import RDMVersionState
 
 

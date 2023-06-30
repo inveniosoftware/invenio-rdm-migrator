@@ -31,11 +31,17 @@ def pid_pk():
     return str(value)
 
 
+def generate_pk(data):
+    """Generate a primery key."""
+    return pid_pk()
+
+
 def generate_recid(data, status="R"):
     """Generate a record id object."""
     # pk is not the pid_value, that comes from rec.json.id in the tg
     return {
         "pk": pid_pk(),
+        # keep obj_type since the record needs this key dereferenced
         "obj_type": "rec",
         "pid_type": "recid",
         "status": status,

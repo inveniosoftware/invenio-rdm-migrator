@@ -8,24 +8,28 @@
 """Dataclasses user models to generate table rows."""
 
 from dataclasses import InitVar, dataclass
+from uuid import UUID
+
+from sqlalchemy.orm import Mapped, mapped_column
+
+from ...load.postgresql.models import Model
 
 
-@dataclass
-class FilesBucket:
+class FilesBucket(Model):
     """Files bucket dataclass model."""
 
-    id: str
-    created: str
-    updated: str
-    default_location: str
-    default_storage_class: str
-    size: int
-    quota_size: int
-    max_file_size: int
-    locked: bool
-    deleted: bool
+    __tablename__: InitVar[str] = "files_bucket"
 
-    _table_name: InitVar[str] = "files_bucket"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    created: Mapped[str]
+    updated: Mapped[str]
+    default_location: Mapped[int]
+    default_storage_class: Mapped[str]
+    size: Mapped[int]
+    quota_size: Mapped[int]
+    max_file_size: Mapped[int]
+    locked: Mapped[bool]
+    deleted: Mapped[bool]
 
 
 @dataclass
@@ -44,7 +48,7 @@ class FilesInstance:
     last_check_at: str
     last_check: bool
 
-    _table_name: InitVar[str] = "files_files"
+    __tablename__: InitVar[str] = "files_files"
 
 
 @dataclass
@@ -60,4 +64,4 @@ class FilesObjectVersion:
     _mimetype: str
     is_head: bool
 
-    _table_name: InitVar[str] = "files_object"
+    __tablename__: InitVar[str] = "files_object"

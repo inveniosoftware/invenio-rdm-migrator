@@ -7,9 +7,9 @@
 
 """Invenio RDM migration OAuth load module."""
 
-from ...load.postgresql import (
+from ...load.postgresql.bulk import PostgreSQLCopyLoad
+from ...load.postgresql.bulk.generators import (
     ExistingDataTableGenerator,
-    PostgreSQLCopyLoad,
     SingleTableGenerator,
 )
 from .models import RemoteAccount, RemoteToken, ServerClient, ServerToken, UserIdentity

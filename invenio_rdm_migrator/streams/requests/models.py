@@ -22,4 +22,4 @@ class RequestMetadata:
     number: str
     expires_at: str
 
-    _table_name: InitVar[str] = "request_metadata"
+    __tablename__: InitVar[str] = "request_metadata"

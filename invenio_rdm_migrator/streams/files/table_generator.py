@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Invenio RDM migration user table load module."""
+"""Invenio RDM migration files table load module."""
 
-
-from ...load.postgresql import TableGenerator
+from ...load.postgresql.bulk.generators import TableGenerator
 from .models import FilesBucket, FilesInstance, FilesObjectVersion
 
 
 class FilesTableGenerator(TableGenerator):
-    """Files and related tables load."""
+    """Files and related tables load via CSV."""
 
     def __init__(self):
         """Constructor."""

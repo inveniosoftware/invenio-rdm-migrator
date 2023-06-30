@@ -13,7 +13,6 @@ import yaml
 
 from ..logging import Logger
 from ..state import GLOBAL, State, StateEntity
-from ..utils import ts
 from .records.state import ParentModelValidator
 from .streams import Stream
 
@@ -54,6 +53,7 @@ class Runner:
             "parents": StateEntity(self.state, "parents", "recid"),
             "records": StateEntity(self.state, "records", "recid"),
             "communities": StateEntity(self.state, "communities", "slug"),
+            "pids": StateEntity(self.state, "pids", "pid_value"),
         }
         GLOBAL.STATE = StateEntity(self.state, "global", "key")
 
@@ -110,5 +110,7 @@ class Runner:
                 # on successful stream run, persist state
                 self.state.save(filename=f"{stream.name}.db")
             except Exception:
-                Logger.get_logger().error(f"Stream {stream.name} failed.", exc_info=1)
+                Logger.get_logger().exception(
+                    f"Stream {stream.name} failed.", exc_info=1
+                )
                 continue

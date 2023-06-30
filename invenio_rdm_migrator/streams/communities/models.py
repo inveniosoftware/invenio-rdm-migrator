@@ -22,7 +22,7 @@ class Community:
     slug: str
     bucket_id: str
 
-    _table_name: InitVar[str] = "communities_metadata"
+    __tablename__: InitVar[str] = "communities_metadata"
 
 
 @dataclass
@@ -33,7 +33,7 @@ class RDMParentCommunityMetadata:
     record_id: str
     request_id: str
 
-    _table_name: InitVar[str] = "rdm_parents_community"
+    __tablename__: InitVar[str] = "rdm_parents_community"
 
 
 @dataclass
@@ -53,7 +53,7 @@ class CommunityMember:
     group_id: int
     request_id: int
 
-    _table_name: InitVar[str] = "communities_members"
+    __tablename__: InitVar[str] = "communities_members"
 
 
 @dataclass
@@ -66,7 +66,7 @@ class FeaturedCommunity:
     updated: str
     start_date: str
 
-    _table_name: InitVar[str] = "communities_featured"
+    __tablename__: InitVar[str] = "communities_featured"
 
 
 @dataclass
@@ -82,4 +82,4 @@ class CommunityFile:
     record_id: str
     object_version_id: str
 
-    _table_name: InitVar[str] = "communities_files"
+    __tablename__: InitVar[str] = "communities_files"

@@ -206,6 +206,19 @@ class State:
             sqlite_autoincrement=False,
         )
 
+        sa.Table(
+            "pids",
+            metadata,
+            sa.Column("pid_value", sa.String, primary_key=True),
+            sa.Column("id", sa.Integer, unique=True, nullable=False),
+            sa.Column("pid_type", sa.String, nullable=False),
+            sa.Column("status", sa.String, nullable=False),
+            sa.Column("created", sa.DateTime, nullable=False),
+            # keep obj_type since the record needs this key dereferenced
+            sa.Column("obj_type", sa.String),
+            sqlite_autoincrement=False,
+        )
+
         # e.g. key = max_pid_pk, value = 1000000
         sa.Table(
             "global",

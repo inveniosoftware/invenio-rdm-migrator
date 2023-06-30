@@ -9,7 +9,7 @@
 
 from datetime import datetime
 
-from ....load.models import PersistentIdentifier
+from ...pids.models import PersistentIdentifier
 from ..models import RDMParentMetadata
 
 
@@ -17,14 +17,7 @@ def generate_parent_rows(parent):
     """Generates rows for a parent record."""
     now = datetime.utcnow().isoformat()
     parent_pid = parent["json"]["pid"]
-    # parent record
-    yield RDMParentMetadata(
-        id=parent["id"],
-        json=parent["json"],
-        created=parent["created"],
-        updated=parent["updated"],
-        version_id=parent["version_id"],
-    )
+    # order is important when doing action/streaming migration
     # parent recid
     yield PersistentIdentifier(
         id=parent_pid["pk"],
@@ -35,4 +28,12 @@ def generate_parent_rows(parent):
         object_uuid=parent["id"],
         created=now,
         updated=now,
+    )
+    # parent record
+    yield RDMParentMetadata(
+        id=parent["id"],
+        json=parent["json"],
+        created=parent["created"],
+        updated=parent["updated"],
+        version_id=parent["version_id"],
     )

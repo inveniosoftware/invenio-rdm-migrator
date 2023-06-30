@@ -13,9 +13,9 @@ from unittest.mock import patch
 
 import pytest
 
-from invenio_rdm_migrator.load.postgresql import (
+from invenio_rdm_migrator.load.postgresql.bulk import PostgreSQLCopyLoad
+from invenio_rdm_migrator.load.postgresql.bulk.generators import (
     ExistingDataTableGenerator,
-    PostgreSQLCopyLoad,
     SingleTableGenerator,
 )
 
@@ -41,7 +41,7 @@ class TestModel:
     bar: str
     number: int
 
-    _table_name: InitVar[str] = "test_table"
+    __tablename__: InitVar[str] = "test_table"
 
 
 def test_identity_tg_generate_rows():
@@ -65,7 +65,7 @@ def test_identity_tg_multiple_tables():
 class TestModelToo(TestModel):
     """Another dataclass model."""
 
-    _table_name: InitVar[str] = "test_table_too"
+    __tablename__: InitVar[str] = "test_table_too"
 
 
 class CopyLoad(PostgreSQLCopyLoad):

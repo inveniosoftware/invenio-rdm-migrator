@@ -6,17 +6,3 @@
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Invenio RDM migration PostgreSQL load module."""
-
-from .copy import PostgreSQLCopyLoad
-from .table_generators import (
-    ExistingDataTableGenerator,
-    SingleTableGenerator,
-    TableGenerator,
-)
-
-__all__ = (
-    "ExistingDataTableGenerator",
-    "PostgreSQLCopyLoad",
-    "SingleTableGenerator",
-    "TableGenerator",
-)

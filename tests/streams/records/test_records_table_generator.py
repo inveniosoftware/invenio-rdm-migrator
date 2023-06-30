@@ -11,8 +11,8 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from invenio_rdm_migrator.load.ids import pid_pk
-from invenio_rdm_migrator.load.models import PersistentIdentifier
 from invenio_rdm_migrator.streams.communities.models import RDMParentCommunityMetadata
+from invenio_rdm_migrator.streams.pids.models import PersistentIdentifier
 from invenio_rdm_migrator.streams.records.load import (
     RDMDraftTableGenerator,
     RDMRecordTableGenerator,
@@ -69,6 +69,16 @@ def test_single_record_generate_rows(
     tg = RDMRecordTableGenerator(parents_state, records_state, communities_state)
     rows = list(tg._generate_rows(transformed_record_entry_pks))
     expected_rows = [
+        PersistentIdentifier(  # parent recid
+            id=pid_1,
+            pid_type="recid",
+            pid_value="12345677",
+            status="R",
+            object_type="rec",
+            object_uuid="12345678-abcd-1a2b-3c4d-123abc456def",
+            created="2023-04-01 12:00:00.00000",
+            updated="2023-04-01 12:00:00.00000",
+        ),
         RDMParentMetadata(  # parent record
             id="12345678-abcd-1a2b-3c4d-123abc456def",
             json={
@@ -90,16 +100,6 @@ def test_single_record_generate_rows(
             created="2023-01-01 12:00:00.00000",
             updated="2023-01-31 12:00:00.00000",
             version_id=1,
-        ),
-        PersistentIdentifier(  # parent recid
-            id=pid_1,
-            pid_type="recid",
-            pid_value="12345677",
-            status="R",
-            object_type="rec",
-            object_uuid="12345678-abcd-1a2b-3c4d-123abc456def",
-            created="2023-04-01 12:00:00.00000",
-            updated="2023-04-01 12:00:00.00000",
         ),
         RDMParentCommunityMetadata(  # parent community
             community_id="12345678-abcd-1a2b-3c4d-123abc456def",
@@ -194,6 +194,16 @@ def test_single_draft_generate_rows(
     tg = RDMDraftTableGenerator(parents_state, records_state, communities_state)
     rows = list(tg._generate_rows(transformed_draft_entry_pks))
     expected_rows = [
+        PersistentIdentifier(  # parent recid
+            id=pid_1,
+            pid_type="recid",
+            pid_value="12345677",
+            status="N",
+            object_type="rec",
+            object_uuid="12345678-abcd-1a2b-3c4d-123abc456def",
+            created="2023-04-01 12:00:00.00000",
+            updated="2023-04-01 12:00:00.00000",
+        ),
         RDMParentMetadata(  # parent record
             id="12345678-abcd-1a2b-3c4d-123abc456def",
             json={
@@ -215,16 +225,6 @@ def test_single_draft_generate_rows(
             created="2023-01-01 12:00:00.00000",
             updated="2023-01-31 12:00:00.00000",
             version_id=1,
-        ),
-        PersistentIdentifier(  # parent recid
-            id=pid_1,
-            pid_type="recid",
-            pid_value="12345677",
-            status="N",
-            object_type="rec",
-            object_uuid="12345678-abcd-1a2b-3c4d-123abc456def",
-            created="2023-04-01 12:00:00.00000",
-            updated="2023-04-01 12:00:00.00000",
         ),
         RDMDraftMetadata(  # record
             id="2d6970ea-602d-4e8b-a918-063a59823386",

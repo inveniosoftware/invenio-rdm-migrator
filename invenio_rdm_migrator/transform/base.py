@@ -17,7 +17,10 @@ class Transform(ABC):
 
     @abstractmethod
     def _transform(self, entry):
-        """Transform entry."""
+        """Transform entry.
+
+        :returns: a transformed entry, not an iterator.
+        """
         pass
 
     def run(self, entries):
@@ -27,7 +30,7 @@ class Transform(ABC):
                 yield self._transform(entry)
             except Exception:
                 logger = Logger.get_logger()
-                logger.error(entry, exc_info=1)
+                logger.exception(entry, exc_info=1)
                 continue
 
 

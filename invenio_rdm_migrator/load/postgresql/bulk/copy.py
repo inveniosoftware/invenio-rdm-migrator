@@ -14,10 +14,10 @@ from pathlib import Path
 
 import psycopg2
 
-from ...logging import Logger
-from ...utils import ts
-from ..base import Load
-from .sequences import AlterSequencesMixin
+from ....logging import Logger
+from ....utils import ts
+from ...base import Load
+from ..sequences import AlterSequencesMixin
 
 
 class PostgreSQLCopyLoad(Load, AlterSequencesMixin):
@@ -71,7 +71,9 @@ class PostgreSQLCopyLoad(Load, AlterSequencesMixin):
                     tg.prepare(self.tmp_dir, entry, stack, output_files)
 
             for tg in self.table_generators:
-                tg.post_prepare(self.tmp_dir, stack, output_files)
+                tg.post_prepare(
+                    tmp_dir=self.tmp_dir, stack=stack, output_files=output_files
+                )
 
     def _prepare(self, entries):
         """Dump entries in csv files for COPY command."""
@@ -100,7 +102,7 @@ class PostgreSQLCopyLoad(Load, AlterSequencesMixin):
 
         with psycopg2.connect(self.db_uri) as conn:
             for existing_data, table in table_entries:
-                name = table._table_name
+                name = table.__tablename__
                 cols = ", ".join([f.name for f in fields(table)])
                 # local overwrite for existing data
                 # e.g. when a table does not need transformation and is already in csv
