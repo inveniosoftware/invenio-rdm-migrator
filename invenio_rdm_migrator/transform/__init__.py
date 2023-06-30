@@ -10,6 +10,7 @@
 from .base import Entry, Transform, drop_nones
 from .encrypt import EncryptMixin
 from .identity import IdentityDictKeyMixin, IdentityTransform
+from .transactions import TransactionGroup
 
 __all__ = (
     "drop_nones",
@@ -17,5 +18,6 @@ __all__ = (
     "Entry",
     "IdentityDictKeyMixin",
     "IdentityTransform",
+    "TransactionGroup",
     "Transform",
 )

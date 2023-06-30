@@ -8,7 +8,7 @@
 """Invenio RDM migration requests table load module."""
 
 from ...load.ids import generate_uuid
-from ...load.postgresql import TableGenerator
+from ...load.postgresql.bulk.generators import TableGenerator
 from .models import RequestMetadata
 
 

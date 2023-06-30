@@ -11,10 +11,10 @@ from datetime import datetime
 from uuid import UUID
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
-from ....load.models import PersistentIdentifier
-from ....load.postgresql import TableGenerator
+from ....load.postgresql.bulk.generators import TableGenerator
 from ....logging import Logger
 from ...communities.models import RDMParentCommunityMetadata
+from ...pids.models import PersistentIdentifier
 from ..models import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
 from .parents import generate_parent_rows
 from .references import CommunitiesReferencesMixin

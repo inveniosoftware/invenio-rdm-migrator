@@ -27,7 +27,7 @@ class User:
     profile: dict
     preferences: dict
 
-    _table_name: InitVar[str] = "accounts_user"
+    __tablename__: InitVar[str] = "accounts_user"
 
 
 @dataclass
@@ -41,7 +41,7 @@ class LoginInformation:
     current_login_ip: str
     login_count: int
 
-    _table_name: InitVar[str] = "accounts_user_login_information"
+    __tablename__: InitVar[str] = "accounts_user_login_information"
 
 
 @dataclass
@@ -59,7 +59,7 @@ class SessionActivity:
     os: str
     device: str
 
-    _table_name: InitVar[str] = "accounts_user_session_activity"
+    __tablename__: InitVar[str] = "accounts_user_session_activity"
 
 
 @dataclass
@@ -77,7 +77,7 @@ class Tokens:
     is_personal: bool
     is_internal: bool
 
-    _table_name: InitVar[str] = "oauth2server_token"
+    __tablename__: InitVar[str] = "oauth2server_token"
 
 
 @dataclass
@@ -90,4 +90,4 @@ class UserIdentity:
     method: str
     id_user: int
 
-    _table_name: InitVar[str] = "accounts_useridentity"
+    __tablename__: InitVar[str] = "accounts_useridentity"

@@ -8,6 +8,7 @@
 """State tests."""
 
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -80,10 +81,13 @@ def test_state_with_no_initial_db(tmp_dir):
     assert len(list(state.all("parents"))) == 0
     assert len(list(state.all("records"))) == 0
     assert len(list(state.all("communities"))) == 0
+    assert len(list(state.all("pids"))) == 0
     assert len(list(state.all("global"))) == 0
 
     # check that no extra tables were created
-    assert set(state.tables) == set({"parents", "records", "communities", "global"})
+    assert set(state.tables) == set(
+        {"parents", "records", "communities", "global", "pids"}
+    )
 
 
 def test_state_load_from_disk(tmp_dir, disk_db):
@@ -339,3 +343,92 @@ def test_record_state_invalid_entries(records_state):
 
     for entry in invalid:
         pytest.raises(IntegrityError, records_state.add, "123", entry)
+
+
+###
+# PIDs State
+###
+
+
+def test_pids_state_valid(pids_state):
+    created = datetime.fromtimestamp(1688045928)
+    pids_state.add(
+        "123",
+        {
+            "id": 1000000,
+            "pid_type": "recid",
+            "status": "K",
+            "created": created,
+        },
+    )
+    pids_state.add(
+        "124",
+        {
+            "id": 1000001,
+            "pid_type": "recid",
+            "status": "K",
+            "obj_type": "rec",
+            "created": created,
+        },
+    )
+
+    assert pids_state.get("123")
+    assert pids_state.get("124")
+
+
+def test_pids_state_duplicated_id(pids_state):
+    created = datetime.fromtimestamp(1688045928)
+    pids_state.add(
+        "123",
+        {
+            "id": 1000000,  # has a unique constraint
+            "pid_type": "recid",
+            "status": "K",
+            "created": created,
+        },
+    )
+
+    pytest.raises(
+        IntegrityError,
+        pids_state.add,
+        "124",  # diff pk to make sure it fails on id
+        {
+            "id": 1000000,  # has a unique constraint
+            "pid_type": "recid",
+            "status": "K",
+            "created": created,
+        },
+    )
+
+
+def test_pids_state_invalid_entries(pids_state):
+    created = datetime.fromtimestamp(1688045928)
+    invalid = [
+        {  # missing id
+            "pid_type": "recid",
+            "status": "K",
+            "obj_type": "rec",
+            "created": created,
+        },
+        {  # missing pid_type
+            "id": 1000000,
+            "status": "K",
+            "obj_type": "rec",
+            "created": created,
+        },
+        {  # missing status
+            "id": 1000000,
+            "pid_type": "recid",
+            "obj_type": "rec",
+            "created": created,
+        },
+        {  # missing created
+            "id": 1000000,
+            "status": "K",
+            "pid_type": "recid",
+            "obj_type": "rec",
+        },
+    ]
+
+    for idx, entry in enumerate(invalid):
+        pytest.raises(IntegrityError, pids_state.add, idx, entry)

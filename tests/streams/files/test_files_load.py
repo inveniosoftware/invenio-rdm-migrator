@@ -34,9 +34,9 @@ def test_files_load_prepare(files_copy_load, transformed_files_entry):
 
     # assert tables
     assert len(tables) == 3
-    assert tables[0]._table_name == "files_files"
-    assert tables[1]._table_name == "files_bucket"
-    assert tables[2]._table_name == "files_object"
+    assert tables[0].__tablename__ == "files_files"
+    assert tables[1].__tablename__ == "files_bucket"
+    assert tables[2].__tablename__ == "files_object"
 
     # assert files were created and have the content
     files = list(os.scandir(files_copy_load.tmp_dir))

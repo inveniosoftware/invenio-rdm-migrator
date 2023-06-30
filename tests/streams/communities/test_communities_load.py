@@ -36,7 +36,7 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
 
     # assert tables
     # it has four tables: communities, parent communities, communities_files and members
-    expected_table_names = [
+    expected__tablename__s = [
         "community_metadata",
         "communities_members",
         "rdm_parents_community",
@@ -44,9 +44,9 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
         "files_object",
         "files_bucket",
     ]
-    table_names = [table._table_name for _, table in tables]
-    assert len(tables) == len(expected_table_names)
-    assert any([e_table in table_names for e_table in expected_table_names])
+    table_names = [table.__tablename__ for _, table in tables]
+    assert len(tables) == len(expected__tablename__s)
+    assert any([e_table in table_names for e_table in expected__tablename__s])
 
     # assert files were created and have the content
     # five files are created: one for the communities, members, files, files bucket, files object

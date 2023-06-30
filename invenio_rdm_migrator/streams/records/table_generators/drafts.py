@@ -5,17 +5,17 @@
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Invenio RDM migration record table load module."""
+"""Invenio RDM migration draft table load module."""
 
 from datetime import datetime
 from functools import partial
 
 import psycopg2
 
-from ....load.ids import generate_recid, generate_uuid, pid_pk
-from ....load.models import PersistentIdentifier
-from ....load.postgresql import TableGenerator
+from ....load.ids import generate_recid, generate_uuid
+from ....load.postgresql.bulk.generators import TableGenerator
 from ...files.models import FilesObjectVersion
+from ...pids.models import PersistentIdentifier
 from ..models import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
 from .parents import generate_parent_rows
 from .references import CommunitiesReferencesMixin, PIDsReferencesMixin
@@ -132,7 +132,7 @@ class RDMDraftTableGenerator(
         communities = parent["json"].get("communities")
         if communities:
             self.resolve_communities(communities)
-        self.resolve_pids(data.get("draft"))
+        self.resolve_draft_pids(data.get("draft"))
 
     def insert_draft_files(self, db_uri=None):
         """Inserts draft files from buckets and object version."""
@@ -142,14 +142,14 @@ class RDMDraftTableGenerator(
             # the query needs to be split in 3 parts because the empty jsonb dict
             # would cause problems with the string formatting
             insert = f"""
-                INSERT INTO {RDMDraftFile._table_name} (
+                INSERT INTO {RDMDraftFile.__tablename__} (
                     id, json, created, updated, version_id, key, record_id, object_version_id
                 )
             """
             select = "SELECT gen_random_uuid(), '{}'::jsonb, rdm.created, rdm.updated, 1, fo.key, rdm.id, fo.version_id"
             from_and_join = f"""
-                FROM {RDMDraftMetadata._table_name} AS rdm
-                INNER JOIN {FilesObjectVersion._table_name} AS fo
+                FROM {RDMDraftMetadata.__tablename__} AS rdm
+                INNER JOIN {FilesObjectVersion.__tablename__} AS fo
                 ON rdm.bucket_id=fo.bucket_id AND fo.is_head='true'
             """
             # no return check, will raise if the sql statement fails

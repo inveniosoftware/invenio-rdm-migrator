@@ -8,7 +8,7 @@
 """Invenio RDM migration user table load module."""
 
 
-from ...load.postgresql import TableGenerator
+from ...load.postgresql.bulk.generators import TableGenerator
 from .models import LoginInformation, User, UserIdentity
 
 

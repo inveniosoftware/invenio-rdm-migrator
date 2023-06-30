@@ -8,7 +8,7 @@
 """PostgreSQL sequence handling."""
 
 
-import psycopg
+import psycopg2
 
 
 class AlterSequencesMixin:
@@ -21,7 +21,7 @@ class AlterSequencesMixin:
             tables = tables.union(set(tg.tables))
             tg.post_load(db_uri=self.db_uri)
 
-        with psycopg.connect(self.db_uri) as conn:
+        with psycopg2.connect(self.db_uri) as conn:
             sequences = conn.execute(
                 """
                 SELECT

@@ -7,10 +7,9 @@
 
 """Invenio RDM migration user table load module."""
 
-from invenio_rdm_migrator.streams.files.models import FilesBucket, FilesObjectVersion
-
 from ...load.ids import generate_uuid, pid_pk
-from ...load.postgresql import TableGenerator
+from ...load.postgresql.bulk.generators import TableGenerator
+from ..files.models import FilesBucket, FilesObjectVersion
 from .models import Community, CommunityFile, CommunityMember, FeaturedCommunity
 
 

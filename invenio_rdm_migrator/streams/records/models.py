@@ -8,6 +8,12 @@
 """Dataclasses record models to generate table rows."""
 
 from dataclasses import InitVar, dataclass
+from uuid import UUID
+
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+
+from ...load.postgresql.models import Model
 
 
 @dataclass
@@ -23,51 +29,47 @@ class RDMRecordMetadata:
     bucket_id: str
     parent_id: str
 
-    _table_name: InitVar[str] = "rdm_records_metadata"
+    __tablename__: InitVar[str] = "rdm_records_metadata"
 
 
-@dataclass
-class RDMParentMetadata:
+class RDMParentMetadata(Model):
     """RDM Parent Metadata dataclass model."""
 
-    id: str
-    json: dict
-    created: str
-    updated: str
-    version_id: int
+    __tablename__: InitVar[str] = "rdm_parents_metadata"
 
-    _table_name: InitVar[str] = "rdm_parents_metadata"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    json: Mapped[dict] = mapped_column(JSONB())
+    created: Mapped[str]
+    updated: Mapped[str]
+    version_id: Mapped[int]
 
 
-@dataclass
-class RDMVersionState:
+class RDMVersionState(Model):
     """RDM Version State dataclass model."""
 
-    latest_index: int
-    parent_id: str
-    latest_id: str
-    next_draft_id: str
+    __tablename__: InitVar[str] = "rdm_versions_state"
 
-    _table_name: InitVar[str] = "rdm_versions_state"
+    latest_index: Mapped[int]
+    parent_id: Mapped[UUID] = mapped_column(primary_key=True)
+    latest_id: Mapped[UUID]
+    next_draft_id: Mapped[UUID]
 
 
-@dataclass
-class RDMDraftMetadata:
+class RDMDraftMetadata(Model):
     """RDM Draft Metadata dataclass model."""
 
-    id: str
-    json: dict
-    created: str
-    updated: str
-    version_id: int
-    index: int
-    bucket_id: str
-    parent_id: str
+    __tablename__: InitVar[str] = "rdm_drafts_metadata"
 
-    expires_at: str
-    fork_version_id: int
-
-    _table_name: InitVar[str] = "rdm_drafts_metadata"
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    json: Mapped[dict] = mapped_column(JSONB())
+    created: Mapped[str]
+    updated: Mapped[str]
+    version_id: Mapped[int]
+    index: Mapped[int]
+    bucket_id: Mapped[UUID]
+    parent_id: Mapped[UUID]
+    expires_at: Mapped[str]
+    fork_version_id: Mapped[int]
 
 
 @dataclass
@@ -83,11 +85,11 @@ class RDMRecordFile:
     record_id: str
     object_version_id: str
 
-    _table_name: InitVar[str] = "rdm_records_files"
+    __tablename__: InitVar[str] = "rdm_records_files"
 
 
 @dataclass
 class RDMDraftFile(RDMRecordFile):
     """RDM Draft File dataclass model."""
 
-    _table_name: InitVar[str] = "rdm_drafts_files"
+    __tablename__: InitVar[str] = "rdm_drafts_files"

@@ -38,7 +38,7 @@ def test_request_load_prepare(request_copy_load, transformed_incl_req_entry):
 
     # assert tables
     assert len(tables) == 1
-    assert tables[0]._table_name == "request_metadata"
+    assert tables[0].__tablename__ == "request_metadata"
 
     # assert files were created and have the content
     files = list(os.scandir(request_copy_load.tmp_dir))

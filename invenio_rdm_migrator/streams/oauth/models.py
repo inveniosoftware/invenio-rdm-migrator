@@ -21,7 +21,7 @@ class RemoteAccount:
     created: str
     updated: str
 
-    _table_name: InitVar[str] = "oauthclient_remoteaccount"
+    __tablename__: InitVar[str] = "oauthclient_remoteaccount"
 
 
 @dataclass
@@ -35,7 +35,7 @@ class RemoteToken:
     created: str
     updated: str
 
-    _table_name: InitVar[str] = "oauthclient_remotetoken"
+    __tablename__: InitVar[str] = "oauthclient_remotetoken"
 
 
 @dataclass
@@ -48,7 +48,7 @@ class UserIdentity:
     created: str
     updated: str
 
-    _table_name: InitVar[str] = "oauthclient_useridentity"
+    __tablename__: InitVar[str] = "oauthclient_useridentity"
 
 
 @dataclass
@@ -66,7 +66,7 @@ class ServerClient:
     _redirect_uris: str
     _default_scopes: str
 
-    _table_name: InitVar[str] = "oauth2server_client"
+    __tablename__: InitVar[str] = "oauth2server_client"
 
 
 @dataclass
@@ -84,4 +84,4 @@ class ServerToken:
     is_personal: bool
     is_internal: bool
 
-    _table_name: InitVar[str] = "oauth2server_token"
+    __tablename__: InitVar[str] = "oauth2server_token"

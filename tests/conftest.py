@@ -75,6 +75,13 @@ def communities_state(state):
 
 
 @pytest.fixture(scope="function")
+def pids_state(state):
+    """Persistent identifiers state."""
+    state = StateEntity(state, "pids", "pid_value")
+    return state
+
+
+@pytest.fixture(scope="function")
 def global_state(state):
     """Records state.
 
