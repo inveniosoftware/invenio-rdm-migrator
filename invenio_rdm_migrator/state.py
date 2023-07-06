@@ -105,10 +105,12 @@ class State:
     def get(self, table_name, key_attr, key_value):
         """Query a table by key."""
         table = self.tables[table_name]
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(
+                sa.select(table).where(getattr(table.columns, key_attr) == key_value)
+            ).one_or_none()
 
-        return self.mem_eng.execute(
-            sa.select(table).where(getattr(table.columns, key_attr) == key_value)
-        ).one_or_none()
+        return result
 
     def all(self, table_name):
         """Get all the data from the state.
@@ -117,26 +119,34 @@ class State:
         """
         table = self.tables[table_name]
 
-        return self.mem_eng.execute(sa.select(table))
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(sa.select(table))
+        return result
 
     def add(self, table_name, data):
         """Add key,data pair to the state."""
         table = self.tables[table_name]
         self._validate(table, data)
-        res = self.mem_eng.execute(sa.insert(table).values(**data))
-        assert res.rowcount == 1
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(sa.insert(table).values(**data))
+            conn.commit()
+
+        assert result.rowcount == 1
 
     def update(self, table_name, key_attr, key_value, data):
         """Update an entry."""
         table = self.tables[table_name]
 
         self._validate(table, data)
-        res = self.mem_eng.execute(
-            sa.update(table)
-            .where(getattr(table.columns, key_attr) == key_value)
-            .values(**data)
-        )
-        assert res.rowcount == 1  # the update succeeded
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(
+                sa.update(table)
+                .where(getattr(table.columns, key_attr) == key_value)
+                .values(**data)
+            )
+            conn.commit()
+
+        assert result.rowcount == 1  # the update succeeded
 
     def _copy_db(cls, src, dest):
         """Copy source database into destination."""
@@ -232,7 +242,7 @@ class StateEntity:
         if not row:
             return row_dict
 
-        for key, value in row.items():
+        for key, value in row._mapping.items():
             # a better generalization might be wanted, for now we only have
             # string, int, JSON and UUID as column types. the only one cause troubles
             # is uuid, which needs to be stringified.

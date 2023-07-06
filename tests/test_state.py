@@ -29,37 +29,41 @@ def disk_db(tmp_dir):
     disk_meta = MetaData()
     State._initialize_db(disk_meta)
     disk_meta.create_all(disk_eng)
+    with disk_eng.connect() as conn:
+        conn.execute(
+            insert(disk_meta.tables["parents"]).values(
+                {
+                    "recid": "123456",
+                    "id": "1234abcd-1234-5678-abcd-123abc456def",
+                    "latest_id": "12345678-abcd-1a2b-3c4d-123abc456def",
+                    "latest_index": 1,
+                },
+            )
+        )
+        conn.execute(
+            insert(disk_meta.tables["records"]).values(
+                {
+                    "recid": "123456",
+                    "index": 1,
+                    "id": "1234abcd-1234-5678-abcd-123abc456def",  # uuid
+                    "parent_id": "1234abcd-1234-5678-abcd-123abc456def",  # parent uuid
+                    "fork_version_id": 3,
+                    "pids": {"doi": "10.1234/123456"},
+                },
+            )
+        )
+        conn.execute(
+            insert(disk_meta.tables["communities"]).values(
+                {"slug": "test-comm", "id": "1234abcd-1234-5678-abcd-123abc456def"}
+            )
+        )
+        conn.execute(
+            insert(disk_meta.tables["global"]).values(
+                {"key": "max_value_pk", "value": 1}
+            )
+        )
 
-    disk_eng.execute(
-        insert(disk_meta.tables["parents"]).values(
-            {
-                "recid": "123456",
-                "id": "1234abcd-1234-5678-abcd-123abc456def",
-                "latest_id": "12345678-abcd-1a2b-3c4d-123abc456def",
-                "latest_index": 1,
-            },
-        )
-    )
-    disk_eng.execute(
-        insert(disk_meta.tables["records"]).values(
-            {
-                "recid": "123456",
-                "index": 1,
-                "id": "1234abcd-1234-5678-abcd-123abc456def",  # uuid
-                "parent_id": "1234abcd-1234-5678-abcd-123abc456def",  # parent uuid
-                "fork_version_id": 3,
-                "pids": {"doi": "10.1234/123456"},
-            },
-        )
-    )
-    disk_eng.execute(
-        insert(disk_meta.tables["communities"]).values(
-            {"slug": "test-comm", "id": "1234abcd-1234-5678-abcd-123abc456def"}
-        )
-    )
-    disk_eng.execute(
-        insert(disk_meta.tables["global"]).values({"key": "max_value_pk", "value": 1})
-    )
+        conn.commit()
 
     yield disk_eng, disk_meta
 
@@ -107,16 +111,19 @@ def test_state_load_from_disk(tmp_dir, disk_db):
     # check the db on disk has not been updated (prevent pollution)
     disk_eng, disk_meta = disk_db
     parents_table = disk_meta.tables["parents"]
-    assert (
-        len(
-            list(
-                disk_eng.execute(
-                    select(parents_table).where(parents_table.columns.recid == "123455")
-                ).all()
+    with disk_eng.connect() as conn:
+        assert (
+            len(
+                list(
+                    conn.execute(
+                        select(parents_table).where(
+                            parents_table.columns.recid == "123455"
+                        )
+                    ).all()
+                )
             )
+            == 0
         )
-        == 0
-    )
 
 
 def test_state_save_to_disk(tmp_dir):
@@ -149,16 +156,19 @@ def test_state_save_to_disk(tmp_dir):
     disk_meta.create_all(disk_eng)
 
     parents_table = disk_meta.tables["parents"]
-    assert (
-        len(
-            list(
-                disk_eng.execute(
-                    select(parents_table).where(parents_table.columns.recid == "123455")
-                ).all()
+    with disk_eng.connect() as conn:
+        assert (
+            len(
+                list(
+                    conn.execute(
+                        select(parents_table).where(
+                            parents_table.columns.recid == "123455"
+                        )
+                    ).all()
+                )
             )
+            == 1
         )
-        == 1
-    )
 
 
 def test_state_save_to_disk_alt_filename(tmp_dir):

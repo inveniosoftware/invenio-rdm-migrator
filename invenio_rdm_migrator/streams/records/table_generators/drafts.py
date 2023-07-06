@@ -10,7 +10,7 @@
 from datetime import datetime
 from functools import partial
 
-import psycopg
+import psycopg2
 
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.models import PersistentIdentifier
@@ -138,7 +138,7 @@ class RDMDraftTableGenerator(
         """Inserts draft files from buckets and object version."""
         assert db_uri  # should have come from kwargs
 
-        with psycopg.connect(db_uri) as conn:
+        with psycopg2.connect(db_uri) as conn:
             # the query needs to be split in 3 parts because the empty jsonb dict
             # would cause problems with the string formatting
             insert = f"""
