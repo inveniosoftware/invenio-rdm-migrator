@@ -10,7 +10,7 @@
 from functools import partial
 
 from ...load.postgresql.transactions.generators import SingleRowGenerator
-from ..files.models import FilesBucket  # FIXME: should move all models to the root?
+from ..models.files import FilesBucket  # FIXME: should move all models to the root?
 
 FilesBucketRowGenerator = partial(SingleRowGenerator, table=FilesBucket)
 """Memory only, no csv."""

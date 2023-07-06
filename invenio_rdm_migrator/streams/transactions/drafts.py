@@ -13,8 +13,8 @@ from datetime import datetime
 from ...load.ids import generate_recid, generate_uuid
 from ...load.postgresql.transactions.generators import RowGenerator
 from ...load.postgresql.transactions.operations import Operation, OperationType
-from ..pids.models import PersistentIdentifier
-from ..records.models import RDMDraftMetadata, RDMVersionState
+from ..models.pids import PersistentIdentifier
+from ..models.records import RDMDraftMetadata, RDMVersionState
 from ..records.table_generators.parents import generate_parent_rows  # FIXME: move
 from ..records.table_generators.references import (
     CommunitiesReferencesMixin,

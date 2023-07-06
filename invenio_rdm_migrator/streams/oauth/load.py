@@ -12,7 +12,7 @@ from ...load.postgresql.bulk.generators import (
     ExistingDataTableGenerator,
     SingleTableGenerator,
 )
-from .models import RemoteAccount, RemoteToken, ServerClient, ServerToken, UserIdentity
+from ..models.oauth import RemoteAccount, RemoteToken, ServerClient, ServerToken
 
 
 class OAuthClientCopyLoad(PostgreSQLCopyLoad):
@@ -26,7 +26,7 @@ class OAuthClientCopyLoad(PostgreSQLCopyLoad):
         super().__init__(
             table_generators=[
                 # it passes on prepare so entries wont have an effect on it
-                ExistingDataTableGenerator(tables=[RemoteAccount, UserIdentity]),
+                ExistingDataTableGenerator(tables=[RemoteAccount]),
                 # this tg will treat the entries passing through the stream
                 SingleTableGenerator(table=RemoteToken),
             ],

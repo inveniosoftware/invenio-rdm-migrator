@@ -11,16 +11,16 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from invenio_rdm_migrator.load.ids import pid_pk
-from invenio_rdm_migrator.streams.communities.models import RDMParentCommunityMetadata
-from invenio_rdm_migrator.streams.pids.models import PersistentIdentifier
-from invenio_rdm_migrator.streams.records.load import (
-    RDMDraftTableGenerator,
-    RDMRecordTableGenerator,
-)
-from invenio_rdm_migrator.streams.records.models import (
+from invenio_rdm_migrator.streams.models.communities import RDMParentCommunityMetadata
+from invenio_rdm_migrator.streams.models.pids import PersistentIdentifier
+from invenio_rdm_migrator.streams.models.records import (
     RDMDraftMetadata,
     RDMParentMetadata,
     RDMRecordMetadata,
+)
+from invenio_rdm_migrator.streams.records.load import (
+    RDMDraftTableGenerator,
+    RDMRecordTableGenerator,
 )
 
 # IMPORTANT NOTE: since the resolve references method would be called externally

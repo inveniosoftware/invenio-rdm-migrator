@@ -9,8 +9,8 @@
 
 from datetime import datetime
 
-from ...pids.models import PersistentIdentifier
-from ..models import RDMParentMetadata
+from ...models.pids import PersistentIdentifier
+from ...models.records import RDMParentMetadata
 
 
 def generate_parent_rows(parent):

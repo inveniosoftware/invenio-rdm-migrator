@@ -14,9 +14,9 @@ import psycopg2
 
 from ....load.ids import generate_recid, generate_uuid
 from ....load.postgresql.bulk.generators import TableGenerator
-from ...files.models import FilesObjectVersion
-from ...pids.models import PersistentIdentifier
-from ..models import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
+from ...models.files import FilesObjectVersion
+from ...models.pids import PersistentIdentifier
+from ...models.records import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
 from .parents import generate_parent_rows
 from .references import CommunitiesReferencesMixin, PIDsReferencesMixin
 

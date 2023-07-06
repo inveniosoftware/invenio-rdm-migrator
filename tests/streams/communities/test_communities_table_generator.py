@@ -9,12 +9,12 @@
 
 
 from invenio_rdm_migrator.streams.communities.load import CommunityTableGenerator
-from invenio_rdm_migrator.streams.communities.models import (
+from invenio_rdm_migrator.streams.models.communities import (
     Community,
     CommunityFile,
     CommunityMember,
 )
-from invenio_rdm_migrator.streams.files.models import FilesBucket, FilesObjectVersion
+from invenio_rdm_migrator.streams.models.files import FilesBucket, FilesObjectVersion
 
 
 def test_generate_rows(communities_state, transformed_community_entry_pks):
