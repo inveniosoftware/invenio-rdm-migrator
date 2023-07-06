@@ -49,4 +49,4 @@ def test_identity_transform():
     input = {"implemented": "test", "unimplemented": "test too"}
     expected = {"implemented": "test", "unimplemented": "test too"}
 
-    assert next(IdentityTransform()._transform(input)) == expected
+    assert IdentityTransform()._transform(input) == expected
