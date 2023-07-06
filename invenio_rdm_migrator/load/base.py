@@ -15,11 +15,6 @@ class Load(ABC):
     """Base class for data loading."""
 
     @abstractmethod
-    def _validate(self):
-        """Validate data before loading."""
-        pass
-
-    @abstractmethod
     def _prepare(self):
         """Prepare data for loading."""
         pass
@@ -33,6 +28,13 @@ class Load(ABC):
     def _cleanup(self):
         """Cleanup data after loading."""
         pass
+
+    def _validate(self):
+        """Validate data before loading."""
+        # It should default to False or be abstract to force implementation.
+        # However, being pragmatic and due to time/resources constraints this validation
+        # is done live in the application after migration (e.g. system field relations)
+        return True
 
     def run(self, entries, cleanup=False):
         """Load entries."""

@@ -23,7 +23,3 @@ class CommunityCopyLoad(PostgreSQLCopyLoad):
             ],
             **kwargs,
         )
-
-    def _validate(self):
-        """Validate data before loading."""
-        return True

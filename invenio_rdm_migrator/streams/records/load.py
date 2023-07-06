@@ -40,7 +40,3 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):
             table_generators.append(RDMVersionStateTableGenerator(self.parents_state))
 
         super().__init__(table_generators=table_generators, **kwargs)
-
-    def _validate(self):
-        """Validate data before loading."""
-        pass
