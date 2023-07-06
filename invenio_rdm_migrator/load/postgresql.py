@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-import psycopg
+import psycopg2
 
 from ..logging import Logger
 from ..utils import JSONEncoder, ts
@@ -148,7 +148,7 @@ class PostgreSQLCopyLoad(Load):
         """
         logger = Logger.get_logger()
 
-        with psycopg.connect(self.db_uri) as conn:
+        with psycopg2.connect(self.db_uri) as conn:
             for existing_data, table in table_entries:
                 name = table._table_name
                 cols = ", ".join([f.name for f in fields(table)])
@@ -197,7 +197,7 @@ class PostgreSQLCopyLoad(Load):
             tables = tables.union(set(tg.tables))
             tg.post_load(db_uri=self.db_uri)
 
-        with psycopg.connect(self.db_uri) as conn:
+        with psycopg2.connect(self.db_uri) as conn:
             sequences = conn.execute(
                 """
                 SELECT
