@@ -8,7 +8,7 @@
 """Invenio RDM migration files table load module."""
 
 from ...load.postgresql.bulk.generators import TableGenerator
-from .models import FilesBucket, FilesInstance, FilesObjectVersion
+from ..models.files import FilesBucket, FilesInstance, FilesObjectVersion
 
 
 class FilesTableGenerator(TableGenerator):

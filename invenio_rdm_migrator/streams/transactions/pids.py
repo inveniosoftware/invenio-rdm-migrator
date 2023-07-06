@@ -10,7 +10,7 @@
 from ...load.ids import generate_pk
 from ...load.postgresql.transactions.generators import SingleRowGenerator
 from ...load.postgresql.transactions.operations import Operation
-from ..pids.models import PersistentIdentifier
+from ..models.pids import PersistentIdentifier
 
 
 class PIDRowGenerator(SingleRowGenerator):

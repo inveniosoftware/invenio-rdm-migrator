@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2023 CERN.
 #
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Dataclasses user models to generate table rows."""
+"""Files models."""
 
-from dataclasses import InitVar, dataclass
+from dataclasses import InitVar
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,8 +21,8 @@ class FilesBucket(Model):
     __tablename__: InitVar[str] = "files_bucket"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[str]  # datetime
+    updated: Mapped[str]  # datetime
     default_location: Mapped[int]
     default_storage_class: Mapped[str]
     size: Mapped[int]
@@ -32,36 +32,34 @@ class FilesBucket(Model):
     deleted: Mapped[bool]
 
 
-@dataclass
-class FilesInstance:
+class FilesInstance(Model):
     """Files instance dataclass model."""
-
-    id: str
-    created: str
-    updated: str
-    uri: str
-    storage_class: str
-    size: int
-    checksum: str
-    readable: bool
-    writable: bool
-    last_check_at: str
-    last_check: bool
 
     __tablename__: InitVar[str] = "files_files"
 
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    created: Mapped[str]  # datetime
+    updated: Mapped[str]  # datetime
+    uri: Mapped[str]
+    storage_class: Mapped[str]
+    size: Mapped[int]
+    checksum: Mapped[str]
+    readable: Mapped[bool]
+    writable: Mapped[bool]
+    last_check_at: Mapped[str]  # datetime
+    last_check: Mapped[bool]
 
-@dataclass
-class FilesObjectVersion:
+
+class FilesObjectVersion(Model):
     """Files object version dataclass model."""
 
-    version_id: str
-    created: str
-    updated: str
-    key: str
-    bucket_id: str
-    file_id: str
-    _mimetype: str
-    is_head: bool
-
     __tablename__: InitVar[str] = "files_object"
+
+    version_id: Mapped[UUID] = mapped_column(primary_key=True)
+    created: Mapped[str]  # datetime
+    updated: Mapped[str]  # datetime
+    key: Mapped[str]
+    bucket_id: Mapped[UUID]
+    file_id: Mapped[UUID]
+    _mimetype: Mapped[str]
+    is_head: Mapped[bool]

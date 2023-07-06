@@ -11,8 +11,8 @@ from copy import deepcopy
 
 import dictdiffer
 
+from invenio_rdm_migrator.streams.models.requests import RequestMetadata
 from invenio_rdm_migrator.streams.requests.load import RequestTableGenerator
-from invenio_rdm_migrator.streams.requests.models import RequestMetadata
 
 
 def test_generate_rows(transformed_incl_req_entry_pks):

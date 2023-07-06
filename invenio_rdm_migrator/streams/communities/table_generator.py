@@ -9,8 +9,13 @@
 
 from ...load.ids import generate_uuid, pid_pk
 from ...load.postgresql.bulk.generators import TableGenerator
-from ..files.models import FilesBucket, FilesObjectVersion
-from .models import Community, CommunityFile, CommunityMember, FeaturedCommunity
+from ..models.communities import (
+    Community,
+    CommunityFile,
+    CommunityMember,
+    FeaturedCommunity,
+)
+from ..models.files import FilesBucket, FilesObjectVersion
 
 
 def _generate_members_uuids(data):

@@ -9,7 +9,7 @@
 
 
 from ...load.postgresql.bulk.generators import TableGenerator
-from .models import LoginInformation, User, UserIdentity
+from ..models.users import LoginInformation, User, UserIdentity
 
 
 class UserTableGenerator(TableGenerator):

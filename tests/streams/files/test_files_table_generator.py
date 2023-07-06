@@ -8,7 +8,7 @@
 """Requests table generator tests."""
 
 from invenio_rdm_migrator.streams.files.load import FilesTableGenerator
-from invenio_rdm_migrator.streams.files.models import (
+from invenio_rdm_migrator.streams.models.files import (
     FilesBucket,
     FilesInstance,
     FilesObjectVersion,

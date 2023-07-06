@@ -9,7 +9,7 @@
 
 from ...load.ids import generate_uuid
 from ...load.postgresql.bulk.generators import TableGenerator
-from .models import RequestMetadata
+from ..models.requests import RequestMetadata
 
 
 class RequestTableGenerator(TableGenerator):
