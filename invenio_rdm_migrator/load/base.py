@@ -29,7 +29,7 @@ class Load(ABC):
         """Cleanup data after loading."""
         pass
 
-    def _validate(self):
+    def _validate(self, *args, **kwargs):
         """Validate data before loading."""
         # It should default to False or be abstract to force implementation.
         # However, being pragmatic and due to time/resources constraints this validation
