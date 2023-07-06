@@ -23,7 +23,3 @@ class RequestCopyLoad(PostgreSQLCopyLoad):
             ],
             **kwargs,
         )
-
-    def _validate(self):
-        """Validate data before loading."""
-        pass

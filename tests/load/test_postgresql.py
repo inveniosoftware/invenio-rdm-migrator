@@ -81,10 +81,6 @@ class CopyLoad(PostgreSQLCopyLoad):
             **kwargs
         )
 
-    def _validate(self):
-        """Validate data before loading."""
-        pass
-
 
 @pytest.fixture(scope="function")
 def entries():
@@ -159,10 +155,6 @@ class CopyLoadToo(PostgreSQLCopyLoad):
             ],
             **kwargs
         )
-
-    def _validate(self):
-        """Validate data before loading."""
-        pass
 
 
 def mock_load(_, table_entries):

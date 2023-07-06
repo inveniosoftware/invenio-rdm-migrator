@@ -21,9 +21,7 @@ class OAuthClientCopyLoad(PostgreSQLCopyLoad):
     It does not load the two tables with tokens, since they need rehashing.
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(
             table_generators=[
@@ -34,10 +32,6 @@ class OAuthClientCopyLoad(PostgreSQLCopyLoad):
             ],
             **kwargs
         )
-
-    def _validate(self):
-        """Validate data before loading."""
-        pass
 
 
 class OAuthServerCopyLoad(PostgreSQLCopyLoad):
@@ -57,7 +51,3 @@ class OAuthServerCopyLoad(PostgreSQLCopyLoad):
             ],
             **kwargs
         )
-
-    def _validate(self):
-        """Validate data before loading."""
-        pass
