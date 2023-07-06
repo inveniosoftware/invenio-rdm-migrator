@@ -17,7 +17,7 @@ class IdentityTransform(Transform):
 
     def _transform(self, entry):
         """Transform entry."""
-        yield entry
+        return entry
 
 
 class IdentityDictKeyMixin:
