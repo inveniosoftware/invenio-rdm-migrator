@@ -36,7 +36,7 @@ class PostgreSQLExecute(Load):
         _operations = []
         for op in entry["operations"]:
             ops = self.tgg.prepare(
-                OperationType(op["op"].upper()), op["table"], op["data"]
+                op["table"], OperationType(op["op"].upper()), op["data"]
             )
             if ops:
                 _operations.extend(ops)
