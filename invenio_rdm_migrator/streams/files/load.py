@@ -9,11 +9,7 @@
 
 from ...load.postgresql.bulk import PostgreSQLCopyLoad
 from ...load.postgresql.bulk.generators import ExistingDataTableGenerator
-from ..models.files import (
-    FilesBucket,
-    FilesInstance,
-    FilesObjectVersion,
-)
+from ..models.files import FilesBucket, FilesInstance, FilesObjectVersion
 from .table_generator import FilesTableGenerator
 
 

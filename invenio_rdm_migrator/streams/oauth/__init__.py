@@ -7,7 +7,7 @@
 
 """Invenio RDM migration OAuth stream."""
 
-from .table_generators import OAuthClientCopyLoad, OAuthServerCopyLoad
+from .load import OAuthClientCopyLoad, OAuthServerCopyLoad
 from .transform import OAuthRemoteTokenTransform, OAuthServerTokenTransform
 
 __all__ = (
