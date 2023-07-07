@@ -25,7 +25,7 @@ def test_cannot_instantiate_base_class():
         Transform()
 
     class Test(Transform):
-        """Test Extract."""
+        """Test Transform."""
 
         pass
 
