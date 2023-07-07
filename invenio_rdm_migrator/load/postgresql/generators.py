@@ -73,7 +73,7 @@ class PostgreSQLGenerator(ABC):
                     dict_set(data, path, pk_func(data))
             except KeyError:
                 logger = Logger.get_logger()
-                logger.exception(f"Path {path} not found on record")
+                logger.exception(f"Path {path} not found on record", exc_info=1)
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
