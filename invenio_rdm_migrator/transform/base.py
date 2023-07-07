@@ -16,7 +16,7 @@ class Transform(ABC):
     """Base class for data transformation."""
 
     @abstractmethod
-    def _transform(self, entry):
+    def _transform(self, entry):  # pragma: no cover
         """Transform entry.
 
         :returns: a transformed entry, not an iterator.
@@ -38,7 +38,7 @@ class Entry(ABC):
     """Base entry class."""
 
     @abstractmethod
-    def transform(self, entry):
+    def transform(self, entry):  # pragma: no cover
         """Transform entry."""
         pass
 

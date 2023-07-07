@@ -15,6 +15,6 @@ class Extract(ABC):
     """Base class for data extraction."""
 
     @abstractmethod
-    def run(self):
+    def run(self):  # pragma: no cover
         """Yield one element at a time."""
         pass
