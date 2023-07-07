@@ -14,6 +14,9 @@ class NullExtract(Extract):
     """Extract class to not read input data."""
 
     def run(self):
-        """Yield one element at a time."""
+        """Return None only once.
+
+        Subsequent calls to run will raise StopIteration.
+        """
         # yield a None value
         yield
