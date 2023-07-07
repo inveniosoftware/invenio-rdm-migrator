@@ -15,17 +15,17 @@ class Load(ABC):
     """Base class for data loading."""
 
     @abstractmethod
-    def _prepare(self):
+    def _prepare(self):  # pragma: no cover
         """Prepare data for loading."""
         pass
 
     @abstractmethod
-    def _load(self):
+    def _load(self):  # pragma: no cover
         """load data."""
         pass
 
     @abstractmethod
-    def _cleanup(self):
+    def _cleanup(self):  # pragma: no cover
         """Cleanup data after loading."""
         pass
 
