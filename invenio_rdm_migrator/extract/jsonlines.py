@@ -7,9 +7,9 @@
 
 """JSONLines extract."""
 
+from pathlib import Path
 
 import jsonlines
-from pathlib import Path
 
 from invenio_rdm_migrator.extract import Extract
 
