@@ -7,7 +7,7 @@
 
 """Base state module."""
 
-from abc import ABC, abstractclassmethod
+from abc import ABC
 from pathlib import Path
 from uuid import UUID
 
@@ -288,7 +288,9 @@ class StateEntity:
 class StateValidator(ABC):
     """Validator interface."""
 
-    @abstractclassmethod
+    @classmethod
     def validate(cls, data):
         """Data validation."""
-        pass
+        # abc fails on instantiation, e.g. Test(), since this is a classmethod
+        # it will always call the parent, therefore the default is False.
+        return False
