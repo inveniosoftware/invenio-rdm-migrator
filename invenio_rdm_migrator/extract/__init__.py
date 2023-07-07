@@ -9,8 +9,10 @@
 
 from .base import Extract
 from .identity import NullExtract
+from .jsonlines import JSONLExtract
 
 __all__ = (
     "Extract",
+    "JSONLExtract",
     "NullExtract",
 )
