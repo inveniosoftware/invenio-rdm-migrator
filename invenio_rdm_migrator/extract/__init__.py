@@ -8,7 +8,7 @@
 """Invenio RDM migration extract module."""
 
 from .base import Extract
-from .identity import NullExtract
+from .null import NullExtract
 from .jsonlines import JSONLExtract
 
 __all__ = (
