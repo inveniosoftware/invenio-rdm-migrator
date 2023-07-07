@@ -15,7 +15,7 @@ import pytest
 from sqlalchemy import MetaData, create_engine, insert, select
 from sqlalchemy.exc import IntegrityError
 
-from invenio_rdm_migrator.state import State
+from invenio_rdm_migrator.state import State, StateValidator
 
 ###
 # Global
@@ -432,3 +432,13 @@ def test_pids_state_invalid_entries(pids_state):
 
     for idx, entry in enumerate(invalid):
         pytest.raises(IntegrityError, pids_state.add, idx, entry)
+
+
+###
+# StateValidator
+###
+
+
+def test_default_validator():
+    # test that the interface holds
+    assert StateValidator.validate({}) == False
