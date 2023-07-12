@@ -10,7 +10,7 @@
 from .base import Transform
 
 
-class TransactionGroup(Transform):
+class Tx(Transform):
     """Transform a transaction group and its items."""
 
     def __init__(self, table_transform_map):
@@ -39,7 +39,7 @@ class TransactionGroup(Transform):
             "tx_id": entry["tx_id"],
             # this information refers to the semantic meaning of the group
             # for example: record metadata update, file upload, draft creation, etc.
-            "tx_group_id": entry["tx_group_id"],
+            "action": entry["action"],
         }
 
         _transformed_operations = []

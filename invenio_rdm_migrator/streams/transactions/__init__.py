@@ -7,12 +7,12 @@
 
 """Invenio RDM migration transaction stream."""
 
-from .drafts import RDMDraftTransactionGenerator
+from .drafts import RDMDraftTxGenerator
 from .files import FilesBucketRowGenerator
 from .pids import PIDRowGenerator
 
 __all__ = (
-    "RDMDraftTransactionGenerator",
+    "RDMDraftTxGenerator",
     "FilesBucketRowGenerator",
     "PIDRowGenerator",
 )

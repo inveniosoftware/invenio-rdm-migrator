@@ -267,20 +267,20 @@ class, which will carry out 2 similar steps to the one above:
    operations will cause the full transaction to fail as a group.
 
 Internally, the load will use an instance of
-`load.postgresql.transactions.generators.group:TransactionGroupGenerator` to prepare the
+`load.postgresql.transactions.generators.group:TxGenerator` to prepare the
 operations. This class contains a mapping between table names and
 `load.postgresql.transactions.generators.row:RowGenerators`, which will return a list of
 operations with the data as database model in the `obj` attribute.
 
-Note that the `TransactionGroupGenerator` is tightly coupled to the
-`transform.transactions.TransactionGroup` since it expects the dictionaries to have a
+Note that the `TxGenerator` is tightly coupled to the
+`transform.transactions.Tx` since it expects the dictionaries to have a
 specific structure:
 
 .. code-block::
 
     {
         "tx_id": the actual transaction id, useful for debug and error handling
-        "tx_group_id": this information refers to the semantic meaning of the group
+        "action": this information refers to the semantic meaning of the group
                        for example: record metadata update or file upload
         "operations": [
             {

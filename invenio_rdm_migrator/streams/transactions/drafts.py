@@ -22,7 +22,7 @@ from ..records.table_generators.references import (
 )
 
 
-class RDMDraftTransactionGenerator(
+class RDMDraftTxGenerator(
     RowGenerator, CommunitiesReferencesMixin, PIDsReferencesMixin
 ):
     """RDM Record and related tables load."""
