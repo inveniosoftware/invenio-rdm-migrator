@@ -7,6 +7,6 @@
 
 """Invenio RDM migration PostgreSQL bulk load module."""
 
-from .execute import PostgreSQLExecute
+from .execute import PostgreSQLTx
 
-__all__ = ("PostgreSQLExecute",)
+__all__ = ("PostgreSQLTx",)

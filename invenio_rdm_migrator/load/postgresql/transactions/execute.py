@@ -15,7 +15,7 @@ from ...base import Load
 from .operations import OperationType
 
 
-class PostgreSQLExecute(Load):
+class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
     def __init__(self, db_uri, tx_generator, **kwargs):
@@ -80,5 +80,6 @@ class PostgreSQLExecute(Load):
                         exc_info=1,
                     )
                     session.rollback()
+                    raise
             # commit all transaction group or none
             session.commit()
