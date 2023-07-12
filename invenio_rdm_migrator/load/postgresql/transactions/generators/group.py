@@ -11,7 +11,7 @@ from .....logging import Logger
 from ..errors import TableNotFound
 
 
-class TransactionGroupGenerator:
+class TxGenerator:
     """Maps a table name to a table generator."""
 
     def __init__(self, table_to_generator_map):

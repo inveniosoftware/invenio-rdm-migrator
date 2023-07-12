@@ -18,12 +18,12 @@ from .operations import OperationType
 class PostgreSQLExecute(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, transaction_group_generator, **kwargs):
+    def __init__(self, db_uri, tx_generator, **kwargs):
         """Constructor."""
         self.db_uri = db_uri
         self._engine = create_engine(self.db_uri)
         # an instance of TableGeneratorMapper
-        self.tgg = transaction_group_generator
+        self.txg = tx_generator
 
     def _cleanup(self, db=False):
         """No cleanup."""
@@ -35,7 +35,7 @@ class PostgreSQLExecute(Load):
         """Identify transaction group and generate the corresponding op-data pairs."""
         _operations = []
         for op in entry["operations"]:
-            ops = self.tgg.prepare(
+            ops = self.txg.prepare(
                 op["table"], OperationType(op["op"].upper()), op["data"]
             )
             if ops:
@@ -58,12 +58,12 @@ class PostgreSQLExecute(Load):
 
         return obj
 
-    def _load(self, transaction_group):
+    def _load(self, tx):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
 
         with Session(self._engine) as session:
-            for op in transaction_group["operations"]:
+            for op in tx["operations"]:
                 type_ = op.type
                 obj = op.obj
                 try:
@@ -76,7 +76,7 @@ class PostgreSQLExecute(Load):
                     session.flush()
                 except Exception:
                     logger.exception(
-                        f"Could not {transaction_group['tx_id']} ({transaction_group['tx_group_id']})",
+                        f"Could not {tx['tx_id']} ({tx['action']})",
                         exc_info=1,
                     )
                     session.rollback()

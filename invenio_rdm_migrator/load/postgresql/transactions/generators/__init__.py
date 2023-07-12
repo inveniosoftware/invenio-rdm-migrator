@@ -7,12 +7,12 @@
 
 """Invenio RDM migration PostgreSQL row generators."""
 
-from .group import TransactionGroupGenerator
+from .group import TxGenerator
 from .row import RowGenerator
 from .single import SingleRowGenerator
 
 __all__ = (
     "RowGenerator",
     "SingleRowGenerator",
-    "TransactionGroupGenerator",
+    "TxGenerator",
 )
