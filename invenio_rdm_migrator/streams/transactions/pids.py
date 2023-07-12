@@ -32,8 +32,8 @@ class PIDRowGenerator(SingleRowGenerator):
             # should be moved to a mixin or similar on the transform step
             from datetime import datetime
 
-            data["created"] = datetime.fromtimestamp(data["created"] / 1000000)
-            data["updated"] = datetime.fromtimestamp(data["updated"] / 1000000)
+            data["created"] = datetime.fromtimestamp(data["created"] / 1_000_000)
+            data["updated"] = datetime.fromtimestamp(data["updated"] / 1_000_000)
 
             self.pids_state.add(
                 data["pid_value"],  # recid

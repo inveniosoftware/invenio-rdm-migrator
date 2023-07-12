@@ -28,8 +28,8 @@ class SingleRowGenerator(RowGenerator):
         from datetime import datetime
 
         if data.get("created"):
-            data["created"] = datetime.fromtimestamp(data["created"] / 1000000)
+            data["created"] = datetime.fromtimestamp(data["created"] / 1_000_000)
         if data.get("updated"):
-            data["updated"] = datetime.fromtimestamp(data["updated"] / 1000000)
+            data["updated"] = datetime.fromtimestamp(data["updated"] / 1_000_000)
 
         yield Operation(op, self.table(**data))

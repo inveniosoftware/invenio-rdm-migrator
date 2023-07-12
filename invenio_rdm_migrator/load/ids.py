@@ -22,8 +22,8 @@ def pid_pk():
     state = GLOBAL.STATE
     state_value = state.get("max_pid_pk")
     if not state_value:
-        value = 1000000
-        state.add("max_pid_pk", {"value": 1000000})
+        value = 1_000_000
+        state.add("max_pid_pk", {"value": 1_000_000})
     else:
         value = state_value["value"] + 1
         state.update("max_pid_pk", {"value": value})

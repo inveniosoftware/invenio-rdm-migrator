@@ -355,7 +355,7 @@ def test_pids_state_valid(pids_state):
     pids_state.add(
         "123",
         {
-            "id": 1000000,
+            "id": 1_000_000,
             "pid_type": "recid",
             "status": "K",
             "created": created,
@@ -381,7 +381,7 @@ def test_pids_state_duplicated_id(pids_state):
     pids_state.add(
         "123",
         {
-            "id": 1000000,  # has a unique constraint
+            "id": 1_000_000,  # has a unique constraint
             "pid_type": "recid",
             "status": "K",
             "created": created,
@@ -393,7 +393,7 @@ def test_pids_state_duplicated_id(pids_state):
         pids_state.add,
         "124",  # diff pk to make sure it fails on id
         {
-            "id": 1000000,  # has a unique constraint
+            "id": 1_000_000,  # has a unique constraint
             "pid_type": "recid",
             "status": "K",
             "created": created,
@@ -411,19 +411,19 @@ def test_pids_state_invalid_entries(pids_state):
             "created": created,
         },
         {  # missing pid_type
-            "id": 1000000,
+            "id": 1_000_000,
             "status": "K",
             "obj_type": "rec",
             "created": created,
         },
         {  # missing status
-            "id": 1000000,
+            "id": 1_000_000,
             "pid_type": "recid",
             "obj_type": "rec",
             "created": created,
         },
         {  # missing created
-            "id": 1000000,
+            "id": 1_000_000,
             "status": "K",
             "pid_type": "recid",
             "obj_type": "rec",
