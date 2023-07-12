@@ -12,7 +12,7 @@ import contextlib
 from dataclasses import fields
 from pathlib import Path
 
-import psycopg2
+import psycopg
 
 from ....logging import Logger
 from ....utils import ts
@@ -100,7 +100,7 @@ class PostgreSQLCopyLoad(Load, AlterSequencesMixin):
         """
         logger = Logger.get_logger()
 
-        with psycopg2.connect(self.db_uri) as conn:
+        with psycopg.connect(self.db_uri) as conn:
             for existing_data, table in table_entries:
                 name = table.__tablename__
                 cols = ", ".join([f.name for f in fields(table)])
