@@ -8,16 +8,18 @@
 """PostgreSQL load tests."""
 
 import tempfile
-from dataclasses import InitVar, dataclass
+from dataclasses import InitVar
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy.orm import Mapped, mapped_column
 
 from invenio_rdm_migrator.load.postgresql.bulk import PostgreSQLCopyLoad
 from invenio_rdm_migrator.load.postgresql.bulk.generators import (
     ExistingDataTableGenerator,
     SingleTableGenerator,
 )
+from invenio_rdm_migrator.load.postgresql.models import Model
 
 
 @pytest.fixture(scope="function")
@@ -33,13 +35,12 @@ def data_dir():
 ###
 
 
-@dataclass
-class TestModel:
+class TestModel(Model):
     """Test dataclass model."""
 
-    foo: str
-    bar: str
-    number: int
+    foo: Mapped[str]
+    bar: Mapped[str]
+    number: Mapped[int] = mapped_column(primary_key=True)
 
     __tablename__: InitVar[str] = "test_table"
 
@@ -61,9 +62,12 @@ def test_identity_tg_multiple_tables():
 ###
 
 
-@dataclass
-class TestModelToo(TestModel):
+class TestModelToo(Model):
     """Another dataclass model."""
+
+    foo: Mapped[str]
+    bar: Mapped[str]
+    number: Mapped[int] = mapped_column(primary_key=True)
 
     __tablename__: InitVar[str] = "test_table_too"
 
