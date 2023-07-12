@@ -61,7 +61,7 @@ def transformed_record_entry_pks(transformed_record_entry):
     data["parent"]["id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
     data["record"]["parent_id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
     data["parent"]["json"]["pid"] = {
-        "pk": "1000000",  # pk, not pid value
+        "pk": "1_000_000",  # pk, not pid value
         "obj_type": "rec",
         "pid_type": "recid",
         "status": "R",
@@ -129,7 +129,7 @@ def transformed_draft_entry_pks(transformed_draft_entry):
     data["parent"]["id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
     data["draft"]["parent_id"] = "12345678-abcd-1a2b-3c4d-123abc456def"
     data["parent"]["json"]["pid"] = {
-        "pk": "1000000",
+        "pk": "1_000_000",
         "obj_type": "rec",
         "pid_type": "recid",
         "status": "N",

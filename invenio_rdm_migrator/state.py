@@ -219,7 +219,7 @@ class State:
             sqlite_autoincrement=False,
         )
 
-        # e.g. key = max_pid_pk, value = 1000000
+        # e.g. key = max_pid_pk, value = 1_000_000
         sa.Table(
             "global",
             metadata,
