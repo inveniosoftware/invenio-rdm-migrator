@@ -28,7 +28,7 @@ def pid_pk():
         value = state_value["value"] + 1
         state.update("max_pid_pk", {"value": value})
 
-    return str(value)
+    return value
 
 
 def generate_pk(data):

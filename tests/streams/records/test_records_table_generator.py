@@ -146,7 +146,7 @@ def test_single_record_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # doi
-            id="1000002",
+            id=1_000_002,
             pid_type="doi",
             pid_value="10.5281/zenodo.12345678",
             status="R",
@@ -156,7 +156,7 @@ def test_single_record_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # oai
-            id="1000003",
+            id=1_000_003,
             pid_type="oai",
             pid_value="oai:zenodo.org:12345678",
             status="R",
@@ -301,11 +301,11 @@ def test_record_versions_and_old_draft_generate_rows(
     v2["record"]["id"] = "2d6970ea-602d-4e8b-a918-063a59823387"
     v2["record"]["index"] = 2
     v2["record"]["json"]["id"] = "12345679"
-    v2["record"]["json"]["pid"]["pk"] = "1000002"  # pk, not pid value
+    v2["record"]["json"]["pid"]["pk"] = 1_000_002  # pk, not pid value
     v2["record"]["json"]["pids"]["oai"]["identifier"] = "oai:zenodo.org:12345679"
     v2["record"]["json"]["pids"]["doi"]["identifier"] = "10.5281/zenodo.12345679"
     d_v1 = transformed_draft_entry_pks
-    d_v1["draft"]["json"]["pid"]["pk"] = "1000002"  # pk, not pid value, same as v1
+    d_v1["draft"]["json"]["pid"]["pk"] = 1_000_002  # pk, not pid value, same as v1
     d_v1["draft"]["json"]["pid"][
         "status"
     ] = "R"  # same as already R pid form the record
@@ -322,7 +322,7 @@ def test_record_versions_and_old_draft_generate_rows(
             json={
                 "id": "12345679",
                 "pid": {
-                    "pk": "1000002",
+                    "pk": 1_000_002,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",
@@ -347,7 +347,7 @@ def test_record_versions_and_old_draft_generate_rows(
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
         ),
         PersistentIdentifier(  # recid
-            id="1000002",  # this called is mocked and will not increment the counter
+            id=1_000_002,  # this called is mocked and will not increment the counter
             pid_type="recid",
             pid_value="12345679",
             status="R",
@@ -357,7 +357,7 @@ def test_record_versions_and_old_draft_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # doi
-            id="1000002",
+            id=1_000_002,
             pid_type="doi",
             pid_value="10.5281/zenodo.12345679",
             status="R",
@@ -367,7 +367,7 @@ def test_record_versions_and_old_draft_generate_rows(
             updated="2023-04-01 12:00:00.00000",
         ),
         PersistentIdentifier(  # oai
-            id="1000003",
+            id=1_000_003,
             pid_type="oai",
             pid_value="oai:zenodo.org:12345679",
             status="R",
@@ -384,7 +384,7 @@ def test_record_versions_and_old_draft_generate_rows(
             json={
                 "id": "12345678",
                 "pid": {
-                    "pk": "1000002",
+                    "pk": 1_000_002,
                     "obj_type": "rec",
                     "pid_type": "recid",
                     "status": "R",

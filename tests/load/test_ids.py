@@ -30,17 +30,17 @@ def test_max_pid_pk(global_state):
     # create pid
     val = pid_pk()
     # check state has been created
-    assert val == str(global_state.get("max_pid_pk")["value"])
+    assert val == global_state.get("max_pid_pk")["value"]
     # create another pid
     val_inc = pid_pk()
     # check the state has been incremented
-    inc_val = str(int(val) + 1)
+    inc_val = val + 1
     assert inc_val == val_inc
-    assert val_inc == str(global_state.get("max_pid_pk")["value"])
+    assert val_inc == global_state.get("max_pid_pk")["value"]
 
 
-def test_generate_pk_returns_string():
-    assert isinstance(generate_pk(None), str)
+def test_generate_pk_returns_integer():
+    assert isinstance(generate_pk(None), int)
 
 
 def test_recid_default_status():
@@ -55,6 +55,6 @@ def test_recid_custom_status():
 
 def test_recid_return_value_types():
     rec_id = generate_recid({})
-    assert isinstance(rec_id["pk"], str)
+    assert isinstance(rec_id["pk"], int)
     assert rec_id["obj_type"] == "rec"
     assert rec_id["pid_type"] == "recid"
