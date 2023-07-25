@@ -18,32 +18,16 @@ from .operations import OperationType
 class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, tx_generator, **kwargs):
+    def __init__(self, db_uri, **kwargs):
         """Constructor."""
         self.db_uri = db_uri
         self._engine = create_engine(self.db_uri)
-        # an instance of TableGeneratorMapper
-        self.txg = tx_generator
 
     def _cleanup(self, db=False):
         """No cleanup."""
         logger = Logger.get_logger()
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
-
-    def _prepare(self, entry):
-        """Identify transaction group and generate the corresponding op-data pairs."""
-        _operations = []
-        for op in entry["operations"]:
-            ops = self.txg.prepare(
-                op["table"], OperationType(op["op"].upper()), op["data"]
-            )
-            if ops:
-                _operations.extend(ops)
-
-        entry["operations"] = _operations
-
-        return entry
 
     def _update_obj(self, session, obj):
         """Updates all attributes of an object."""
@@ -58,28 +42,35 @@ class PostgreSQLTx(Load):
 
         return obj
 
-    def _load(self, tx):
+    def _load(self, transactions):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
 
-        with Session(self._engine) as session:
-            for op in tx["operations"]:
-                type_ = op.type
-                obj = op.obj
-                try:
-                    if type_ == OperationType.INSERT:
-                        session.add(obj)
-                    elif type_ == OperationType.DELETE:
-                        session.delete(obj)
-                    elif type_ == OperationType.UPDATE:
-                        self._update_obj(session, obj)
-                    session.flush()
-                except Exception:
-                    logger.exception(
-                        f"Could not {tx['tx_id']} ({tx['action']})",
-                        exc_info=1,
-                    )
-                    session.rollback()
-                    raise
-            # commit all transaction group or none
-            session.commit()
+        for action in transactions:
+            operations = action.prepare()
+
+            with Session(self._engine) as session:
+                for op in operations:
+                    type_ = op.type
+                    obj = op.obj
+                    try:
+                        if type_ == OperationType.INSERT:
+                            session.add(obj)
+                        elif type_ == OperationType.DELETE:
+                            session.delete(obj)
+                        elif type_ == OperationType.UPDATE:
+                            self._update_obj(session, obj)
+                        session.flush()
+                    except Exception:  # FIXME: specify exception cls
+                        logger.exception(
+                            f"Could not {action.tx_id} ({action.name})",
+                            exc_info=1,
+                        )
+                        session.rollback()
+                        raise
+                # commit all transaction group or none
+                session.commit()
+
+    def run(self, entries, cleanup=False):
+        """Load entries."""
+        self._load(entries)

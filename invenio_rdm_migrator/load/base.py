@@ -14,7 +14,6 @@ from abc import ABC, abstractmethod
 class Load(ABC):
     """Base class for data loading."""
 
-    @abstractmethod
     def _prepare(self):  # pragma: no cover
         """Prepare data for loading."""
         pass
