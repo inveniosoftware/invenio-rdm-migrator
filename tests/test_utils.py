@@ -10,7 +10,8 @@
 import json
 from uuid import UUID
 
-from invenio_rdm_migrator.utils import JSONEncoder, ts
+import pytest
+from invenio_rdm_migrator.utils import JSONEncoder, ts, dict_set
 
 ###
 # timestamp
@@ -56,3 +57,32 @@ def test_nested_uuid_values():
     }
     encoded_data = JSONEncoder().encode(data)
     assert encoded_data == json.dumps(expected_data)
+
+
+###
+# Dict set
+###
+
+
+def test_existing_keys():
+    source = {"a": {"b": {"c": 1}}}
+    key = "a.b.d"
+    value = 2
+    dict_set(source, key, value)
+    assert source == {"a": {"b": {"c": 1, "d": 2}}}
+
+
+def test_nested_dict():
+    source = {"a": {"b": {}}}
+    key = "a.b.c.d"
+    value = 3
+    dict_set(source, key, value)
+    assert source == {"a": {"b": {"c": {"d": 3}}}}
+
+
+def test_nonexistent_key():
+    source = {}
+    key = "a.b.c"
+    value = 6
+    with pytest.raises(KeyError):
+        dict_set(source, key, value)
