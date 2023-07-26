@@ -23,10 +23,10 @@ class PersistentIdentifier(Model):
     pid_type: Mapped[str]
     pid_value: Mapped[str]
     status: Mapped[str]
-    object_type: Mapped[str]
-    object_uuid: Mapped[UUID]
+    object_type: Mapped[str] = mapped_column(nullable=True)
+    object_uuid: Mapped[UUID] = mapped_column(nullable=True)
     created: Mapped[str]
     updated: Mapped[str]
     # default since we do not take it into account in many places
     # ant it's not in the data
-    pid_provider: Mapped[str] = mapped_column(default=None)
+    pid_provider: Mapped[str] = mapped_column(nullable=True, default=None)

@@ -11,6 +11,7 @@ from dataclasses import InitVar
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import BigInteger
 
 from ...load.postgresql.models import Model
 
@@ -26,8 +27,8 @@ class FilesBucket(Model):
     default_location: Mapped[int]
     default_storage_class: Mapped[str]
     size: Mapped[int]
-    quota_size: Mapped[int]
-    max_file_size: Mapped[int]
+    quota_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
+    max_file_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
     locked: Mapped[bool]
     deleted: Mapped[bool]
 

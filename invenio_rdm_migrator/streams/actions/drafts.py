@@ -7,8 +7,8 @@
 
 """Invenio RDM migration drafts row load module."""
 
-
 from datetime import datetime
+from functools import partial
 
 from ...actions import LoadAction
 from ...load.ids import generate_pk, generate_recid, generate_uuid
@@ -48,6 +48,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
                 ("draft", "id", generate_uuid),
                 ("parent", "id", generate_uuid),
                 ("parent", "json.pid", generate_recid),
+                ("draft", "json.pid", partial(generate_recid, status="N")),
             ],
         )
         assert pid and bucket and draft and parent  # i.e. not None as parameter

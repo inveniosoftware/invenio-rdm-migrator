@@ -48,10 +48,11 @@ class RDMVersionState(Model):
 
     __tablename__: InitVar[str] = "rdm_versions_state"
 
-    latest_index: Mapped[int]
     parent_id: Mapped[UUID] = mapped_column(primary_key=True)
-    latest_id: Mapped[UUID]
-    next_draft_id: Mapped[UUID]
+    latest_id: Mapped[UUID] = mapped_column(nullable=True)
+    next_draft_id: Mapped[UUID] = mapped_column(nullable=True)
+    # latest_index has a programmatic default of 1 if the db value is None
+    latest_index: Mapped[int] = mapped_column(nullable=True)
 
 
 class RDMDraftMetadata(Model):
@@ -68,7 +69,8 @@ class RDMDraftMetadata(Model):
     bucket_id: Mapped[UUID]
     parent_id: Mapped[UUID]
     expires_at: Mapped[str]
-    fork_version_id: Mapped[int]
+    # in a new version this value is None
+    fork_version_id: Mapped[int] = mapped_column(nullable=True)
 
 
 class RDMRecordFile(Model):
