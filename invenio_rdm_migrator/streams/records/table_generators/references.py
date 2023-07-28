@@ -7,6 +7,8 @@
 
 """Invenio RDM records table generators references."""
 
+from ....state import STATE
+
 
 class CommunitiesReferencesMixin:
     """Communities reference resolver."""
@@ -17,7 +19,7 @@ class CommunitiesReferencesMixin:
         Assumes the the table generator has a communities_state attribute.
         """
         default_slug = communities.get("default")
-        default_id = self.communities_state.get(default_slug)
+        default_id = STATE.COMMUNITIES.get(default_slug)
         if not default_id:
             # TODO: maybe raise error without correct default community?
             communities = {}
@@ -27,7 +29,7 @@ class CommunitiesReferencesMixin:
         communities_slugs = communities.get("ids", [])
         _ids = []
         for slug in communities_slugs:
-            _id = self.communities_state.get(slug)
+            _id = STATE.COMMUNITIES.get(slug)
             if _id:
                 _ids.append(_id)
         communities["ids"] = _ids
@@ -45,7 +47,7 @@ class PIDsReferencesMixin:
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
         recid = draft["json"]["id"]
-        forked_published = self.records_state.get(recid)
+        forked_published = STATE.RECORDS.get(recid)
         if forked_published:
             pids = draft["json"]["pids"]
             has_draft_external_doi = pids.get("doi", {}).get("provider") == "external"

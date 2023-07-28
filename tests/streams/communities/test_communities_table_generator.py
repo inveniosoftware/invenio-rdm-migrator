@@ -17,9 +17,9 @@ from invenio_rdm_migrator.streams.models.communities import (
 from invenio_rdm_migrator.streams.models.files import FilesBucket, FilesObjectVersion
 
 
-def test_generate_rows(communities_state, transformed_community_entry_pks):
+def test_generate_rows(state, transformed_community_entry_pks):
     """Test the row generation of the request table generator."""
-    tg = CommunityTableGenerator(communities_state)
+    tg = CommunityTableGenerator()
     rows = list(tg._generate_rows(transformed_community_entry_pks))
     expected_rows = [
         FilesBucket(

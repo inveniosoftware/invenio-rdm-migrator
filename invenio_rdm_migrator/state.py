@@ -18,7 +18,7 @@ from .logging import Logger
 from .utils import ts
 
 
-class State:
+class StateDB:
     """Migration state."""
 
     def __init__(self, db_dir, validators=None):
@@ -229,15 +229,6 @@ class State:
         )
 
 
-class GLOBAL:
-    """Static class holding a reference to a state query."""
-
-    # implemented this way to avoid having to drill state.global from the
-    # runner to the lower level pid_pk()
-    # ideally there would be some sort of application context/proxies to access this.
-    STATE = None
-
-
 class StateEntity:
     """Helper class to query specific state tables."""
 
@@ -294,3 +285,25 @@ class StateValidator(ABC):
         # abc fails on instantiation, e.g. Test(), since this is a classmethod
         # it will always call the parent, therefore the default is False.
         return False
+
+
+class STATE:
+    """Static class holding a reference to a state query."""
+
+    # implemented this way to avoid having to drill state.global from the
+    # runner to the lower level pid_pk()
+    # ideally there would be some sort of application context/proxies to access this.
+    VALUES = None
+    PARENTS = None
+    RECORDS = None
+    COMMUNITIES = None
+    PIDS = None
+
+    @classmethod
+    def initialized_state(cls, state_db):
+        """Initializes state."""
+        cls.PARENTS = StateEntity(state_db, "parents", "recid")
+        cls.RECORDS = StateEntity(state_db, "records", "recid")
+        cls.COMMUNITIES = StateEntity(state_db, "communities", "slug")
+        cls.PIDS = StateEntity(state_db, "pids", "pid_value")
+        cls.VALUES = StateEntity(state_db, "global", "key")

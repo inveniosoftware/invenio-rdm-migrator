@@ -9,7 +9,7 @@
 
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
 
-from ..state import GLOBAL
+from ..state import STATE
 
 
 class EncryptMixin:
@@ -17,7 +17,7 @@ class EncryptMixin:
 
     def __init__(self):
         """Constructor."""
-        state = GLOBAL.STATE
+        state = STATE.VALUES
 
         old_secret_key = state.get("old_secret_key")["value"]
         assert old_secret_key

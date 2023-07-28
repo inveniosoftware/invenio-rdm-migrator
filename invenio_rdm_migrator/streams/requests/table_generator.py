@@ -7,21 +7,22 @@
 
 """Invenio RDM migration requests table load module."""
 
+
 from ...load.ids import generate_uuid
 from ...load.postgresql.bulk.generators import TableGenerator
+from ...state import STATE
 from ..models.requests import RequestMetadata
 
 
 class RequestTableGenerator(TableGenerator):
     """Requests and related tables load."""
 
-    def __init__(self, communities_state):
+    def __init__(self):
         """Constructor."""
         super().__init__(
             tables=[RequestMetadata],
             pks=[("id", generate_uuid)],
         )
-        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Yield requests metadata."""
@@ -46,7 +47,7 @@ class RequestTableGenerator(TableGenerator):
         """
         # it assumes the data is transformed by an InclusionRequestEntry
         request_slug = data["json"]["receiver"]["community"]
-        community_id = self.communities_state.get(request_slug).get("id")
+        community_id = STATE.COMMUNITIES.get(request_slug).get("id")
 
         data["json"]["receiver"]["community"] = community_id
 

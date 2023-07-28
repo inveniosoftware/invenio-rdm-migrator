@@ -98,26 +98,9 @@ def pid_data():
     }
 
 
-def test_create_draft_new(
-    draft_data,
-    parent_data,
-    bucket_data,
-    pid_data,
-    parents_state,
-    records_state,
-    communities_state,
-    pids_state,
-):
+def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data):
     action = RDMDraftCreateAction(
-        tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
-        draft=draft_data,
-        parent=parent_data,
-        parents_state=parents_state,
-        records_state=records_state,
-        communities_state=communities_state,
-        pids_state=pids_state,
+        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
     )
     rows = list(action.prepare())
     assert len(rows) == 7
@@ -138,17 +121,10 @@ def test_create_draft_new(
 
 
 def test_create_draft_new_version(
-    draft_data,
-    parent_data,
-    bucket_data,
-    pid_data,
-    parents_state,
-    records_state,
-    communities_state,
-    pids_state,
+    state, draft_data, parent_data, bucket_data, pid_data
 ):
     # set existing parent so the action goes on the new version path
-    parents_state.add(
+    state.PARENTS.add(
         parent_data["json"]["id"],  # recid
         {
             "id": parent_data["id"],
@@ -157,15 +133,7 @@ def test_create_draft_new_version(
         },
     )
     action = RDMDraftCreateAction(
-        tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
-        draft=draft_data,
-        parent=parent_data,
-        parents_state=parents_state,
-        records_state=records_state,
-        communities_state=communities_state,
-        pids_state=pids_state,
+        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
     )
     rows = list(action.prepare())
     assert len(rows) == 5
@@ -182,17 +150,10 @@ def test_create_draft_new_version(
 
 
 def test_create_draft_published_draft(
-    draft_data,
-    parent_data,
-    bucket_data,
-    pid_data,
-    parents_state,
-    records_state,
-    communities_state,
-    pids_state,
+    state, draft_data, parent_data, bucket_data, pid_data
 ):
     # set existing parent so the action goes on the new version path
-    parents_state.add(
+    state.PARENTS.add(
         parent_data["json"]["id"],  # recid
         {
             "id": parent_data["id"],
@@ -201,7 +162,7 @@ def test_create_draft_published_draft(
         },
     )
 
-    records_state.add(
+    state.RECORDS.add(
         draft_data["json"]["id"],  # recid
         {
             "index": 1,
@@ -212,15 +173,7 @@ def test_create_draft_published_draft(
         },
     )
     action = RDMDraftCreateAction(
-        tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
-        draft=draft_data,
-        parent=parent_data,
-        parents_state=parents_state,
-        records_state=records_state,
-        communities_state=communities_state,
-        pids_state=pids_state,
+        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
     )
     rows = list(action.prepare())
     assert len(rows) == 4

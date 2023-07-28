@@ -15,7 +15,7 @@ import pytest
 from sqlalchemy import MetaData, create_engine, insert, select
 from sqlalchemy.exc import IntegrityError
 
-from invenio_rdm_migrator.state import State, StateValidator
+from invenio_rdm_migrator.state import StateDB, StateValidator
 
 ###
 # Global
@@ -28,7 +28,7 @@ def disk_db(tmp_dir):
     db_dir = Path(tmp_dir.name) / "state.db"
     disk_eng = create_engine(f"sqlite:///{db_dir}")
     disk_meta = MetaData()
-    State._initialize_db(disk_meta)
+    StateDB._initialize_db(disk_meta)
     disk_meta.create_all(disk_eng)
     with disk_eng.connect() as conn:
         conn.execute(
@@ -76,7 +76,7 @@ def test_state_with_no_initial_db(tmp_dir):
 
     Test the implicit creation of tables.
     """
-    state = State(db_dir=tmp_dir.name)
+    state = StateDB(db_dir=tmp_dir.name)
     # tables exist and are empty
     assert len(list(state.all("parents"))) == 0
     assert len(list(state.all("records"))) == 0
@@ -92,7 +92,7 @@ def test_state_with_no_initial_db(tmp_dir):
 
 def test_state_load_from_disk(tmp_dir, disk_db):
     """Test db loading from disk into memory."""
-    state = State(db_dir=tmp_dir.name)
+    state = StateDB(db_dir=tmp_dir.name)
 
     # check the memory db status
     assert len(list(state.all("parents"))) == 1
@@ -132,7 +132,7 @@ def test_state_load_from_disk(tmp_dir, disk_db):
 
 def test_state_save_to_disk(tmp_dir):
     """Test db persistence to disk."""
-    state = State(db_dir=tmp_dir.name)
+    state = StateDB(db_dir=tmp_dir.name)
     # check the memory db status
     assert len(list(state.all("parents"))) == 0
     assert len(list(state.all("records"))) == 0
@@ -156,7 +156,7 @@ def test_state_save_to_disk(tmp_dir):
     db_dir = Path(tmp_dir.name) / "state.db"
     disk_eng = create_engine(f"sqlite:///{db_dir}")
     disk_meta = MetaData()
-    _ = State._initialize_db(disk_meta)
+    _ = StateDB._initialize_db(disk_meta)
     disk_meta.create_all(disk_eng)
 
     parents_table = disk_meta.tables["parents"]
@@ -177,14 +177,14 @@ def test_state_save_to_disk(tmp_dir):
 
 def test_state_save_to_disk_alt_filename(tmp_dir):
     """Test db persistence to disk with a different filename."""
-    state = State(db_dir=tmp_dir.name)
+    state = StateDB(db_dir=tmp_dir.name)
     state.save(filename="altname.db")
     assert (Path(tmp_dir.name) / "altname.db").exists()
 
 
 def test_state_save_to_disk_alt_filepath(tmp_dir):
     """Test db persistence to disk on a different path."""
-    state = State(db_dir=tmp_dir.name)
+    state = StateDB(db_dir=tmp_dir.name)
 
     alt_dir = tempfile.TemporaryDirectory()
     alt_path = Path(alt_dir.name) / "altpath.db"
@@ -203,7 +203,7 @@ def test_state_save_to_disk_alt_filepath(tmp_dir):
 
 
 def test_parent_state_record_entry(parents_state):
-    parents_state.add(
+    parents_state.PARENTS.add(
         "123",
         {
             "id": "f4d3071d-1234-abcd-1ab2-1234abcd56ef",
@@ -211,22 +211,22 @@ def test_parent_state_record_entry(parents_state):
             "latest_id": "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef",
         },
     )
-    assert parents_state.get("123")
+    assert parents_state.PARENTS.get("123")
 
 
 def test_parent_state_draft_entry(parents_state):
-    parents_state.add(
+    parents_state.PARENTS.add(
         "123",
         {
             "id": "f4d3071d-1234-abcd-1ab2-1234abcd56ef",
             "next_draft_id": "dd4f71d0-1234-abcd-1ab2-1234abcd56ef",
         },
     )
-    assert parents_state.get("123")
+    assert parents_state.PARENTS.get("123")
 
 
 def test_parent_state_update_record(parents_state):
-    parents_state.add(
+    parents_state.PARENTS.add(
         "123",
         {
             "id": "f4d3071d-1234-abcd-1ab2-1234abcd56ef",
@@ -234,24 +234,24 @@ def test_parent_state_update_record(parents_state):
             "latest_id": "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef",
         },
     )
-    assert not parents_state.get("123").get("next_draft_id")
+    assert not parents_state.PARENTS.get("123").get("next_draft_id")
 
-    parents_state.update(
+    parents_state.PARENTS.update(
         "123",
         {
             "latest_index": 100,
             "latest_id": "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef",
         },
     )
-    assert parents_state.get("123").get("latest_index") == 100
+    assert parents_state.PARENTS.get("123").get("latest_index") == 100
     assert (
-        parents_state.get("123").get("latest_id")
+        parents_state.PARENTS.get("123").get("latest_id")
         == "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef"
     )
 
 
 def test_parent_state_update_draft(parents_state):
-    parents_state.add(
+    parents_state.PARENTS.add(
         "123",
         {
             "id": "f4d3071d-1234-abcd-1ab2-1234abcd56ef",
@@ -259,16 +259,16 @@ def test_parent_state_update_draft(parents_state):
             "latest_id": "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef",
         },
     )
-    assert not parents_state.get("123").get("next_draft_id")
+    assert not parents_state.PARENTS.get("123").get("next_draft_id")
 
-    parents_state.update(
+    parents_state.PARENTS.update(
         "123",
         {
             "next_draft_id": "dd4f71d0-1234-abcd-1ab2-1234abcd56ef",
         },
     )
     assert (
-        parents_state.get("123").get("next_draft_id")
+        parents_state.PARENTS.get("123").get("next_draft_id")
         == "dd4f71d0-1234-abcd-1ab2-1234abcd56ef"
     )
 
@@ -282,7 +282,7 @@ def test_parent_state_invalid_entries(parents_state):
     ]
 
     for entry in invalid_by_db_constraints:
-        pytest.raises(IntegrityError, parents_state.add, "123", entry)
+        pytest.raises(IntegrityError, parents_state.PARENTS.add, "123", entry)
 
     invalid_by_validator = [
         {  # missing lastest index
@@ -296,7 +296,7 @@ def test_parent_state_invalid_entries(parents_state):
     ]
 
     for entry in invalid_by_validator:
-        pytest.raises(AssertionError, parents_state.add, "123", entry)
+        pytest.raises(AssertionError, parents_state.PARENTS.add, "123", entry)
 
 
 ###
@@ -304,8 +304,8 @@ def test_parent_state_invalid_entries(parents_state):
 ###
 
 
-def test_record_state_record_entry(records_state):
-    records_state.add(
+def test_record_state_record_entry(state):
+    state.RECORDS.add(
         "123",
         {
             "index": 1,
@@ -314,10 +314,10 @@ def test_record_state_record_entry(records_state):
             "fork_version_id": 1,
         },
     )
-    assert records_state.get("123")
+    assert state.RECORDS.get("123")
 
 
-def test_record_state_invalid_entries(records_state):
+def test_record_state_invalid_entries(state):
     invalid = [
         {  # missing index
             "id": "d3c0dd1d-1234-abcd-1ab2-1234abcd56ef",
@@ -342,7 +342,7 @@ def test_record_state_invalid_entries(records_state):
     ]
 
     for entry in invalid:
-        pytest.raises(IntegrityError, records_state.add, "123", entry)
+        pytest.raises(IntegrityError, state.RECORDS.add, "123", entry)
 
 
 ###
@@ -350,9 +350,9 @@ def test_record_state_invalid_entries(records_state):
 ###
 
 
-def test_pids_state_valid(pids_state):
+def test_pids_state_valid(state):
     created = datetime.fromtimestamp(1688045928)
-    pids_state.add(
+    state.PIDS.add(
         "123",
         {
             "id": 1_000_000,
@@ -361,7 +361,7 @@ def test_pids_state_valid(pids_state):
             "created": created,
         },
     )
-    pids_state.add(
+    state.PIDS.add(
         "124",
         {
             "id": 1000001,
@@ -372,13 +372,13 @@ def test_pids_state_valid(pids_state):
         },
     )
 
-    assert pids_state.get("123")
-    assert pids_state.get("124")
+    assert state.PIDS.get("123")
+    assert state.PIDS.get("124")
 
 
-def test_pids_state_duplicated_id(pids_state):
+def test_pids_state_duplicated_id(state):
     created = datetime.fromtimestamp(1688045928)
-    pids_state.add(
+    state.PIDS.add(
         "123",
         {
             "id": 1_000_000,  # has a unique constraint
@@ -390,7 +390,7 @@ def test_pids_state_duplicated_id(pids_state):
 
     pytest.raises(
         IntegrityError,
-        pids_state.add,
+        state.PIDS.add,
         "124",  # diff pk to make sure it fails on id
         {
             "id": 1_000_000,  # has a unique constraint
@@ -401,7 +401,7 @@ def test_pids_state_duplicated_id(pids_state):
     )
 
 
-def test_pids_state_invalid_entries(pids_state):
+def test_pids_state_invalid_entries(state):
     created = datetime.fromtimestamp(1688045928)
     invalid = [
         {  # missing id
@@ -431,7 +431,7 @@ def test_pids_state_invalid_entries(pids_state):
     ]
 
     for idx, entry in enumerate(invalid):
-        pytest.raises(IntegrityError, pids_state.add, idx, entry)
+        pytest.raises(IntegrityError, state.PIDS.add, idx, entry)
 
 
 ###

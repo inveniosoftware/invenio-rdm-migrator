@@ -14,13 +14,13 @@ from invenio_rdm_migrator.transform import EncryptMixin, Transform
 
 
 @pytest.fixture(scope="function")
-def secret_keys_state(global_state):
+def secret_keys_state(state):
     """Adds secret keys to global state."""
-    global_state.add(
+    state.VALUES.add(
         "old_secret_key",
         {"value": bytes("OLDKEY", "utf-8")},
     )
-    global_state.add(
+    state.VALUES.add(
         "new_secret_key",
         {"value": bytes("NEWKEY", "utf-8")},
     )

@@ -14,12 +14,6 @@ from .table_generator import CommunityTableGenerator
 class CommunityCopyLoad(PostgreSQLCopyLoad):
     """PostgreSQL communities COPY load."""
 
-    def __init__(self, state, **kwargs):
+    def __init__(self, **kwargs):
         """Constructor."""
-        self.communities_state = state["communities"]
-        super().__init__(
-            table_generators=[
-                CommunityTableGenerator(communities_state=self.communities_state),
-            ],
-            **kwargs,
-        )
+        super().__init__(table_generators=[CommunityTableGenerator()], **kwargs)

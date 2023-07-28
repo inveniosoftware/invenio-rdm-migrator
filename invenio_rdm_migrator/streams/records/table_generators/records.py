@@ -13,6 +13,7 @@ from uuid import UUID
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.postgresql.bulk.generators import TableGenerator
 from ....logging import Logger
+from ....state import STATE
 from ...models.communities import RDMParentCommunityMetadata
 from ...models.pids import PersistentIdentifier
 from ...models.records import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
@@ -48,7 +49,7 @@ def generate_record_uuid(data):
 class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
     """RDM Record and related tables load."""
 
-    def __init__(self, parents_state, records_state, communities_state):
+    def __init__(self):
         """Constructor."""
         super().__init__(
             tables=[
@@ -67,9 +68,6 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                 ("record_files", generate_files_uuids),
             ],
         )
-        self.parents_state = parents_state
-        self.records_state = records_state
-        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Generates rows for a record."""
@@ -83,9 +81,9 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
         record_pid = record["json"]["pid"]
 
         # parent
-        state_parent = self.parents_state.get(parent["json"]["id"])
+        state_parent = STATE.PARENTS.get(parent["json"]["id"])
         if not state_parent:
-            self.parents_state.add(
+            STATE.PARENTS.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
@@ -114,7 +112,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                     )
         else:
             if state_parent.get("latest_index") < record["index"]:
-                self.parents_state.update(
+                STATE.PARENTS.update(
                     parent["json"]["id"],
                     {
                         "latest_index": record["index"],
@@ -124,7 +122,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
 
         parent_id = state_parent["id"] if state_parent else record["parent_id"]
         # record
-        self.records_state.add(
+        STATE.RECORDS.add(
             record["json"]["id"],  # recid
             {
                 "index": record["index"],

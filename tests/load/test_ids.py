@@ -23,20 +23,20 @@ def test_valid_input():
     UUID(uuid)  # will raise ValueError if its not a UUID
 
 
-def test_max_pid_pk(global_state):
+def test_max_pid_pk(state):
     """Test max pid pk value changes."""
     # check state is empty
-    assert not global_state.get("max_pid_pk")
+    assert not state.VALUES.get("max_pid_pk")
     # create pid
     val = pid_pk()
     # check state has been created
-    assert val == global_state.get("max_pid_pk")["value"]
+    assert val == state.VALUES.get("max_pid_pk")["value"]
     # create another pid
     val_inc = pid_pk()
     # check the state has been incremented
     inc_val = val + 1
     assert inc_val == val_inc
-    assert val_inc == global_state.get("max_pid_pk")["value"]
+    assert val_inc == state.VALUES.get("max_pid_pk")["value"]
 
 
 def test_generate_pk_returns_integer():

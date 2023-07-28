@@ -9,7 +9,7 @@
 
 from uuid import uuid4
 
-from ..state import GLOBAL
+from ..state import STATE
 
 
 def generate_uuid(data):
@@ -19,7 +19,7 @@ def generate_uuid(data):
 
 def pid_pk():
     """Generate an autoincrementing numeric primary key."""
-    state = GLOBAL.STATE
+    state = STATE.VALUES
     state_value = state.get("max_pid_pk")
     if not state_value:
         value = 1_000_000

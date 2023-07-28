@@ -13,6 +13,7 @@ from functools import partial
 from ...actions import LoadAction
 from ...load.ids import generate_pk, generate_recid, generate_uuid
 from ...load.postgresql.transactions.operations import Operation, OperationType
+from ...state import STATE
 from ..models.files import FilesBucket
 from ..models.pids import PersistentIdentifier
 from ..models.records import RDMDraftMetadata, RDMVersionState
@@ -28,18 +29,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
     name = "create-draft"
 
-    def __init__(
-        self,
-        tx_id,
-        pid,
-        bucket,
-        draft,
-        parent,
-        parents_state,
-        records_state,
-        communities_state,
-        pids_state,
-    ):
+    def __init__(self, tx_id, pid, bucket, draft, parent):
         """Constructor."""
         super().__init__(
             tx_id,
@@ -56,11 +46,6 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
         self.bucket = bucket
         self.draft = draft
         self.parent = parent
-        # state related
-        self.parents_state = parents_state
-        self.records_state = records_state
-        self.communities_state = communities_state
-        self.pids_state = pids_state
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -83,7 +68,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
             )
 
             # note would raise an exception if it exists
-            self.pids_state.add(
+            STATE.PIDS.add(
                 self.pid["pid_value"],  # recid
                 {
                     "id": self.pid["id"],
@@ -118,9 +103,9 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
         recid = self.draft["json"]["id"]
-        forked_published = self.records_state.get(recid)
+        forked_published = STATE.RECORDS.get(recid)
 
-        existing_parent = self.parents_state.get(self.parent["json"]["id"])
+        existing_parent = STATE.PARENTS.get(self.parent["json"]["id"])
         # parent id
         #  a) draft of a published record, parent id = parent id of published
         #  b) new version, parent id = parent id of the previous version
@@ -128,7 +113,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
         # both values should be equal at first, the first is not calculated as pk func
         self.draft["parent_id"] = self.parent["id"]
         if not existing_parent:  # case c
-            self.parents_state.add(
+            STATE.PARENTS.add(
                 self.parent["json"]["id"],  # recid
                 {
                     "id": self.parent["id"],
@@ -155,7 +140,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
             if not forked_published:
                 # it can only happen once
                 assert not existing_parent.get("next_draft_id")
-                self.parents_state.update(
+                STATE.PARENTS.update(
                     self.parent["json"]["id"],
                     {"next_draft_id": self.draft["id"]},
                 )
@@ -165,7 +150,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
         if not forked_published:
             # recid must have been created by a previous action in the same tx group
-            draft_pid = self.pids_state.get(self.draft["json"]["id"])
+            draft_pid = STATE.PIDS.get(self.draft["json"]["id"])
             assert draft_pid
 
             # update to add object_uuid
@@ -212,7 +197,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
         # FIXME: this query can be avoided by keeping a consistent view across this method
         # I dont want to refactor yet another thing on this PR.
-        existing_parent = self.parents_state.get(self.parent["json"]["id"])
+        existing_parent = STATE.PARENTS.get(self.parent["json"]["id"])
 
         version_op = OperationType.UPDATE if forked_published else OperationType.INSERT
         yield Operation(

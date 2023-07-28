@@ -53,11 +53,7 @@ class MockDateTime:
     MockDateTime(),
 )
 def test_single_record_generate_rows(
-    global_state,
-    communities_state,
-    parents_state,
-    records_state,
-    transformed_record_entry_pks,
+    state, communities_state, parents_state, transformed_record_entry_pks
 ):
     """A published record with a non state parent.
 
@@ -66,7 +62,7 @@ def test_single_record_generate_rows(
     """
     pid_1 = pid_pk()
     pid_2 = pid_pk()
-    tg = RDMRecordTableGenerator(parents_state, records_state, communities_state)
+    tg = RDMRecordTableGenerator()
     rows = list(tg._generate_rows(transformed_record_entry_pks))
     expected_rows = [
         PersistentIdentifier(  # parent recid
@@ -169,8 +165,8 @@ def test_single_record_generate_rows(
 
     assert rows == expected_rows
 
-    assert len(list(parents_state.all())) == 2  # pre-existing and new
-    assert len(list(records_state.all())) == 1
+    assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
+    assert len(list(state.RECORDS.all())) == 1
 
 
 @patch(
@@ -182,16 +178,12 @@ def test_single_record_generate_rows(
     MockDateTime(),
 )
 def test_single_draft_generate_rows(
-    global_state,
-    communities_state,
-    parents_state,
-    records_state,
-    transformed_draft_entry_pks,
+    state, communities_state, parents_state, transformed_draft_entry_pks
 ):
     """A new draft, not published."""
     pid_1 = pid_pk()
     pid_2 = pid_pk()
-    tg = RDMDraftTableGenerator(parents_state, records_state, communities_state)
+    tg = RDMDraftTableGenerator()
     rows = list(tg._generate_rows(transformed_draft_entry_pks))
     expected_rows = [
         PersistentIdentifier(  # parent recid
@@ -266,8 +258,8 @@ def test_single_draft_generate_rows(
 
     assert rows == expected_rows
 
-    assert len(list(parents_state.all())) == 2  # pre-existing and new
-    assert len(list(records_state.all())) == 0
+    assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
+    assert len(list(state.RECORDS.all())) == 0
 
 
 @patch(
@@ -283,17 +275,16 @@ def test_single_draft_generate_rows(
     MockDateTime(),
 )
 def test_record_versions_and_old_draft_generate_rows(
-    global_state,
+    state,
     communities_state,
     parents_state,
-    records_state,
     transformed_record_entry_pks,
     transformed_draft_entry_pks,
 ):
     """A record with two versions (v1, v2) and a draft of the first version (v1)."""
     tgs = [
-        RDMRecordTableGenerator(parents_state, records_state, communities_state),
-        RDMDraftTableGenerator(parents_state, records_state, communities_state),
+        RDMRecordTableGenerator(),
+        RDMDraftTableGenerator(),
     ]
 
     v1 = transformed_record_entry_pks
@@ -412,8 +403,8 @@ def test_record_versions_and_old_draft_generate_rows(
     assert rows[7:11] == expected_rows_v2
     assert rows[11:12] == expected_rows_d_v1
 
-    assert len(list(parents_state.all())) == 2  # pre-existing and new
-    assert len(list(records_state.all())) == 2  # two added records
+    assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
+    assert len(list(state.RECORDS.all())) == 2  # two added records
 
 
 @patch(
@@ -429,17 +420,16 @@ def test_record_versions_and_old_draft_generate_rows(
     MockDateTime(),
 )
 def test_record_and_new_version_draft_generate_rows(
-    global_state,
+    state,
     communities_state,
     parents_state,
-    records_state,
     transformed_record_entry_pks,
     transformed_draft_entry_pks,
 ):
     """A published record (v1) with a new version draft (v2)."""
     tgs = [
-        RDMRecordTableGenerator(parents_state, records_state, communities_state),
-        RDMDraftTableGenerator(parents_state, records_state, communities_state),
+        RDMRecordTableGenerator(),
+        RDMDraftTableGenerator(),
     ]
 
     pid_1 = pid_pk()
@@ -508,5 +498,5 @@ def test_record_and_new_version_draft_generate_rows(
     # v2 rows not asserted since they are checked at test_record_versions_and_old_draft_generate_rows
     assert rows[11:13] == expected_rows_d_v3
 
-    assert len(list(parents_state.all())) == 2  # pre-existing and new
-    assert len(list(records_state.all())) == 2  # two added records
+    assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
+    assert len(list(state.RECORDS.all())) == 2  # two added records

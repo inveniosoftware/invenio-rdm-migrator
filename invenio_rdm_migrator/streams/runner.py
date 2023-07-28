@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 
 from ..logging import Logger
-from ..state import GLOBAL, State, StateEntity
+from ..state import STATE, StateDB
 from .records.state import ParentModelValidator
 from .streams import Stream
 
@@ -45,24 +45,16 @@ class Runner:
 
         self.db_uri = config.get("db_uri")
         self.streams = []
-        self.state = State(
+        self.state = StateDB(
             db_dir=self.state_dir, validators={"parents": ParentModelValidator}
         )
-
-        self.state_entities = {
-            "parents": StateEntity(self.state, "parents", "recid"),
-            "records": StateEntity(self.state, "records", "recid"),
-            "communities": StateEntity(self.state, "communities", "slug"),
-            "pids": StateEntity(self.state, "pids", "pid_value"),
-        }
-        GLOBAL.STATE = StateEntity(self.state, "global", "key")
-
+        STATE.initialized_state(self.state)
         # set up secret keys
-        GLOBAL.STATE.add(
+        STATE.VALUES.add(
             "old_secret_key",
             {"value": bytes(config.get("old_secret_key"), "utf-8")},
         )
-        GLOBAL.STATE.add(
+        STATE.VALUES.add(
             "new_secret_key",
             {"value": bytes(config.get("new_secret_key"), "utf-8")},
         )
@@ -95,7 +87,6 @@ class Runner:
                             db_uri=self.db_uri,
                             data_dir=data_dir,
                             tmp_dir=tmp_dir,
-                            state=self.state_entities,
                             existing_data=existing_data,
                             **stream_config.get("load", {}),
                         ),

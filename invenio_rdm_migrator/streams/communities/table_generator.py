@@ -9,6 +9,7 @@
 
 from ...load.ids import generate_uuid, pid_pk
 from ...load.postgresql.bulk.generators import TableGenerator
+from ...state import STATE
 from ..models.communities import (
     Community,
     CommunityFile,
@@ -33,9 +34,8 @@ def _generate_featured_community_id(data):
 class CommunityTableGenerator(TableGenerator):
     """User and related tables load."""
 
-    def __init__(self, communities_state):
+    def __init__(self):
         """Constructor."""
-        self.communities_state = communities_state
         super().__init__(
             tables=[
                 Community,
@@ -61,8 +61,8 @@ class CommunityTableGenerator(TableGenerator):
         community_files = data["community_files"]
         bucket = community_files["bucket"]
 
-        if not self.communities_state.get(community_slug):
-            self.communities_state.add(community_slug, {"id": community_id})
+        if not STATE.COMMUNITIES.get(community_slug):
+            STATE.COMMUNITIES.add(community_slug, {"id": community_id})
 
         community["bucket_id"] = bucket["id"]
         yield FilesBucket(**bucket)

@@ -14,6 +14,7 @@ import psycopg
 
 from ....load.ids import generate_recid, generate_uuid
 from ....load.postgresql.bulk.generators import TableGenerator
+from ....state import STATE
 from ...models.files import FilesObjectVersion
 from ...models.pids import PersistentIdentifier
 from ...models.records import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
@@ -26,7 +27,7 @@ class RDMDraftTableGenerator(
 ):
     """RDM Record and related tables load."""
 
-    def __init__(self, parents_state, records_state, communities_state):
+    def __init__(self):
         """Constructor."""
         super().__init__(
             tables=[
@@ -43,9 +44,6 @@ class RDMDraftTableGenerator(
                 ("draft.parent_id", lambda d: d["parent"]["id"]),
             ],
         )
-        self.parents_state = parents_state
-        self.records_state = records_state
-        self.communities_state = communities_state
 
     def _generate_rows(self, data, **kwargs):
         """Generates rows for a record."""
@@ -59,11 +57,11 @@ class RDMDraftTableGenerator(
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
         recid = draft["json"]["id"]
-        forked_published = self.records_state.get(recid)
+        forked_published = STATE.RECORDS.get(recid)
 
-        state_parent = self.parents_state.get(parent["json"]["id"])
+        state_parent = STATE.PARENTS.get(parent["json"]["id"])
         if not state_parent:
-            self.parents_state.add(
+            STATE.PARENTS.add(
                 parent["json"]["id"],  # recid
                 {
                     "id": parent["id"],
@@ -77,7 +75,7 @@ class RDMDraftTableGenerator(
         # draft of a new version
         elif not forked_published:
             assert not state_parent.get("next_draft_id")  # it can only happen once
-            self.parents_state.update(
+            STATE.PARENTS.update(
                 parent["json"]["id"],
                 {
                     "next_draft_id": draft["id"],

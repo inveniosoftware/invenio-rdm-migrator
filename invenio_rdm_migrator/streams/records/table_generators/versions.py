@@ -8,16 +8,16 @@
 """Invenio RDM migration record table load module."""
 
 from ....load.postgresql.bulk.generators import TableGenerator
+from ....state import STATE
 from ...models.records import RDMVersionState
 
 
 class RDMVersionStateTableGenerator(TableGenerator):
     """RDM version state computed table."""
 
-    def __init__(self, parents_state):
+    def __init__(self):
         """Constructor."""
         super().__init__(tables=[RDMVersionState])
-        self.parents_state = parents_state
 
     def _generate_rows(self, parent_entry, **kwargs):
         # Version state to be populated in the end from the final state
@@ -35,5 +35,5 @@ class RDMVersionStateTableGenerator(TableGenerator):
 
     def post_prepare(self, tmp_dir, stack, output_files, **kwargs):
         """Overwrite entries with parent state entries."""
-        for entry in self.parents_state.all():
+        for entry in STATE.PARENTS.all():
             super().prepare(tmp_dir, entry, stack, output_files, **kwargs)

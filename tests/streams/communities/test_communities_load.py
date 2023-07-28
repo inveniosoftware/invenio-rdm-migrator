@@ -16,12 +16,10 @@ from invenio_rdm_migrator.streams.communities import CommunityCopyLoad
 
 
 @pytest.fixture(scope="function")
-def community_copy_load(communities_state, tmp_dir):
+def community_copy_load(state, tmp_dir):
     """Community load instance."""
     # the db queries will be mocked
-    load = CommunityCopyLoad(
-        db_uri="None", tmp_dir=tmp_dir.name, state={"communities": communities_state}
-    )
+    load = CommunityCopyLoad(db_uri="None", tmp_dir=tmp_dir.name)
     yield load
     load._cleanup()
 

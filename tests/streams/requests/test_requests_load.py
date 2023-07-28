@@ -19,9 +19,7 @@ from invenio_rdm_migrator.streams.requests import RequestCopyLoad
 def request_copy_load(communities_state, tmp_dir):
     """Request load instance."""
     # the db queries will be mocked
-    load = RequestCopyLoad(
-        db_uri="None", tmp_dir=tmp_dir.name, state={"communities": communities_state}
-    )
+    load = RequestCopyLoad(db_uri="None", tmp_dir=tmp_dir.name)
     yield load
     load._cleanup()
 
