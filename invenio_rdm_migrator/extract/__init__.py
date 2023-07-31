@@ -10,9 +10,11 @@
 from .base import Extract
 from .jsonlines import JSONLExtract
 from .null import NullExtract
+from .transactions import Tx
 
 __all__ = (
     "Extract",
     "JSONLExtract",
     "NullExtract",
+    "Tx",
 )
