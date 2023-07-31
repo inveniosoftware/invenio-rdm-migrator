@@ -63,7 +63,7 @@ class PostgreSQLTx(Load):
                         session.flush()
                     except Exception:  # FIXME: specify exception cls
                         logger.exception(
-                            f"Could not {action.tx_id} ({action.name})",
+                            f"Could not load {action.tx_id} ({action.name})",
                             exc_info=1,
                         )
                         session.rollback()

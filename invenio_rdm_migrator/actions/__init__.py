@@ -7,9 +7,10 @@
 
 """Actions module."""
 
-from .base import LoadAction, TransformAction
+from .base import LoadAction, LoadData, TransformAction
 
 __all__ = (
     "LoadAction",
+    "LoadData",
     "TransformAction",
 )

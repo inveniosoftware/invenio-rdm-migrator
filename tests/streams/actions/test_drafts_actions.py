@@ -99,9 +99,14 @@ def pid_data():
 
 
 def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data):
-    action = RDMDraftCreateAction(
-        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
+    data = RDMDraftCreateAction.data_cls(
+        tx_id=1,
+        pid=pid_data,
+        bucket=bucket_data,
+        draft=draft_data,
+        parent=parent_data,
     )
+    action = RDMDraftCreateAction(data)
     rows = list(action.prepare())
     assert len(rows) == 7
     assert rows[0].type == OperationType.INSERT
@@ -132,9 +137,15 @@ def test_create_draft_new_version(
             "latest_index": 1,
         },
     )
-    action = RDMDraftCreateAction(
-        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
+    data = RDMDraftCreateAction.data_cls(
+        tx_id=1,
+        pid=pid_data,
+        bucket=bucket_data,
+        draft=draft_data,
+        parent=parent_data,
     )
+    action = RDMDraftCreateAction(data)
+
     rows = list(action.prepare())
     assert len(rows) == 5
     assert rows[0].type == OperationType.INSERT
@@ -172,9 +183,14 @@ def test_create_draft_published_draft(
             "pids": {},
         },
     )
-    action = RDMDraftCreateAction(
-        tx_id=1, pid=pid_data, bucket=bucket_data, draft=draft_data, parent=parent_data
+    data = RDMDraftCreateAction.data_cls(
+        tx_id=1,
+        pid=pid_data,
+        bucket=bucket_data,
+        draft=draft_data,
+        parent=parent_data,
     )
+    action = RDMDraftCreateAction(data)
     rows = list(action.prepare())
     assert len(rows) == 4
     assert rows[0].type == OperationType.INSERT

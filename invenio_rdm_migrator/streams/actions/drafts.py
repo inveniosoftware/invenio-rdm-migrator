@@ -7,10 +7,11 @@
 
 """Invenio RDM migration drafts row load module."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 
-from ...actions import LoadAction
+from ...actions import LoadAction, LoadData
 from ...load.ids import generate_pk, generate_recid, generate_uuid
 from ...load.postgresql.transactions.operations import Operation, OperationType
 from ...state import STATE
@@ -24,28 +25,31 @@ from ..records.table_generators.references import (
 )
 
 
+@dataclass
+class RDMDraftCreateData(LoadData):
+    """Draft create action data."""
+
+    # NOTE: we could go with some common ``typing.TypedDict`` definitions to help more
+    pid: dict
+    bucket: dict
+    draft: dict
+    parent: dict
+
+
+# TODO: Could also be named `DraftCreateAction`
 class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
     """RDM draft creation."""
 
     name = "create-draft"
+    data_cls = RDMDraftCreateData
 
-    def __init__(self, tx_id, pid, bucket, draft, parent):
-        """Constructor."""
-        super().__init__(
-            tx_id,
-            pks=[
-                ("pid", "id", generate_pk),
-                ("draft", "id", generate_uuid),
-                ("parent", "id", generate_uuid),
-                ("parent", "json.pid", generate_recid),
-                ("draft", "json.pid", partial(generate_recid, status="N")),
-            ],
-        )
-        assert pid and bucket and draft and parent  # i.e. not None as parameter
-        self.pid = pid
-        self.bucket = bucket
-        self.draft = draft
-        self.parent = parent
+    pks = [
+        ("pid", "id", generate_pk),
+        ("draft", "id", generate_uuid),
+        ("parent", "id", generate_uuid),
+        ("parent", "json.pid", generate_recid),
+        ("draft", "json.pid", partial(generate_recid, status="N")),
+    ]
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -55,30 +59,27 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
     def _generate_pid_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        if self.pid["pid_type"] != "depid":
+        pid = self.data.pid
+        if pid["pid_type"] != "depid":
             # FIXME: temporary fix to test the microseconds conversion
             # should be moved to a mixin or similar on the transform step
             from datetime import datetime
 
-            self.pid["created"] = datetime.fromtimestamp(
-                self.pid["created"] / 1_000_000
-            )
-            self.pid["updated"] = datetime.fromtimestamp(
-                self.pid["updated"] / 1_000_000
-            )
+            pid["created"] = datetime.fromtimestamp(pid["created"] / 1_000_000)
+            pid["updated"] = datetime.fromtimestamp(pid["updated"] / 1_000_000)
 
             # note would raise an exception if it exists
             STATE.PIDS.add(
-                self.pid["pid_value"],  # recid
+                pid["pid_value"],  # recid
                 {
-                    "id": self.pid["id"],
-                    "pid_type": self.pid["pid_type"],
-                    "status": self.pid["status"],
-                    "obj_type": self.pid["object_type"],
-                    "created": self.pid["created"],
+                    "id": pid["id"],
+                    "pid_type": pid["pid_type"],
+                    "status": pid["status"],
+                    "obj_type": pid["object_type"],
+                    "created": pid["created"],
                 },
             )
-            yield Operation(OperationType.INSERT, PersistentIdentifier(**self.pid))
+            yield Operation(OperationType.INSERT, PersistentIdentifier(**pid))
 
     def _generate_bucket_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -86,71 +87,67 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
         # should be moved to a mixin or similar on the transform step
         from datetime import datetime
 
-        self.bucket["created"] = datetime.fromtimestamp(
-            self.bucket["created"] / 1_000_000
-        )
-        self.bucket["updated"] = datetime.fromtimestamp(
-            self.bucket["updated"] / 1_000_000
-        )
+        bucket = self.data.bucket
+        bucket["created"] = datetime.fromtimestamp(bucket["created"] / 1_000_000)
+        bucket["updated"] = datetime.fromtimestamp(bucket["updated"] / 1_000_000)
 
-        yield Operation(OperationType.INSERT, FilesBucket(**self.bucket))
+        yield Operation(OperationType.INSERT, FilesBucket(**bucket))
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""
         now = datetime.utcnow().isoformat()
 
+        draft = self.data.draft
+        parent = self.data.parent
+
         # some legacy records have different pid value in deposit than record
         # however _deposit.pid.value would contain the correct one
         # if it is not legacy we get it from the current field (json.id)
-        recid = self.draft["json"]["id"]
+        recid = draft["json"]["id"]
         forked_published = STATE.RECORDS.get(recid)
 
-        existing_parent = STATE.PARENTS.get(self.parent["json"]["id"])
+        existing_parent = STATE.PARENTS.get(parent["json"]["id"])
         # parent id
         #  a) draft of a published record, parent id = parent id of published
         #  b) new version, parent id = parent id of the previous version
         #  c) draft of a new record, parent id = given by pk func
         # both values should be equal at first, the first is not calculated as pk func
-        self.draft["parent_id"] = self.parent["id"]
+        draft["parent_id"] = parent["id"]
         if not existing_parent:  # case c
             STATE.PARENTS.add(
-                self.parent["json"]["id"],  # recid
+                parent["json"]["id"],  # recid
                 {
-                    "id": self.parent["id"],
-                    "next_draft_id": self.draft["id"],
+                    "id": parent["id"],
+                    "next_draft_id": draft["id"],
                 },
             )
             # drafts have a parent on save
             # on the other hand there is no community parent/request
             # FIXME: temporary fix to test the microseconds conversion
             # should be moved to a mixin or similar on the transform step
-            self.parent["created"] = datetime.fromtimestamp(
-                self.parent["created"] / 1_000_000
-            )
-            self.parent["updated"] = datetime.fromtimestamp(
-                self.parent["updated"] / 1_000_000
-            )
-            for obj in generate_parent_rows(self.parent):
+            parent["created"] = datetime.fromtimestamp(parent["created"] / 1_000_000)
+            parent["updated"] = datetime.fromtimestamp(parent["updated"] / 1_000_000)
+            for obj in generate_parent_rows(parent):
                 # cannot use yield from because we have to add `op`
                 yield Operation(OperationType.INSERT, obj)
 
         else:  # case a and b
-            self.parent["id"] = existing_parent["id"]
-            self.draft["parent_id"] = existing_parent["id"]  # keep metadata consistent
+            parent["id"] = existing_parent["id"]
+            draft["parent_id"] = existing_parent["id"]  # keep metadata consistent
             if not forked_published:
                 # it can only happen once
                 assert not existing_parent.get("next_draft_id")
                 STATE.PARENTS.update(
-                    self.parent["json"]["id"],
-                    {"next_draft_id": self.draft["id"]},
+                    parent["json"]["id"],
+                    {"next_draft_id": draft["id"]},
                 )
             else:
                 # state parent  and an existing record must match
-                assert self.parent["id"] == forked_published["parent_id"]
+                assert parent["id"] == forked_published["parent_id"]
 
         if not forked_published:
             # recid must have been created by a previous action in the same tx group
-            draft_pid = STATE.PIDS.get(self.draft["json"]["id"])
+            draft_pid = STATE.PIDS.get(draft["json"]["id"])
             assert draft_pid
 
             # update to add object_uuid
@@ -160,10 +157,10 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
                 PersistentIdentifier(
                     id=draft_pid["id"],  # pk
                     pid_type=draft_pid["pid_type"],  # in drafts are recid
-                    pid_value=self.draft["json"]["id"],
+                    pid_value=draft["json"]["id"],
                     status=draft_pid["status"],
                     object_type="rec",  # hardcoded since the state has the initial one
-                    object_uuid=self.draft["id"],
+                    object_uuid=draft["id"],
                     created=draft_pid["created"],
                     updated=now,
                 ),
@@ -171,33 +168,29 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
         # FIXME: temporary fix to test the microseconds conversion
         # should be moved to a mixin or similar on the transform step
-        self.draft["created"] = datetime.fromtimestamp(
-            self.draft["created"] / 1_000_000
-        )
-        self.draft["updated"] = datetime.fromtimestamp(
-            self.draft["updated"] / 1_000_000
-        )
+        draft["created"] = datetime.fromtimestamp(draft["created"] / 1_000_000)
+        draft["updated"] = datetime.fromtimestamp(draft["updated"] / 1_000_000)
 
         yield Operation(
             OperationType.INSERT,
             RDMDraftMetadata(
-                id=forked_published.get("id") or self.draft["id"],
-                json=self.draft["json"],
-                created=self.draft["created"],
-                updated=self.draft["updated"],
-                version_id=self.draft["version_id"],
-                index=forked_published.get("index") or self.draft["index"],
-                bucket_id=self.draft["bucket_id"],
-                parent_id=self.parent["id"],
-                expires_at=self.draft["expires_at"],
+                id=forked_published.get("id") or draft["id"],
+                json=draft["json"],
+                created=draft["created"],
+                updated=draft["updated"],
+                version_id=draft["version_id"],
+                index=forked_published.get("index") or draft["index"],
+                bucket_id=draft["bucket_id"],
+                parent_id=parent["id"],
+                expires_at=draft["expires_at"],
                 fork_version_id=forked_published.get("fork_version_id")
-                or self.draft["fork_version_id"],
+                or draft["fork_version_id"],
             ),
         )
 
         # FIXME: this query can be avoided by keeping a consistent view across this method
         # I dont want to refactor yet another thing on this PR.
-        existing_parent = STATE.PARENTS.get(self.parent["json"]["id"])
+        existing_parent = STATE.PARENTS.get(parent["json"]["id"])
 
         version_op = OperationType.UPDATE if forked_published else OperationType.INSERT
         yield Operation(
@@ -213,8 +206,8 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
     def _resolve_references(self, **kwargs):
         """Resolve references e.g communities slug names."""
         # resolve parent communities slug
-        parent = self.parent
+        parent = self.data.parent
         communities = parent["json"].get("communities")
         if communities:
             self.resolve_communities(communities)
-        self.resolve_draft_pids(self.draft)
+        self.resolve_draft_pids(self.data.draft)

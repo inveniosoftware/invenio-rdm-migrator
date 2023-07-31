@@ -13,7 +13,9 @@ the E T L instances a lightweight container that "calls" the corresponding metho
 an action. Being the latter the one implementing the logic.
 """
 
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import ClassVar
 
 from ..logging import Logger
 from ..utils import dict_set
@@ -24,41 +26,16 @@ class Action:
 
     name = None
 
-    def __init__(self, tx_id):
+    def __init__(self):
         """Constructor."""
         assert self.name  # it must have a name
-        self.tx_id = tx_id
 
 
-class TransformAction(Action, ABC):
-    """Transform action.
+@dataclass
+class LoadData:
+    """Load action data."""
 
-    This action detects or fingerprints an action type based on data and enables its
-    transformation into a LoadAction.
-    """
-
-    mapped_cls = None
-
-    def __init__(self, tx_id, data):
-        """Constructor."""
-        super().__init__(tx_id=tx_id)
-        assert isinstance(data, list)  # list of dictionaries with payload
-        self.data = data
-
-    def transform(self):
-        """Transforms an action."""
-        return self.mapped_cls(tx_id=self.tx_id, **self._transform_data())
-
-    def fingerprint(self):  # pragma: no cover
-        """Checks if the data corresponds with that required by the action.
-
-        If it does, it sets the attributes.
-        """
-        return False
-
-    @abstractmethod
-    def _transform_data(self):  # pragma: no cover
-        """Transforms the data and returns an instance of the mapped_cls."""
+    tx_id: int
 
 
 class LoadAction(Action, ABC):
@@ -67,18 +44,23 @@ class LoadAction(Action, ABC):
     This generates the corresponding SQL operations to perform.
     """
 
-    def __init__(self, tx_id, pks=None):
+    data_cls: ClassVar[type[LoadData]] = None
+    pks = []
+
+    def __init__(self, data: data_cls):
         """Constructor.
 
         :param pks: a triplet with the attribute, the key and the function.
         """
-        super().__init__(tx_id)
-        self.pks = pks or []
+        assert self.data_cls is not None
+        assert isinstance(data, self.data_cls)
+        self.data = data
+        super().__init__()
 
     def _generate_pks(self):
         for attr_name, path, pk_func in self.pks:
             try:
-                attr = getattr(self, attr_name)
+                attr = getattr(self.data, attr_name)
                 dict_set(attr, path, pk_func(attr))
             except AttributeError:
                 logger = Logger.get_logger()
@@ -105,3 +87,37 @@ class LoadAction(Action, ABC):
         # resolve entry references
         self._resolve_references()
         yield from self._generate_rows(**kwargs)
+
+
+class TransformAction(Action, ABC):
+    """Transform action.
+
+    Detects/matches an action type based on transaction data and transforms the data
+    into a target ``LoadAction``.
+    """
+
+    load_cls: ClassVar[type[LoadAction]] = None
+
+    def __init__(self, tx):
+        """Constructor."""
+        assert self.load_cls is not None
+        self.tx = tx
+        super().__init__()
+
+    @property
+    def data_cls(self):
+        """Load data class."""
+        return self.load_cls.data_cls
+
+    def transform(self):
+        """Transforms an action."""
+        return self.load_cls(self._transform_data())
+
+    @classmethod
+    def matches_action(cls, tx):  # pragma: no cover
+        """Checks if the data matches with that required by the action."""
+        return False
+
+    @abstractmethod
+    def _transform_data(self):  # pragma: no cover
+        """Transforms the data and returns an instance of the ``data_cls``."""
