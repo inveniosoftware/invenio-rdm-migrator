@@ -7,6 +7,6 @@
 
 """Invenio RDM migration transaction stream."""
 
-from .drafts import RDMDraftCreateAction
+from .drafts import DraftCreateAction
 
-__all__ = ("RDMDraftCreateAction",)
+__all__ = ("DraftCreateAction",)

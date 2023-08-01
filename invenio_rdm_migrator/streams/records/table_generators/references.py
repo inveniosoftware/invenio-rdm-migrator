@@ -21,7 +21,7 @@ class CommunitiesReferencesMixin:
         default_slug = communities.get("default")
         default_id = STATE.COMMUNITIES.get(default_slug)
         if not default_id:
-            # TODO: maybe raise error without correct default community?
+            # raise error without correct default community?
             communities = {}
 
         communities["default"] = default_id

@@ -18,7 +18,7 @@ from ...state import STATE
 from ..models.files import FilesBucket
 from ..models.pids import PersistentIdentifier
 from ..models.records import RDMDraftMetadata, RDMVersionState
-from ..records.table_generators.parents import generate_parent_rows  # FIXME: move
+from ..records.table_generators.parents import generate_parent_rows
 from ..records.table_generators.references import (
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
@@ -36,8 +36,7 @@ class RDMDraftCreateData(LoadData):
     parent: dict
 
 
-# TODO: Could also be named `DraftCreateAction`
-class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
+class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
     """RDM draft creation."""
 
     name = "create-draft"
@@ -61,8 +60,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
         """Generates rows for a new draft."""
         pid = self.data.pid
         if pid["pid_type"] != "depid":
-            # FIXME: temporary fix to test the microseconds conversion
-            # should be moved to a mixin or similar on the transform step
+            # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
             from datetime import datetime
 
             pid["created"] = datetime.fromtimestamp(pid["created"] / 1_000_000)
@@ -83,9 +81,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
 
     def _generate_bucket_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        # FIXME: temporary fix to test the microseconds conversion
-        # should be moved to a mixin or similar on the transform step
-        from datetime import datetime
+        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
 
         bucket = self.data.bucket
         bucket["created"] = datetime.fromtimestamp(bucket["created"] / 1_000_000)
@@ -123,8 +119,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
             )
             # drafts have a parent on save
             # on the other hand there is no community parent/request
-            # FIXME: temporary fix to test the microseconds conversion
-            # should be moved to a mixin or similar on the transform step
+            # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
             parent["created"] = datetime.fromtimestamp(parent["created"] / 1_000_000)
             parent["updated"] = datetime.fromtimestamp(parent["updated"] / 1_000_000)
             for obj in generate_parent_rows(parent):
@@ -166,8 +161,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
                 ),
             )
 
-        # FIXME: temporary fix to test the microseconds conversion
-        # should be moved to a mixin or similar on the transform step
+        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
         draft["created"] = datetime.fromtimestamp(draft["created"] / 1_000_000)
         draft["updated"] = datetime.fromtimestamp(draft["updated"] / 1_000_000)
 
@@ -188,8 +182,7 @@ class RDMDraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReference
             ),
         )
 
-        # FIXME: this query can be avoided by keeping a consistent view across this method
-        # I dont want to refactor yet another thing on this PR.
+        # this query can be avoided by keeping a consistent view across this method
         existing_parent = STATE.PARENTS.get(parent["json"]["id"])
 
         version_op = OperationType.UPDATE if forked_published else OperationType.INSERT

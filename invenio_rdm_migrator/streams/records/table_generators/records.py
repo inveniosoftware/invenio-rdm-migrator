@@ -96,8 +96,8 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             if "default" in parent["json"]["communities"]:
                 parent_def_id = parent["json"]["communities"]["default"]
                 parent_comm_id = parent["id"]
-                # TODO temporary fix for deleted communities. When a community is deleted, its id is the slug and fails on DB (foreign key expects uuid and not string)
-                # check uuid
+                # when a community is deleted, its id is the slug and fails on DB
+                # FK expects uuid and not string
                 if _is_valid_uuid(parent_def_id) and _is_valid_uuid(parent_comm_id):
                     yield RDMParentCommunityMetadata(
                         community_id=parent_def_id,

@@ -31,8 +31,8 @@ class PostgreSQLTx(Load):
 
     def _update_obj(self, session, obj):
         """Updates all attributes of an object."""
-        # FIXME: this function accesses many private methods, variables
-        # assumes indexes, etc. Needs refactoring, implemented for PoC
+        # this function accesses many private methods, variables, assumes indexes, etc.
+        # pragmatic implementation, feel free to refactor.
         pk = obj.__mapper__.primary_key[0].name
         pk_value = getattr(obj, pk)
         db_obj = session.get(obj.__class__, pk_value)
@@ -61,7 +61,7 @@ class PostgreSQLTx(Load):
                         elif type_ == OperationType.UPDATE:
                             self._update_obj(session, obj)
                         session.flush()
-                    except Exception:  # FIXME: specify exception cls
+                    except Exception:
                         logger.exception(
                             f"Could not load {action.tx_id} ({action.name})",
                             exc_info=1,

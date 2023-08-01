@@ -10,7 +10,7 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions import RDMDraftCreateAction
+from invenio_rdm_migrator.streams.actions import DraftCreateAction
 from invenio_rdm_migrator.streams.models.files import FilesBucket
 from invenio_rdm_migrator.streams.models.pids import PersistentIdentifier
 from invenio_rdm_migrator.streams.models.records import (
@@ -106,7 +106,7 @@ def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data)
         draft=draft_data,
         parent=parent_data,
     )
-    action = RDMDraftCreateAction(data)
+    action = DraftCreateAction(data)
     rows = list(action.prepare())
     assert len(rows) == 7
     assert rows[0].type == OperationType.INSERT
@@ -144,7 +144,7 @@ def test_create_draft_new_version(
         draft=draft_data,
         parent=parent_data,
     )
-    action = RDMDraftCreateAction(data)
+    action = DraftCreateAction(data)
 
     rows = list(action.prepare())
     assert len(rows) == 5
@@ -190,7 +190,7 @@ def test_create_draft_published_draft(
         draft=draft_data,
         parent=parent_data,
     )
-    action = RDMDraftCreateAction(data)
+    action = DraftCreateAction(data)
     rows = list(action.prepare())
     assert len(rows) == 4
     assert rows[0].type == OperationType.INSERT
