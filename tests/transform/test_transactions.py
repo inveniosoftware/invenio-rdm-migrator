@@ -54,7 +54,7 @@ class TestTransformAction(TransformAction):
         """Transforms the data and returns an instance of the ``data_cls``."""
         record = next(o["after"] for o in self.tx.operations if o["table"] == "records")
         record["json"]["titles"] = [record["json"].pop("title")]
-        return self.data_cls(
+        return dict(
             tx_id=self.tx.id,
             record=record,
             files=[o["after"] for o in self.tx.operations if o["table"] == "files"],

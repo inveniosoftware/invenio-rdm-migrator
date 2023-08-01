@@ -47,14 +47,13 @@ class LoadAction(Action, ABC):
     data_cls: ClassVar[type[LoadData]] = None
     pks = []
 
-    def __init__(self, data: data_cls):
+    def __init__(self, data: dict):
         """Constructor.
 
         :param pks: a triplet with the attribute, the key and the function.
         """
-        assert self.data_cls is not None
-        assert isinstance(data, self.data_cls)
-        self.data = data
+        assert data is not None
+        self.data = self.data_cls(**data)
         super().__init__()
 
     def _generate_pks(self):
@@ -104,11 +103,6 @@ class TransformAction(Action, ABC):
         self.tx = tx
         super().__init__()
 
-    @property
-    def data_cls(self):
-        """Load data class."""
-        return self.load_cls.data_cls
-
     def transform(self):
         """Transforms an action."""
         return self.load_cls(self._transform_data())
@@ -120,4 +114,4 @@ class TransformAction(Action, ABC):
 
     @abstractmethod
     def _transform_data(self):  # pragma: no cover
-        """Transforms the data and returns an instance of the ``data_cls``."""
+        """Transforms the data and returns a dictionary."""

@@ -99,7 +99,7 @@ def pid_data():
 
 
 def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data):
-    data = RDMDraftCreateAction.data_cls(
+    data = dict(
         tx_id=1,
         pid=pid_data,
         bucket=bucket_data,
@@ -137,7 +137,7 @@ def test_create_draft_new_version(
             "latest_index": 1,
         },
     )
-    data = RDMDraftCreateAction.data_cls(
+    data = dict(
         tx_id=1,
         pid=pid_data,
         bucket=bucket_data,
@@ -183,7 +183,7 @@ def test_create_draft_published_draft(
             "pids": {},
         },
     )
-    data = RDMDraftCreateAction.data_cls(
+    data = dict(
         tx_id=1,
         pid=pid_data,
         bucket=bucket_data,
