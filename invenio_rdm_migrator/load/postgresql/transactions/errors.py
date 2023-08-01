@@ -13,11 +13,6 @@ class TableNotFound(Exception):
 
     def __init__(self, table_name):
         """Constructor."""
-        self.table_name = table_name
-
-    @property
-    def description(self):
-        """Exception's description."""
-        return (
+        super().__init__(
             f"Cannot process transaction row. Table not configured: {self.table_name}"
         )
