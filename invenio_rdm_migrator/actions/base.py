@@ -13,7 +13,7 @@ the E T L instances a lightweight container that "calls" the corresponding metho
 an action. Being the latter the one implementing the logic.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -107,10 +107,9 @@ class TransformAction(Action, ABC):
         """Transforms an action."""
         return self.load_cls(self._transform_data())
 
-    @classmethod
+    @abstractclassmethod
     def matches_action(cls, tx):  # pragma: no cover
         """Checks if the data matches with that required by the action."""
-        return False
 
     @abstractmethod
     def _transform_data(self):  # pragma: no cover

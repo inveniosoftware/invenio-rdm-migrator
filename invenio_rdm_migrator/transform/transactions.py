@@ -11,6 +11,7 @@ from abc import ABC
 
 from ..actions.base import TransformAction
 from .base import Transform
+from .errors import MultipleActionMatches, NoActionMatch
 
 
 class BaseTxTransform(Transform, ABC):
@@ -19,9 +20,17 @@ class BaseTxTransform(Transform, ABC):
     actions: list[TransformAction] = []
 
     def _detect_action(self, tx):
+        match_cnt = 0
+        match_cls = None
         for action_cls in self.actions:
             if action_cls.matches_action(tx):
-                return action_cls  # return the first matched class
+                match_cnt += 1
+                match_cls = action_cls
+
+        if match_cnt > 1:
+            raise MultipleActionMatches(tx)
+
+        return match_cls  # return the first matched class
 
     def _transform(self, tx):
         """Transform action.
@@ -31,7 +40,7 @@ class BaseTxTransform(Transform, ABC):
         """
         action_cls = self._detect_action(tx)
         if not action_cls:
-            raise Exception(f"Could not detect action for {tx}")
+            raise NoActionMatch(tx)
 
         action = action_cls(tx)
         return action.transform()

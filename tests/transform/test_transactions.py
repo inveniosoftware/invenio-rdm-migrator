@@ -9,9 +9,29 @@
 
 from dataclasses import dataclass
 
+import pytest
+
 from invenio_rdm_migrator.actions import LoadAction, LoadData, TransformAction
 from invenio_rdm_migrator.extract import Tx
 from invenio_rdm_migrator.transform import BaseTxTransform
+from invenio_rdm_migrator.transform.errors import MultipleActionMatches, NoActionMatch
+
+
+@pytest.fixture()
+def tx(scope="function"):
+    return Tx(
+        id=1,
+        operations=[
+            {
+                "table": "records",
+                "op": "I",
+                "after": {"id": "abc", "json": {"title": "Test title"}},
+            },
+            {"table": "files", "op": "I", "after": {"key": "data.zip"}},
+            {"table": "files", "op": "I", "after": {"key": "article.pdf"}},
+            {"table": "files", "op": "I", "after": {"key": "figure.png"}},
+        ],
+    )
 
 
 @dataclass
@@ -67,20 +87,7 @@ class TestTxTransform(BaseTxTransform):
     ]
 
 
-def test_transform_returns_load_action():
-    tx = Tx(
-        id=1,
-        operations=[
-            {
-                "table": "records",
-                "op": "I",
-                "after": {"id": "abc", "json": {"title": "Test title"}},
-            },
-            {"table": "files", "op": "I", "after": {"key": "data.zip"}},
-            {"table": "files", "op": "I", "after": {"key": "article.pdf"}},
-            {"table": "files", "op": "I", "after": {"key": "figure.png"}},
-        ],
-    )
+def test_transform_returns_load_action(tx):
     transform = TestTxTransform()
     load_action = transform._transform(tx)
     assert isinstance(load_action, TestLoadAction)
@@ -93,3 +100,27 @@ def test_transform_returns_load_action():
         {"key": "article.pdf"},
         {"key": "figure.png"},
     ]
+
+
+def test_multiple_action_matches(tx):
+    class MultipleTxTransform(BaseTxTransform):
+        actions = [
+            TestTransformAction,
+            TestTransformAction,
+        ]
+
+    transform = MultipleTxTransform()
+    with pytest.raises(MultipleActionMatches):
+        transform._transform(tx)
+
+
+def test_no_action_matches():
+    tx = Tx(
+        id=1,
+        operations=[
+            {"table": "random", "op": "I", "after": {"some": "value"}},
+        ],
+    )
+    transform = TestTxTransform()
+    with pytest.raises(NoActionMatch):
+        transform._transform(tx)
