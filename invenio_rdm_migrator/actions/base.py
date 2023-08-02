@@ -68,7 +68,7 @@ class LoadAction(Action, ABC):
                 logger = Logger.get_logger()
                 logger.exception(f"Path {path} not found on record", exc_info=1)
 
-    def _resolve_references(self, data, **kwargs):  # pragma: no cover
+    def _resolve_references(self, **kwargs):  # pragma: no cover
         """Resolve references e.g communities slug names."""
         pass
 
