@@ -8,7 +8,6 @@
 """User actions module."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 from ...actions import LoadAction, LoadData
 from ...load.postgresql.transactions.operations import Operation, OperationType
@@ -21,7 +20,7 @@ class UserData(LoadData):
     """User action data."""
 
     user: dict
-    login_information: Optional[dict] = None
+    login_information: dict
 
 
 class UserRegistrationAction(LoadAction, EncryptMixin):
@@ -52,14 +51,12 @@ class UserRegistrationAction(LoadAction, EncryptMixin):
 
         yield Operation(OperationType.INSERT, User(**self.data.user))
 
-        if self.data.login_information:
-            yield Operation(
-                OperationType.INSERT,
-                LoginInformation(
-                    user_id=self.data.user["id"],
-                    **self.data.login_information,
-                ),
-            )
+        yield Operation(
+            OperationType.INSERT,
+            LoginInformation(
+                user_id=self.data.user["id"], **self.data.login_information
+            ),
+        )
 
 
 # FIXME: To be verified
@@ -80,7 +77,6 @@ class UserEditAction(LoadAction, EncryptMixin):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a user edit."""
-        assert not self.data.login_information
         # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
         from datetime import datetime
 
@@ -94,6 +90,13 @@ class UserEditAction(LoadAction, EncryptMixin):
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
         yield Operation(OperationType.UPDATE, User(**self.data.user))
+
+        yield Operation(
+            OperationType.UPDATE,
+            LoginInformation(
+                user_id=self.data.user["id"], **self.data.login_information
+            ),
+        )
 
 
 class UserProfileEditAction(LoadAction):
