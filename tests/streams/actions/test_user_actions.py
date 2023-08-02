@@ -57,10 +57,12 @@ def test_register_new_user(secret_keys_state, user_data, login_info_data):
     assert isinstance(rows[1].obj, LoginInformation)
 
 
-def test_edit_user(secret_keys_state, user_data):
-    data = dict(tx_id=1, user=user_data)
+def test_edit_user(secret_keys_state, user_data, login_info_data):
+    data = dict(tx_id=1, user=user_data, login_information=login_info_data)
     action = UserEditAction(data)
     rows = list(action.prepare())
-    assert len(rows) == 1
+    assert len(rows) == 2
     assert rows[0].type == OperationType.UPDATE
     assert isinstance(rows[0].obj, User)
+    assert rows[1].type == OperationType.UPDATE
+    assert isinstance(rows[1].obj, LoginInformation)
