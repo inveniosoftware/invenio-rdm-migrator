@@ -14,20 +14,6 @@ from invenio_rdm_migrator.transform import EncryptMixin, Transform
 
 
 @pytest.fixture(scope="function")
-def secret_keys_state(state):
-    """Adds secret keys to global state."""
-    state.VALUES.add(
-        "old_secret_key",
-        {"value": bytes("OLDKEY", "utf-8")},
-    )
-    state.VALUES.add(
-        "new_secret_key",
-        {"value": bytes("NEWKEY", "utf-8")},
-    )
-    return
-
-
-@pytest.fixture(scope="function")
 def transform_with_mixin():
     """Test instance of a transform class with identity mixin"""
 

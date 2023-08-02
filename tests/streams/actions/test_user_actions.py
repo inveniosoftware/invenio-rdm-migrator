@@ -10,7 +10,7 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions import UserRegistrationAction
+from invenio_rdm_migrator.streams.actions import UserEditAction, UserRegistrationAction
 from invenio_rdm_migrator.streams.models.users import LoginInformation, User
 
 
@@ -23,7 +23,7 @@ def user_data():
         "username": "test_user",
         "displayname": "test_user",
         "email": "someaddr@domain.org",
-        "password": "$pbkdf2-sha512$Th1sW0ulDB34P4sSw0rd",
+        "password": "zmkNzdnG1PXP5C3dmZqlJw==",
         "active": True,
         "confirmed_at": None,
         "version_id": 1,
@@ -46,7 +46,7 @@ def login_info_data():
     }
 
 
-def test_register_new_user(user_data, login_info_data):
+def test_register_new_user(secret_keys_state, user_data, login_info_data):
     data = dict(tx_id=1, user=user_data, login_information=login_info_data)
     action = UserRegistrationAction(data)
     rows = list(action.prepare())
@@ -55,3 +55,12 @@ def test_register_new_user(user_data, login_info_data):
     assert isinstance(rows[0].obj, User)
     assert rows[1].type == OperationType.INSERT
     assert isinstance(rows[1].obj, LoginInformation)
+
+
+def test_edit_user(secret_keys_state, user_data):
+    data = dict(tx_id=1, user=user_data)
+    action = UserEditAction(data)
+    rows = list(action.prepare())
+    assert len(rows) == 1
+    assert rows[0].type == OperationType.UPDATE
+    assert isinstance(rows[0].obj, User)
