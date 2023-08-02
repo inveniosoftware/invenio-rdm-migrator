@@ -7,47 +7,49 @@
 
 """User actions module."""
 
-from ...actions import LoadAction
+from dataclasses import dataclass
 
-# from ..models.users import LoginInformation, User, UserIdentity
+from ...actions import LoadAction, LoadData
+from ...load.postgresql.transactions.operations import Operation, OperationType
+from ..models.users import LoginInformation, User
+
+
+@dataclass
+class UserData(LoadData):
+    """User action data."""
+
+    user: dict
+    login_information: dict
 
 
 class UserRegistrationAction(LoadAction):
     """Registers a user."""
 
     name = "register-user"
-
-    def __init__(
-        self,
-        tx_id,
-        user,
-        profile,
-    ):
-        """Constructor."""
-        super().__init__(tx_id)
-        assert user and profile  # i.e. not None as parameter
-        self.user = user
-        self.profile = profile
+    data_cls = UserData
 
     def _generate_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        # login_info = self.user["user"].pop("login_information", None)
-        # self.user["profile"] = self.profile
+        """Generates rows for a new user."""
+        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
+        from datetime import datetime
 
-        # yield User(**self.user)
+        self.data.user["created"] = datetime.fromtimestamp(
+            self.data.user["created"] / 1_000_000
+        )
+        self.data.user["updated"] = datetime.fromtimestamp(
+            self.data.user["updated"] / 1_000_000
+        )
 
-        # if login_info:
-        #     yield LoginInformation(
-        #         user_id=self.user["id"],
-        #         **login_info,
-        #     )
-        # identities = data.get("identities", [])
-        # for identity in identities:
-        #     yield UserIdentity(
-        #         id_user=self.user["id"],
-        #         **identity,
-        #     )
-        pass
+        yield Operation(OperationType.INSERT, User(**self.data.user))
+
+        if self.data.login_information:
+            yield Operation(
+                OperationType.INSERT,
+                LoginInformation(
+                    user_id=self.data.user["id"],
+                    **self.data.login_information,
+                ),
+            )
 
 
 # FIXME: To be verified

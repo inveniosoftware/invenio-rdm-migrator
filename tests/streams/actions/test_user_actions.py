@@ -5,10 +5,9 @@
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Draft actions tests."""
+"""User actions tests."""
 
 import pytest
-
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
 from invenio_rdm_migrator.streams.actions import UserRegistrationAction
@@ -33,18 +32,12 @@ def user_data():
             "visibility": "restricted",
             "email_visibility": "restricted",
         },
-        "last_login_at": None,
-        "current_login_at": None,
-        "last_login_ip": None,
-        "current_login_ip": None,
-        "login_count": None,
     }
 
 
 @pytest.fixture()
-def user_data():
+def login_info_data():
     return {
-        "user_id": 123456,
         "last_login_at": None,
         "current_login_at": None,
         "last_login_ip": None,
@@ -53,12 +46,12 @@ def user_data():
     }
 
 
-def test_create_draft_new(user_data, login_info_data):
-    data = dict(tx_id=1, user=user_data, login_info=login_info_data)
+def test_register_new_user(user_data, login_info_data):
+    data = dict(tx_id=1, user=user_data, login_information=login_info_data)
     action = UserRegistrationAction(data)
     rows = list(action.prepare())
     assert len(rows) == 2
     assert rows[0].type == OperationType.INSERT
     assert isinstance(rows[0].obj, User)
-    assert rows[0].type == OperationType.INSERT
-    assert isinstance(rows[0].obj, LoginInformation)
+    assert rows[1].type == OperationType.INSERT
+    assert isinstance(rows[1].obj, LoginInformation)

@@ -8,5 +8,6 @@
 """Invenio RDM migration transaction stream."""
 
 from .drafts import DraftCreateAction
+from .users import UserRegistrationAction
 
 __all__ = ("DraftCreateAction",)
