@@ -28,7 +28,7 @@ class User(Model):
     email: Mapped[str]
     password: Mapped[str]
     active: Mapped[bool]
-    updated: Mapped[str]  # datetime
+    confirmed_at: Mapped[str]  # datetime
     version_id: Mapped[int]
     profile: Mapped[dict] = mapped_column(JSONB())
     preferences: Mapped[dict] = mapped_column(JSONB())
