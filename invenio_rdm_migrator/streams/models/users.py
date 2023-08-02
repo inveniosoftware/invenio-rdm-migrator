@@ -23,15 +23,15 @@ class User(Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
-    username: Mapped[str]
-    displayname: Mapped[str]
+    username: Mapped[str] = mapped_column(nullable=True)
+    displayname: Mapped[str] = mapped_column(nullable=True)
     email: Mapped[str]
     password: Mapped[str]
     active: Mapped[bool]
-    confirmed_at: Mapped[str]  # datetime
+    confirmed_at: Mapped[str] = mapped_column(nullable=True)  # datetime
     version_id: Mapped[int]
-    profile: Mapped[dict] = mapped_column(JSONB())
-    preferences: Mapped[dict] = mapped_column(JSONB())
+    profile: Mapped[dict] = mapped_column(JSONB(), nullable=True)
+    preferences: Mapped[dict] = mapped_column(JSONB(), nullable=True)
 
 
 class LoginInformation(Model):
@@ -40,10 +40,11 @@ class LoginInformation(Model):
     __tablename__: InitVar[str] = "accounts_user_login_information"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    last_login_at: Mapped[str]  # datetime
-    current_login_at: Mapped[str]  # datetime
-    last_login_ip: Mapped[str]
-    current_login_ip: Mapped[str]
+    # the initial creation has them all to None
+    last_login_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    current_login_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    last_login_ip: Mapped[str] = mapped_column(nullable=True)
+    current_login_ip: Mapped[str] = mapped_column(nullable=True)
     login_count: Mapped[int]
 
 
