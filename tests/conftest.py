@@ -65,3 +65,17 @@ def communities_state(state):
     state.COMMUNITIES.add("comm", {"id": "12345678-abcd-1a2b-3c4d-123abc456def"})
 
     return state
+
+
+@pytest.fixture(scope="function")
+def secret_keys_state(state):
+    """Adds secret keys to global state."""
+    state.VALUES.add(
+        "old_secret_key",
+        {"value": bytes("OLDKEY", "utf-8")},
+    )
+    state.VALUES.add(
+        "new_secret_key",
+        {"value": bytes("NEWKEY", "utf-8")},
+    )
+    return
