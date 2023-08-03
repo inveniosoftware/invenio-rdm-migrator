@@ -8,11 +8,12 @@
 """User actions module."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 from ...actions import LoadAction, LoadData
 from ...load.postgresql.transactions.operations import Operation, OperationType
 from ...transform import EncryptMixin
-from ..models.users import LoginInformation, User
+from ..models.users import LoginInformation, SessionActivity, User
 
 
 @dataclass
@@ -20,7 +21,8 @@ class UserData(LoadData):
     """User action data."""
 
     user: dict
-    login_information: dict
+    login_information: Optional[dict] = None
+    sessions: Optional[list] = None
 
 
 class UserRegistrationAction(LoadAction, EncryptMixin):
@@ -51,18 +53,20 @@ class UserRegistrationAction(LoadAction, EncryptMixin):
 
         yield Operation(OperationType.INSERT, User(**self.data.user))
 
-        yield Operation(
-            OperationType.INSERT,
-            LoginInformation(
-                user_id=self.data.user["id"], **self.data.login_information
-            ),
-        )
+        if self.data.login_information:
+            yield Operation(
+                OperationType.INSERT,
+                LoginInformation(
+                    user_id=self.data.user["id"], **self.data.login_information
+                ),
+            )
 
 
-# FIXME: To be verified
-# an email confirmation would be a user update with a change on `confirmed_at`
-# an email change would be a user update with a change on `email`
-# an password change would be a user update with a change on `password`, requires re-encryption
+# Handles many types of changes:
+# - Profile change (email, username, full name)
+# - Password change (including re-encryption)
+# - User confirmation
+# - User deactivation
 class UserEditAction(LoadAction, EncryptMixin):
     """Registers a user."""
 
@@ -91,12 +95,13 @@ class UserEditAction(LoadAction, EncryptMixin):
 
         yield Operation(OperationType.UPDATE, User(**self.data.user))
 
-        yield Operation(
-            OperationType.UPDATE,
-            LoginInformation(
-                user_id=self.data.user["id"], **self.data.login_information
-            ),
-        )
+        if self.data.login_information:
+            yield Operation(
+                OperationType.UPDATE,
+                LoginInformation(
+                    user_id=self.data.user["id"], **self.data.login_information
+                ),
+            )
 
 
 class UserProfileEditAction(LoadAction):
@@ -119,5 +124,37 @@ class UserProfileEditAction(LoadAction):
         pass
 
 
-# FIXME: do we want to migrate user sessions? might be a good idea to force log-in to get
-# an idea of active users
+class UserDeactivationAction(LoadAction, EncryptMixin):
+    """Deactivate a user.
+
+    For example, flag it as spam.
+    """
+
+    name = "deactivate-user"
+    data_cls = UserData
+
+    def __init__(self, data, **kwargs):
+        """Constructor."""
+        # Explicit calls, otherwise MRO only initializes LoadAction
+        LoadAction.__init__(self, data, **kwargs)
+        EncryptMixin.__init__(self)
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        assert not self.data.user["active"]
+        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
+        from datetime import datetime
+
+        self.data.user["created"] = datetime.fromtimestamp(
+            self.data.user["created"] / 1_000_000
+        )
+        self.data.user["updated"] = datetime.fromtimestamp(
+            self.data.user["updated"] / 1_000_000
+        )
+
+        self.data.user["password"] = self.re_encrypt(self.data.user["password"])
+
+        yield Operation(OperationType.UPDATE, User(**self.data.user))
+
+        for session in self.data.sessions:
+            yield Operation(OperationType.DELETE, SessionActivity(**session))

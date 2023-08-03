@@ -10,11 +10,19 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions import UserEditAction, UserRegistrationAction
-from invenio_rdm_migrator.streams.models.users import LoginInformation, User
+from invenio_rdm_migrator.streams.actions import (
+    UserDeactivationAction,
+    UserEditAction,
+    UserRegistrationAction,
+)
+from invenio_rdm_migrator.streams.models.users import (
+    LoginInformation,
+    SessionActivity,
+    User,
+)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def user_data():
     return {
         "id": 123456,
@@ -46,6 +54,36 @@ def login_info_data():
     }
 
 
+@pytest.fixture()
+def sessions_data():
+    return [
+        {
+            "user_id": None,
+            "created": 0,
+            "updated": 0,
+            "sid_s": "bc51d8ea3ccc285c_64cb64fa",
+            "ip": None,
+            "country": None,
+            "browser": None,
+            "browser_version": None,
+            "os": None,
+            "device": None,
+        },
+        {
+            "user_id": None,
+            "created": 0,
+            "updated": 0,
+            "sid_s": "754493997337aa0a_64cb65bc",
+            "ip": None,
+            "country": None,
+            "browser": None,
+            "browser_version": None,
+            "os": None,
+            "device": None,
+        },
+    ]
+
+
 def test_register_new_user(secret_keys_state, user_data, login_info_data):
     data = dict(tx_id=1, user=user_data, login_information=login_info_data)
     action = UserRegistrationAction(data)
@@ -66,3 +104,20 @@ def test_edit_user(secret_keys_state, user_data, login_info_data):
     assert isinstance(rows[0].obj, User)
     assert rows[1].type == OperationType.UPDATE
     assert isinstance(rows[1].obj, LoginInformation)
+
+
+def test_edit_user(secret_keys_state, user_data, sessions_data):
+    # prepare
+    user_data["active"] = False
+
+    # test
+    data = dict(tx_id=1, user=user_data, sessions=sessions_data)
+    action = UserDeactivationAction(data)
+    rows = list(action.prepare())
+    assert len(rows) == 3
+    assert rows[0].type == OperationType.UPDATE
+    assert isinstance(rows[0].obj, User)
+    assert rows[1].type == OperationType.DELETE
+    assert isinstance(rows[1].obj, SessionActivity)
+    assert rows[2].type == OperationType.DELETE
+    assert isinstance(rows[2].obj, SessionActivity)
