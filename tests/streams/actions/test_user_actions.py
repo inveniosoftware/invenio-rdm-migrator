@@ -106,7 +106,7 @@ def test_edit_user(secret_keys_state, user_data, login_info_data):
     assert isinstance(rows[1].obj, LoginInformation)
 
 
-def test_edit_user(secret_keys_state, user_data, sessions_data):
+def test_deactivate_user(secret_keys_state, user_data, sessions_data):
     # prepare
     user_data["active"] = False
 
