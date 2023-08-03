@@ -42,6 +42,19 @@ class PostgreSQLTx(Load):
 
         return obj
 
+    def _delete_obj(self, session, obj):
+        """Deletes an object.
+
+        It is required to delete the persisted object rather than a new one,
+        which is what happens when the model is instantiated.
+        """
+        # this function accesses many private methods, variables, assumes indexes, etc.
+        # pragmatic implementation, feel free to refactor.
+        pk = obj.__mapper__.primary_key[0].name
+        pk_value = getattr(obj, pk)
+        db_obj = session.get(obj.__class__, pk_value)
+        session.delete(db_obj)
+
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
@@ -57,7 +70,7 @@ class PostgreSQLTx(Load):
                         if type_ == OperationType.INSERT:
                             session.add(obj)
                         elif type_ == OperationType.DELETE:
-                            session.delete(obj)
+                            self._delete_obj(session, obj)
                         elif type_ == OperationType.UPDATE:
                             self._update_obj(session, obj)
                         session.flush()
