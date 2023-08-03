@@ -57,12 +57,12 @@ class SessionActivity(Model):
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     sid_s: Mapped[str] = mapped_column(primary_key=True)
-    ip: Mapped[str]
-    country: Mapped[str]
-    browser: Mapped[str]
-    browser_version: Mapped[str]
-    os: Mapped[str]
-    device: Mapped[str]
+    ip: Mapped[str] = mapped_column(nullable=True)
+    country: Mapped[str] = mapped_column(nullable=True)
+    browser: Mapped[str] = mapped_column(nullable=True)
+    browser_version: Mapped[str] = mapped_column(nullable=True)
+    os: Mapped[str] = mapped_column(nullable=True)
+    device: Mapped[str] = mapped_column(nullable=True)
 
 
 class UserIdentity(Model):
