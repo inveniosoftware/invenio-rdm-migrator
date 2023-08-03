@@ -8,10 +8,11 @@
 """Invenio RDM migration transaction stream."""
 
 from .drafts import DraftCreateAction
-from .users import UserEditAction, UserRegistrationAction
+from .users import UserDeactivationAction, UserEditAction, UserRegistrationAction
 
 __all__ = (
     "DraftCreateAction",
+    "UserDeactivationAction",
     "UserEditAction",
     "UserRegistrationAction",
 )
