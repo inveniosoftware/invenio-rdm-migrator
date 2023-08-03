@@ -15,6 +15,10 @@ from ...load.postgresql.transactions.operations import Operation, OperationType
 from ...transform import EncryptMixin
 from ..models.users import LoginInformation, SessionActivity, User
 
+# GLOBAL FIXME: partial updates would allow to remove the encrypt mixin from many of the
+# actions, since only user registration and edit (with password change should) do the
+# re-encryption. Would save time too.
+
 
 @dataclass
 class UserData(LoadData):
@@ -155,6 +159,14 @@ class UserDeactivationAction(LoadAction, EncryptMixin):
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
         yield Operation(OperationType.UPDATE, User(**self.data.user))
+
+        if self.data.login_information:
+            yield Operation(
+                OperationType.UPDATE,
+                LoginInformation(
+                    user_id=self.data.user["id"], **self.data.login_information
+                ),
+            )
 
         for session in self.data.sessions:
             yield Operation(OperationType.DELETE, SessionActivity(**session))
