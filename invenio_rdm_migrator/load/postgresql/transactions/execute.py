@@ -29,13 +29,19 @@ class PostgreSQLTx(Load):
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
 
-    def _update_obj(self, session, obj):
-        """Updates all attributes of an object."""
+    def _get_obj_by_pk(self, session, obj):
+        """Get an object based on the primary key."""
         # this function accesses many private methods, variables, assumes indexes, etc.
         # pragmatic implementation, feel free to refactor.
-        pk = obj.__mapper__.primary_key[0].name
-        pk_value = getattr(obj, pk)
-        db_obj = session.get(obj.__class__, pk_value)
+        pk = {}
+        for key in obj.__mapper__.primary_key:
+            pk[key.name] = getattr(obj, key.name)
+
+        return session.get(obj.__class__, pk)
+
+    def _update_obj(self, session, obj):
+        """Updates all attributes of an object."""
+        db_obj = self._get_obj_by_pk(session, obj)
         for column in db_obj.__table__.columns.keys():
             value = getattr(obj, column)
             setattr(db_obj, column, value)
@@ -48,11 +54,7 @@ class PostgreSQLTx(Load):
         It is required to delete the persisted object rather than a new one,
         which is what happens when the model is instantiated.
         """
-        # this function accesses many private methods, variables, assumes indexes, etc.
-        # pragmatic implementation, feel free to refactor.
-        pk = obj.__mapper__.primary_key[0].name
-        pk_value = getattr(obj, pk)
-        db_obj = session.get(obj.__class__, pk_value)
+        db_obj = self._get_obj_by_pk(session, obj)
         session.delete(db_obj)
 
     def _load(self, transactions):
