@@ -43,16 +43,6 @@ class UserRegistrationAction(LoadAction, EncryptMixin):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new user."""
-        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-        from datetime import datetime
-
-        self.data.user["created"] = datetime.fromtimestamp(
-            self.data.user["created"] / 1_000_000
-        )
-        self.data.user["updated"] = datetime.fromtimestamp(
-            self.data.user["updated"] / 1_000_000
-        )
-
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
         yield Operation(OperationType.INSERT, User(**self.data.user))
@@ -85,16 +75,6 @@ class UserEditAction(LoadAction, EncryptMixin):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a user edit."""
-        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-        from datetime import datetime
-
-        self.data.user["created"] = datetime.fromtimestamp(
-            self.data.user["created"] / 1_000_000
-        )
-        self.data.user["updated"] = datetime.fromtimestamp(
-            self.data.user["updated"] / 1_000_000
-        )
-
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
         yield Operation(OperationType.UPDATE, User(**self.data.user))
@@ -146,15 +126,6 @@ class UserDeactivationAction(LoadAction, EncryptMixin):
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
         assert not self.data.user["active"]
-        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-        from datetime import datetime
-
-        self.data.user["created"] = datetime.fromtimestamp(
-            self.data.user["created"] / 1_000_000
-        )
-        self.data.user["updated"] = datetime.fromtimestamp(
-            self.data.user["updated"] / 1_000_000
-        )
 
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 

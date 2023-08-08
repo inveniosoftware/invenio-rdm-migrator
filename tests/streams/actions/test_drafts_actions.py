@@ -43,8 +43,8 @@ def draft_data():
         "parent_id": "9493793c-47d2-48e2-9867-ca597b4ebb41",
         "expires_at": None,
         "fork_version_id": None,
-        "created": 1620000000000,
-        "updated": 1620000000000,
+        "created": "2021-05-01T00:00:00",
+        "updated": "2021-05-01T00:00:00",
     }
 
 
@@ -60,8 +60,8 @@ def parent_data():
             "communities": {"ids": ["zenodo", "migration"], "default": "zenodo"},
         },
         "version_id": 1,
-        "created": 1620000000000,
-        "updated": 1620000000000,
+        "created": "2021-05-01T00:00:00",
+        "updated": "2021-05-01T00:00:00",
     }
 
 
@@ -70,8 +70,8 @@ def bucket_data():
     """Bucket data."""
     return {
         "id": "0e12b4b6-9cc7-46df-9a04-c11c478de211",
-        "created": 1640995200000000,
-        "updated": 1640995200000000,
+        "created": "2022-01-01T00:00:00",
+        "updated": "2022-01-01T00:00:00",
         "default_location": 1,
         "default_storage_class": "L",
         "size": 0,
@@ -93,8 +93,8 @@ def pid_data():
         "status": "K",
         "object_type": "rec",
         "object_uuid": "d94f793c-47d2-48e2-9867-ca597b4ebb41",
-        "created": 1640995200000000,
-        "updated": 1640995200000000,
+        "created": "2022-01-01T00:00:00",
+        "updated": "2022-01-01T00:00:00",
     }
 
 

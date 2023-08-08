@@ -60,12 +60,6 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
         """Generates rows for a new draft."""
         pid = self.data.pid
         if pid["pid_type"] != "depid":
-            # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-            from datetime import datetime
-
-            pid["created"] = datetime.fromtimestamp(pid["created"] / 1_000_000)
-            pid["updated"] = datetime.fromtimestamp(pid["updated"] / 1_000_000)
-
             # note would raise an exception if it exists
             STATE.PIDS.add(
                 pid["pid_value"],  # recid
@@ -81,13 +75,7 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
 
     def _generate_bucket_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-
-        bucket = self.data.bucket
-        bucket["created"] = datetime.fromtimestamp(bucket["created"] / 1_000_000)
-        bucket["updated"] = datetime.fromtimestamp(bucket["updated"] / 1_000_000)
-
-        yield Operation(OperationType.INSERT, FilesBucket(**bucket))
+        yield Operation(OperationType.INSERT, FilesBucket(**self.data.bucket))
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -119,9 +107,6 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
             )
             # drafts have a parent on save
             # on the other hand there is no community parent/request
-            # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-            parent["created"] = datetime.fromtimestamp(parent["created"] / 1_000_000)
-            parent["updated"] = datetime.fromtimestamp(parent["updated"] / 1_000_000)
             for obj in generate_parent_rows(parent):
                 # cannot use yield from because we have to add `op`
                 yield Operation(OperationType.INSERT, obj)
@@ -160,10 +145,6 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
                     updated=now,
                 ),
             )
-
-        # https://github.com/inveniosoftware/invenio-rdm-migrator/issues/123
-        draft["created"] = datetime.fromtimestamp(draft["created"] / 1_000_000)
-        draft["updated"] = datetime.fromtimestamp(draft["updated"] / 1_000_000)
 
         yield Operation(
             OperationType.INSERT,
