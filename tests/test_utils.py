@@ -79,9 +79,25 @@ def test_set_existing_key():
     assert source == {"a": {"b": 2}}
 
 
+def test_set_list():
+    source = {"a": {}}
+    key = "a.b"
+    value = [1, 2]
+    dict_set(source, key, value)
+    assert source == {"a": {"b": [1, 2]}}
+
+
 def test_set_empty_root():
     source = {}
     key = "a.b"
+    value = 6
+    dict_set(source, key, value)
+    assert source == {"a": {"b": 6}}
+
+
+def test_set_empty_root_list_key():
+    source = {}
+    key = ["a", "b"]
     value = 6
     dict_set(source, key, value)
     assert source == {"a": {"b": 6}}
@@ -93,3 +109,19 @@ def test_nested_dict():
     value = 3
     dict_set(source, key, value)
     assert source == {"a": {"b": {"c": {"d": 3}}}}
+
+
+def test_int_key():
+    source = {1: ""}
+    key = 1
+    value = 3
+    # "lookup must be string or list"
+    pytest.raises(TypeError, dict_set, source, key, value)
+
+
+def test_no_key():
+    source = {"a": "value"}
+    key = None
+    value = 3
+    # ("No lookup key specified"
+    pytest.raises(KeyError, dict_set, source, key, value)
