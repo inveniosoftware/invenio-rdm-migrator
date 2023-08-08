@@ -213,7 +213,7 @@ class StateDB:
             sa.Column("id", sa.Integer, unique=True, nullable=False),
             sa.Column("pid_type", sa.String, nullable=False),
             sa.Column("status", sa.String, nullable=False),
-            sa.Column("created", sa.DateTime, nullable=False),
+            sa.Column("created", sa.String, nullable=False),
             # keep obj_type since the record needs this key dereferenced
             sa.Column("obj_type", sa.String),
             sqlite_autoincrement=False,
