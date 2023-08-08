@@ -9,6 +9,8 @@
 
 from enum import Enum
 
+from ..models import Model
+
 
 class OperationType(str, Enum):
     """SQL operation type enumeration."""
@@ -32,8 +34,8 @@ class Operation:
     A transaction is composed by one or more operations.
     """
 
-    def __init__(self, type, obj):
+    def __init__(self, type: OperationType, model: Model, data: dict):
         """Constructor."""
-        assert isinstance(type, OperationType)
         self.type = type
-        self.obj = obj
+        self.model = model
+        self.data = data

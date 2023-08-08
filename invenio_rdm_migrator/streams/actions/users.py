@@ -45,14 +45,13 @@ class UserRegistrationAction(LoadAction, EncryptMixin):
         """Generates rows for a new user."""
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
-        yield Operation(OperationType.INSERT, User(**self.data.user))
+        yield Operation(OperationType.INSERT, User, self.data.user)
 
         if self.data.login_information:
             yield Operation(
                 OperationType.INSERT,
-                LoginInformation(
-                    user_id=self.data.user["id"], **self.data.login_information
-                ),
+                LoginInformation,
+                dict(user_id=self.data.user["id"], **self.data.login_information),
             )
 
 
@@ -77,14 +76,13 @@ class UserEditAction(LoadAction, EncryptMixin):
         """Generates rows for a user edit."""
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
-        yield Operation(OperationType.UPDATE, User(**self.data.user))
+        yield Operation(OperationType.UPDATE, User, self.data.user)
 
         if self.data.login_information:
             yield Operation(
                 OperationType.UPDATE,
-                LoginInformation(
-                    user_id=self.data.user["id"], **self.data.login_information
-                ),
+                LoginInformation,
+                dict(user_id=self.data.user["id"], **self.data.login_information),
             )
 
 
@@ -129,15 +127,14 @@ class UserDeactivationAction(LoadAction, EncryptMixin):
 
         self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
-        yield Operation(OperationType.UPDATE, User(**self.data.user))
+        yield Operation(OperationType.UPDATE, User, self.data.user)
 
         if self.data.login_information:
             yield Operation(
                 OperationType.UPDATE,
-                LoginInformation(
-                    user_id=self.data.user["id"], **self.data.login_information
-                ),
+                LoginInformation,
+                dict(user_id=self.data.user["id"], **self.data.login_information),
             )
 
         for session in self.data.sessions:
-            yield Operation(OperationType.DELETE, SessionActivity(**session))
+            yield Operation(OperationType.DELETE, SessionActivity, session)

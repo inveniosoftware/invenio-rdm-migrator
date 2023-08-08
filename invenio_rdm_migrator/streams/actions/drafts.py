@@ -18,11 +18,11 @@ from ...state import STATE
 from ..models.files import FilesBucket
 from ..models.pids import PersistentIdentifier
 from ..models.records import RDMDraftMetadata, RDMVersionState
-from ..records.table_generators.parents import generate_parent_rows
 from ..records.table_generators.references import (
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
 )
+from .parents import generate_parent_ops
 
 
 @dataclass
@@ -71,11 +71,11 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
                     "created": pid["created"],
                 },
             )
-            yield Operation(OperationType.INSERT, PersistentIdentifier(**pid))
+            yield Operation(OperationType.INSERT, PersistentIdentifier, pid)
 
     def _generate_bucket_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        yield Operation(OperationType.INSERT, FilesBucket(**self.data.bucket))
+        yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -107,9 +107,7 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
             )
             # drafts have a parent on save
             # on the other hand there is no community parent/request
-            for obj in generate_parent_rows(parent):
-                # cannot use yield from because we have to add `op`
-                yield Operation(OperationType.INSERT, obj)
+            yield from generate_parent_ops(parent)
 
         else:  # case a and b
             parent["id"] = existing_parent["id"]
@@ -134,7 +132,8 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
             # could avoid this operation but it is clearer on when and why this happens
             yield Operation(
                 OperationType.UPDATE,
-                PersistentIdentifier(
+                PersistentIdentifier,
+                dict(
                     id=draft_pid["id"],  # pk
                     pid_type=draft_pid["pid_type"],  # in drafts are recid
                     pid_value=draft["json"]["id"],
@@ -148,7 +147,8 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
 
         yield Operation(
             OperationType.INSERT,
-            RDMDraftMetadata(
+            RDMDraftMetadata,
+            dict(
                 id=forked_published.get("id") or draft["id"],
                 json=draft["json"],
                 created=draft["created"],
@@ -165,11 +165,11 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
 
         # this query can be avoided by keeping a consistent view across this method
         existing_parent = STATE.PARENTS.get(parent["json"]["id"])
-
         version_op = OperationType.UPDATE if forked_published else OperationType.INSERT
         yield Operation(
             version_op,
-            RDMVersionState(
+            RDMVersionState,
+            dict(
                 latest_index=existing_parent["latest_index"],
                 parent_id=existing_parent["id"],
                 latest_id=existing_parent["latest_id"],

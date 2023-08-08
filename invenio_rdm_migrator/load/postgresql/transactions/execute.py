@@ -29,33 +29,15 @@ class PostgreSQLTx(Load):
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
 
-    def _get_obj_by_pk(self, session, obj):
+    def _get_obj_by_pk(self, session, model, data):
         """Get an object based on the primary key."""
         # this function accesses many private methods, variables, assumes indexes, etc.
         # pragmatic implementation, feel free to refactor.
         pk = {}
-        for key in obj.__mapper__.primary_key:
-            pk[key.name] = getattr(obj, key.name)
+        for key in model.__mapper__.primary_key:
+            pk[key.name] = data[key.name]
 
-        return session.get(obj.__class__, pk)
-
-    def _update_obj(self, session, obj):
-        """Updates all attributes of an object."""
-        db_obj = self._get_obj_by_pk(session, obj)
-        for column in db_obj.__table__.columns.keys():
-            value = getattr(obj, column)
-            setattr(db_obj, column, value)
-
-        return obj
-
-    def _delete_obj(self, session, obj):
-        """Deletes an object.
-
-        It is required to delete the persisted object rather than a new one,
-        which is what happens when the model is instantiated.
-        """
-        db_obj = self._get_obj_by_pk(session, obj)
-        session.delete(db_obj)
+        return session.get(model, pk)
 
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
@@ -66,15 +48,18 @@ class PostgreSQLTx(Load):
 
             with Session(self._engine) as session:
                 for op in operations:
-                    type_ = op.type
-                    obj = op.obj
                     try:
-                        if type_ == OperationType.INSERT:
+                        if op.type == OperationType.INSERT:
+                            obj = op.model(**op.data)
                             session.add(obj)
-                        elif type_ == OperationType.DELETE:
-                            self._delete_obj(session, obj)
-                        elif type_ == OperationType.UPDATE:
-                            self._update_obj(session, obj)
+                        elif op.type == OperationType.DELETE:
+                            obj = self._get_obj_by_pk(session, op.model, op.data)
+                            session.delete(obj)
+                        elif op.type == OperationType.UPDATE:
+                            obj = self._get_obj_by_pk(session, op.model, op.data)
+                            for key, value in op.data.items():
+                                setattr(obj, key, value)
+
                         session.flush()
                     except Exception:
                         logger.exception(
