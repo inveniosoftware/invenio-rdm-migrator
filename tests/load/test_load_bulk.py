@@ -5,7 +5,7 @@
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""PostgreSQL load tests."""
+"""PostgreSQL bulk load tests."""
 
 import tempfile
 from dataclasses import InitVar
