@@ -54,8 +54,5 @@ def dict_set(source, key, value):
     keys = parse_lookup_key(key)
     parent = source
     for key in keys[:-1]:
-        if isinstance(key, int):
-            parent = parent[key]
-        else:
-            parent = parent.setdefault(key, {})
+        parent = parent.setdefault(key, {})
     parent[keys[-1]] = value
