@@ -110,19 +110,19 @@ def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data)
     rows = list(action.prepare())
     assert len(rows) == 7
     assert rows[0].type == OperationType.INSERT
-    assert isinstance(rows[0].obj, PersistentIdentifier)
+    assert rows[0].model == PersistentIdentifier
     assert rows[1].type == OperationType.INSERT
-    assert isinstance(rows[1].obj, FilesBucket)
+    assert rows[1].model == FilesBucket
     assert rows[2].type == OperationType.INSERT
-    assert isinstance(rows[2].obj, PersistentIdentifier)
+    assert rows[2].model == PersistentIdentifier
     assert rows[3].type == OperationType.INSERT
-    assert isinstance(rows[3].obj, RDMParentMetadata)
+    assert rows[3].model == RDMParentMetadata
     assert rows[4].type == OperationType.UPDATE
-    assert isinstance(rows[4].obj, PersistentIdentifier)
+    assert rows[4].model == PersistentIdentifier
     assert rows[5].type == OperationType.INSERT
-    assert isinstance(rows[5].obj, RDMDraftMetadata)
+    assert rows[5].model == RDMDraftMetadata
     assert rows[6].type == OperationType.INSERT
-    assert isinstance(rows[6].obj, RDMVersionState)
+    assert rows[6].model == RDMVersionState
 
 
 def test_create_draft_new_version(
@@ -149,15 +149,15 @@ def test_create_draft_new_version(
     rows = list(action.prepare())
     assert len(rows) == 5
     assert rows[0].type == OperationType.INSERT
-    assert isinstance(rows[0].obj, PersistentIdentifier)
+    assert rows[0].model == PersistentIdentifier
     assert rows[1].type == OperationType.INSERT
-    assert isinstance(rows[1].obj, FilesBucket)
+    assert rows[1].model == FilesBucket
     assert rows[2].type == OperationType.UPDATE
-    assert isinstance(rows[2].obj, PersistentIdentifier)
+    assert rows[2].model == PersistentIdentifier
     assert rows[3].type == OperationType.INSERT
-    assert isinstance(rows[3].obj, RDMDraftMetadata)
+    assert rows[3].model == RDMDraftMetadata
     assert rows[4].type == OperationType.INSERT
-    assert isinstance(rows[4].obj, RDMVersionState)
+    assert rows[4].model == RDMVersionState
 
 
 def test_create_draft_published_draft(
@@ -194,10 +194,10 @@ def test_create_draft_published_draft(
     rows = list(action.prepare())
     assert len(rows) == 4
     assert rows[0].type == OperationType.INSERT
-    assert isinstance(rows[0].obj, PersistentIdentifier)
+    assert rows[0].model == PersistentIdentifier
     assert rows[1].type == OperationType.INSERT
-    assert isinstance(rows[1].obj, FilesBucket)
+    assert rows[1].model == FilesBucket
     assert rows[2].type == OperationType.INSERT
-    assert isinstance(rows[2].obj, RDMDraftMetadata)
+    assert rows[2].model == RDMDraftMetadata
     assert rows[3].type == OperationType.UPDATE
-    assert isinstance(rows[3].obj, RDMVersionState)
+    assert rows[3].model == RDMVersionState

@@ -90,9 +90,9 @@ def test_register_new_user(secret_keys_state, user_data, login_info_data):
     rows = list(action.prepare())
     assert len(rows) == 2
     assert rows[0].type == OperationType.INSERT
-    assert isinstance(rows[0].obj, User)
+    assert rows[0].model == User
     assert rows[1].type == OperationType.INSERT
-    assert isinstance(rows[1].obj, LoginInformation)
+    assert rows[1].model == LoginInformation
 
 
 def test_edit_user(secret_keys_state, user_data, login_info_data):
@@ -101,9 +101,9 @@ def test_edit_user(secret_keys_state, user_data, login_info_data):
     rows = list(action.prepare())
     assert len(rows) == 2
     assert rows[0].type == OperationType.UPDATE
-    assert isinstance(rows[0].obj, User)
+    assert rows[0].model == User
     assert rows[1].type == OperationType.UPDATE
-    assert isinstance(rows[1].obj, LoginInformation)
+    assert rows[1].model == LoginInformation
 
 
 def test_deactivate_user(secret_keys_state, user_data, sessions_data):
@@ -116,8 +116,8 @@ def test_deactivate_user(secret_keys_state, user_data, sessions_data):
     rows = list(action.prepare())
     assert len(rows) == 3
     assert rows[0].type == OperationType.UPDATE
-    assert isinstance(rows[0].obj, User)
+    assert rows[0].model == User
     assert rows[1].type == OperationType.DELETE
-    assert isinstance(rows[1].obj, SessionActivity)
+    assert rows[1].model == SessionActivity
     assert rows[2].type == OperationType.DELETE
-    assert isinstance(rows[2].obj, SessionActivity)
+    assert rows[2].model == SessionActivity
