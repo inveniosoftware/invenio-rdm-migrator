@@ -10,6 +10,14 @@ Changes
 =======
 
 
+Version 3.0.0
+
+- `Operation` instances have split the model and the data into two attributes.
+- Add user actions.
+- `PostgreSQLTx` `resolve_references` function has now a default behaviour (`pass`).
+- Add nullable configuration to draft and user related models.
+- Minor bug fixes.
+
 Version 2.0.0
 
 - Make state globally available.
