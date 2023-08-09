@@ -89,8 +89,12 @@ class RDMDraftTableGenerator(
         if forked_published:
             parent_id = forked_published["parent_id"]
 
+        draft_id = forked_published.get("id") or draft["id"]
+        # all drafts have a bucket due to the `post_create` hook on the files sysfield
+        STATE.BUCKETS.add(draft["bucket_id"], {"draft_id": draft_id})
+
         yield RDMDraftMetadata(
-            id=forked_published.get("id") or draft["id"],
+            id=draft_id,
             json=draft["json"],
             created=draft["created"],
             updated=draft["updated"],

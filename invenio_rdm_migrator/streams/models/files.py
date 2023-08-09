@@ -41,13 +41,13 @@ class FilesInstance(Model):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
-    uri: Mapped[str]
-    storage_class: Mapped[str]
-    size: Mapped[int]
-    checksum: Mapped[str]
+    uri: Mapped[str] = mapped_column(nullable=True)
+    storage_class: Mapped[str] = mapped_column(nullable=True)
+    size: Mapped[int] = mapped_column(nullable=True)
+    checksum: Mapped[str] = mapped_column(nullable=True)
     readable: Mapped[bool]
     writable: Mapped[bool]
-    last_check_at: Mapped[str]  # datetime
+    last_check_at: Mapped[str] = mapped_column(nullable=True)  # datetime
     last_check: Mapped[bool]
 
 
@@ -61,6 +61,6 @@ class FilesObjectVersion(Model):
     updated: Mapped[str]  # datetime
     key: Mapped[str]
     bucket_id: Mapped[UUID]
-    file_id: Mapped[UUID]
-    _mimetype: Mapped[str]
+    file_id: Mapped[UUID] = mapped_column(nullable=True)
+    _mimetype: Mapped[str] = mapped_column(nullable=True)
     is_head: Mapped[bool]
