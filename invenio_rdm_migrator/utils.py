@@ -21,7 +21,7 @@ def ts(iso=True, fmt=None):
 
 
 class JSONEncoder(json.JSONEncoder):
-    """Ecoder to support UUID inside dictionaries."""
+    """Encoder to support UUID inside dictionaries."""
 
     def default(self, o):
         """Default encoding."""
