@@ -96,10 +96,10 @@ class RDMDraftFile(Model):
     # duplicated code to avoid dealing with sqlalchemy inheritance and fks
     # which in our case do not play any role
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(JSONB(), nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
     key: Mapped[str]
     record_id: Mapped[UUID]
-    object_version_id: Mapped[UUID]
+    object_version_id: Mapped[UUID] = mapped_column(nullable=True)

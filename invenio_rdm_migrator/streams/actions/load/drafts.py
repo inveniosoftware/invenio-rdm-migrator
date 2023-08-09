@@ -145,11 +145,14 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
                 ),
             )
 
+        draft_id = forked_published.get("id") or draft["id"]
+
+        STATE.BUCKETS.add(draft["bucket_id"], {"draft_id": draft_id})
         yield Operation(
             OperationType.INSERT,
             RDMDraftMetadata,
             dict(
-                id=forked_published.get("id") or draft["id"],
+                id=draft_id,
                 json=draft["json"],
                 created=draft["created"],
                 updated=draft["updated"],

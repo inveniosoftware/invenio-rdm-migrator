@@ -193,8 +193,17 @@ class StateDB:
             sa.Column("id", UUIDType, nullable=False, unique=True),
             sa.Column("parent_id", UUIDType, nullable=False),
             sa.Column("index", sa.Integer, nullable=False),
+            # record's version_id
             sa.Column("fork_version_id", sa.Integer, nullable=False),
             sa.Column("pids", JSONType, default="{}"),
+            sqlite_autoincrement=False,
+        )
+
+        sa.Table(
+            "buckets",
+            metadata,
+            sa.Column("id", UUIDType, nullable=False, unique=True),
+            sa.Column("draft_id", UUIDType, nullable=False),
             sqlite_autoincrement=False,
         )
 
@@ -298,12 +307,14 @@ class STATE:
     RECORDS = None
     COMMUNITIES = None
     PIDS = None
+    BUCKETS = None
 
     @classmethod
     def initialized_state(cls, state_db):
         """Initializes state."""
         cls.PARENTS = StateEntity(state_db, "parents", "recid")
         cls.RECORDS = StateEntity(state_db, "records", "recid")
+        cls.BUCKETS = StateEntity(state_db, "buckets", "id")
         cls.COMMUNITIES = StateEntity(state_db, "communities", "slug")
         cls.PIDS = StateEntity(state_db, "pids", "pid_value")
         cls.VALUES = StateEntity(state_db, "global", "key")

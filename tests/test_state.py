@@ -86,7 +86,7 @@ def test_state_with_no_initial_db(tmp_dir):
 
     # check that no extra tables were created
     assert set(state.tables) == set(
-        {"parents", "records", "communities", "global", "pids"}
+        {"parents", "records", "communities", "global", "pids", "buckets"}
     )
 
 
@@ -442,3 +442,26 @@ def test_pids_state_invalid_entries(state):
 def test_default_validator():
     # test that the interface holds
     assert StateValidator.validate({}) == False
+
+
+###
+# Bucket State
+###
+
+
+def test_bucket_state_valid(state):
+    state.BUCKETS.add(
+        "0e12b4b6-9cc7-46df-9a04-c11c478de211",
+        {"draft_id": "d94f793c-47d2-48e2-9867-ca597b4ebb41"},
+    )
+
+    assert state.BUCKETS.get("0e12b4b6-9cc7-46df-9a04-c11c478de211")
+
+
+def test_buckets_state_invalid_entries(state):
+    pytest.raises(
+        IntegrityError,
+        state.BUCKETS.add,
+        "0e12b4b6-9cc7-46df-9a04-c11c478de211",
+        {},  # empty
+    )

@@ -8,10 +8,12 @@
 """Invenio RDM migration load actions."""
 
 from .drafts import DraftCreateAction
+from .files import FileUploadAction
 from .users import UserDeactivationAction, UserEditAction, UserRegistrationAction
 
 __all__ = (
     "DraftCreateAction",
+    "FileUploadAction",
     "UserDeactivationAction",
     "UserEditAction",
     "UserRegistrationAction",
