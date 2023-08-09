@@ -10,14 +10,16 @@
 from .base import Entry, Transform, drop_nones
 from .encrypt import EncryptMixin
 from .identity import IdentityDictKeyMixin, IdentityTransform
+from .json import JSONTransformMixin
 from .transactions import BaseTxTransform
 
 __all__ = (
     "drop_nones",
+    "BaseTxTransform",
     "EncryptMixin",
     "Entry",
     "IdentityDictKeyMixin",
     "IdentityTransform",
-    "BaseTxTransform",
+    "JSONTransformMixin",
     "Transform",
 )
