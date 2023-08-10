@@ -10,7 +10,7 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions import DraftCreateAction
+from invenio_rdm_migrator.streams.actions.load import DraftCreateAction
 from invenio_rdm_migrator.streams.models.files import FilesBucket
 from invenio_rdm_migrator.streams.models.pids import PersistentIdentifier
 from invenio_rdm_migrator.streams.models.records import (

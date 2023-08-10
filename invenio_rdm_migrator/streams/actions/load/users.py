@@ -10,10 +10,10 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from ...actions import LoadAction, LoadData
-from ...load.postgresql.transactions.operations import Operation, OperationType
-from ...transform import EncryptMixin
-from ..models.users import LoginInformation, SessionActivity, User
+from ....actions import LoadAction, LoadData
+from ....load.postgresql.transactions.operations import Operation, OperationType
+from ....transform import EncryptMixin
+from ...models.users import LoginInformation, SessionActivity, User
 
 # GLOBAL FIXME: partial updates would allow to remove the encrypt mixin from many of the
 # actions, since only user registration and edit (with password change should) do the
