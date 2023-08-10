@@ -1,5 +1,5 @@
 ..
-    Copyright (C) 2022 CERN.
+    Copyright (C) 2022-2023 CERN.
 
 
     Invenio-RDM-Migrator is free software; you can redistribute it and/or
@@ -9,6 +9,11 @@
 Changes
 =======
 
+
+Version 3.1.0
+
+- Add `DatetimeMixin` to transform timestamps into iso formatted date strings.
+- Add `JSONLoadMixin` to load dictionaries from strings.
 
 Version 3.0.0
 
