@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from ..logging import Logger
+from ..transform import DatetimeMixin
 from ..utils import dict_set
 
 
@@ -88,7 +89,7 @@ class LoadAction(Action, ABC):
         yield from self._generate_rows(**kwargs)
 
 
-class TransformAction(Action, ABC):
+class TransformAction(Action, DatetimeMixin, ABC):
     """Transform action.
 
     Detects/matches an action type based on transaction data and transforms the data

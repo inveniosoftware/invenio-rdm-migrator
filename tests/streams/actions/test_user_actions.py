@@ -26,8 +26,8 @@ from invenio_rdm_migrator.streams.models.users import (
 def user_data():
     return {
         "id": 123456,
-        "created": 1640995200000000,
-        "updated": 1640995200000000,
+        "created": "2021-05-01T00:00:00",
+        "updated": "2021-05-01T00:00:00",
         "username": "test_user",
         "displayname": "test_user",
         "email": "someaddr@domain.org",
