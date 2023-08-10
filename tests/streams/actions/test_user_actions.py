@@ -10,7 +10,7 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions import (
+from invenio_rdm_migrator.streams.actions.load import (
     UserDeactivationAction,
     UserEditAction,
     UserRegistrationAction,

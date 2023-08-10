@@ -9,9 +9,9 @@
 
 from datetime import datetime
 
-from ...load.postgresql.transactions.operations import Operation, OperationType
-from ..models.pids import PersistentIdentifier
-from ..models.records import RDMParentMetadata
+from ....load.postgresql.transactions.operations import Operation, OperationType
+from ...models.pids import PersistentIdentifier
+from ...models.records import RDMParentMetadata
 
 
 def generate_parent_ops(parent):

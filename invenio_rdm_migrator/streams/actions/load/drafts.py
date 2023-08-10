@@ -11,14 +11,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 
-from ...actions import LoadAction, LoadData
-from ...load.ids import generate_pk, generate_recid, generate_uuid
-from ...load.postgresql.transactions.operations import Operation, OperationType
-from ...state import STATE
-from ..models.files import FilesBucket
-from ..models.pids import PersistentIdentifier
-from ..models.records import RDMDraftMetadata, RDMVersionState
-from ..records.table_generators.references import (
+from ....actions import LoadAction, LoadData
+from ....load.ids import generate_pk, generate_recid, generate_uuid
+from ....load.postgresql.transactions.operations import Operation, OperationType
+from ....state import STATE
+from ...models.files import FilesBucket
+from ...models.pids import PersistentIdentifier
+from ...models.records import RDMDraftMetadata, RDMVersionState
+from ...records.table_generators.references import (
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
 )
