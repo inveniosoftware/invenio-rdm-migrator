@@ -9,6 +9,9 @@
 Changes
 =======
 
+Version 4.0.0
+
+- Namespace actions by load and transform.
 
 Version 3.1.0
 
