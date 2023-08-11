@@ -44,7 +44,6 @@ class FileUploadAction(LoadAction):
         )
         yield Operation(OperationType.INSERT, FilesInstance, self.data.file_instance)
 
-        self.data.file_record["record_id"] = STATE.BUCKETS.get(
-            self.data.file_record["id"]
-        )
+        cached_bucket = STATE.BUCKETS.get(self.data.bucket["id"])
+        self.data.file_record["record_id"] = cached_bucket["draft_id"]
         yield Operation(OperationType.INSERT, RDMDraftFile, self.data.file_record)

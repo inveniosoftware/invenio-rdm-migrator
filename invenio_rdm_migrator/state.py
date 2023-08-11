@@ -202,7 +202,7 @@ class StateDB:
         sa.Table(
             "buckets",
             metadata,
-            sa.Column("id", UUIDType, nullable=False, unique=True),
+            sa.Column("id", UUIDType, primary_key=True),
             sa.Column("draft_id", UUIDType, nullable=False),
             sqlite_autoincrement=False,
         )

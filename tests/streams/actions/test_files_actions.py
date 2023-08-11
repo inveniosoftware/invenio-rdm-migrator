@@ -7,6 +7,8 @@
 
 """File actions tests."""
 
+from uuid import UUID
+
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
@@ -105,5 +107,6 @@ def test_upload_file_action(buckets_state, bucket_data, fi_data, ov_data, fr_dat
     assert rows[2].model == FilesInstance
     assert rows[3].type == OperationType.INSERT
     assert rows[3].model == RDMDraftFile
-    assert rows[3].data["id"] is not None
-    assert rows[3].data["record_id"] is not None
+    UUID(rows[3].data["id"])  # would raise value error if not UUID or None
+    # still type str since it has not been inserted in DB
+    assert rows[3].data["record_id"] == "d94f793c-47d2-48e2-9867-ca597b4ebb41"
