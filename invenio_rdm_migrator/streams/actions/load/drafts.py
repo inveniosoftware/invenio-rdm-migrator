@@ -9,6 +9,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 from ....actions import LoadAction, LoadData
 from ....load.ids import generate_pk, generate_uuid
@@ -16,7 +17,12 @@ from ....load.postgresql.transactions.operations import Operation, OperationType
 from ....state import STATE
 from ...models.files import FilesBucket
 from ...models.pids import PersistentIdentifier
-from ...models.records import RDMDraftMetadata, RDMParentMetadata, RDMVersionState
+from ...models.records import (
+    RDMDraftMetadata,
+    RDMParentMetadata,
+    RDMRecordMetadata,
+    RDMVersionState,
+)
 from ...records.table_generators.references import (
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
@@ -234,3 +240,156 @@ class DraftEditAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixi
         state_parent = STATE.PARENTS.get(parent["json"]["id"])
         self.data.draft["id"] = state_parent["next_draft_id"]
         self.data.parent["id"] = state_parent["id"]
+
+
+class RDMDraftPublishData(LoadData):
+    """Draft publish action data."""
+
+    # bucket
+    record_bucket: dict
+    # metadata
+    parent: dict
+    draft: dict
+    # pids
+    parent_pid: dict
+    record_pid: dict
+    record_oai: dict
+    parent_doi: Optional[dict] = None
+    record_doi: Optional[dict] = None
+
+
+class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
+    """RDM publish creation."""
+
+    name = "publish-draft"
+    data_cls = RDMDraftPublishData
+
+    pks = []
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        yield from self._generate_pid_rows(**kwargs)
+        yield from self._generate_bucket_rows(**kwargs)
+        yield from self._generate_draft_rows(**kwargs)
+
+    def _generate_pid_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        # recid (draft) gets registered when creating a record, keeps the same pid
+        assert self.data.record_pid["status"] == "R"
+        assert self.data.parent_pid["status"] == "R"
+        STATE.PIDS.update(self.data.draft_pid["pid_value"], {"status": "R"})
+        yield Operation(
+            OperationType.UPDATE, PersistentIdentifier, self.data.record_pid
+        )
+        yield Operation(
+            OperationType.UPDATE, PersistentIdentifier, self.data.parent_pid
+        )
+
+        if self.data.record_doi:
+            assert self.data.parent_doi  # cannot be one doi without the other
+            yield Operation(
+                OperationType.INSERT, PersistentIdentifier, self.data.record_doi
+            )
+            yield Operation(
+                OperationType.INSERT, PersistentIdentifier, self.data.parent_doi
+            )
+
+        if self.data.record_oai:
+            yield Operation(
+                OperationType.INSERT, PersistentIdentifier, self.data.record_oai
+            )
+
+    def _generate_bucket_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        # the drafts service would make a copy of all object versions to the copied bucket
+        # however, at DB level updating the bucket information would suffice
+        # the new record would point to it and the previous draft would be deleted.
+        assert self.data.bucket["locked"]
+        # delete bucket from STATE.BUCKET, it is not linked to a draft anymore?
+        yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
+
+        # delete RDMDraftFiles
+
+        # create RDMRecordFiles
+
+    def _generate_draft_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        parent = self.data.parent
+        draft = self.data.draft
+        # delete draft
+        # can we simplify this by only passing an `id`?
+        # would mean all other fields are optional
+        # i.e. data validation is delegated to db exceptions
+        yield Operation(
+            OperationType.DELETE,
+            RDMDraftMetadata,
+            dict(
+                id=draft["id"],
+                json=draft["json"],
+                created=draft["created"],
+                updated=draft["updated"],
+                version_id=draft["version_id"],
+                index=draft["index"],
+                bucket_id=draft["bucket_id"],
+                parent_id=parent["id"],
+                expires_at=draft["expires_at"],
+                fork_version_id=draft["fork_version_id"],
+            ),
+        )
+
+        # create record
+        yield Operation(
+            OperationType.INSERT,
+            RDMRecordMetadata,
+            dict(
+                id=draft["id"],
+                json=draft["json"],  # what happens with fields such as $schema?
+                created=draft["updated"],  # creation of record ~ latest draft update
+                updated=draft["updated"],
+                version_id=1,
+                index=1,
+                bucket_id=draft["bucket_id"],
+                parent_id=parent["id"],
+            ),
+        )
+        # update parent
+        # might contain metadata updates (e.g. communities)
+        yield Operation(
+            OperationType.UPDATE,
+            RDMParentMetadata,
+            dict(
+                id=parent["id"],
+                json=parent["json"],
+                created=parent["created"],
+                updated=parent["updated"],
+                version_id=parent["version_id"],
+            ),
+        )
+
+        # update versioning
+        # not 100% sure this is correct
+        # if we publish a new draft, it would be
+        # not sure if next_draft_id=None always is the correct workflow
+        STATE.PARENTS.update(
+            parent["json"]["id"],
+            {
+                "latest_index": parent["latest_index"],
+                "parent_id": parent["id"],
+                "latest_id": draft["id"],
+                "next_draft_id": None,
+            },
+        )
+        yield Operation(
+            OperationType.UPDATE,
+            RDMVersionState,
+            dict(
+                latest_index=parent["latest_index"],
+                parent_id=parent["id"],
+                latest_id=draft["id"],
+                next_draft_id=None,  # publishing a new record
+            ),
+        )
+
+    def _resolve_references(self, **kwargs):
+        """Resolve references e.g communities slug names."""
+        pass
