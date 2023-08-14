@@ -57,6 +57,10 @@ class PostgreSQLTx(Load):
                             session.delete(obj)
                         elif op.type == OperationType.UPDATE:
                             obj = self._get_obj_by_pk(session, op.model, op.data)
+                            # due to dictdiff/partial updates we only update those
+                            # keys that changed the value. there is no instantiation
+                            # of the data class with the op.data so they dont need
+                            # values to be defined as optional
                             for key, value in op.data.items():
                                 setattr(obj, key, value)
 

@@ -17,7 +17,7 @@ from ....load.postgresql.transactions.operations import Operation, OperationType
 from ....state import STATE
 from ...models.files import FilesBucket
 from ...models.pids import PersistentIdentifier
-from ...models.records import RDMDraftMetadata, RDMVersionState
+from ...models.records import RDMDraftMetadata, RDMParentMetadata, RDMVersionState
 from ...records.table_generators.references import (
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
@@ -29,7 +29,6 @@ from .parents import generate_parent_ops
 class RDMDraftCreateData(LoadData):
     """Draft create action data."""
 
-    # NOTE: we could go with some common ``typing.TypedDict`` definitions to help more
     pid: dict
     bucket: dict
     draft: dict
@@ -188,3 +187,54 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
         if communities:
             self.resolve_communities(communities)
         self.resolve_draft_pids(self.data.draft)
+
+
+@dataclass
+class RDMDraftEditData(LoadData):
+    """Draft edit action data."""
+
+    draft: dict
+    parent: dict
+
+
+class DraftEditAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
+    """RDM draft edit/update."""
+
+    name = "edit-draft"
+    data_cls = RDMDraftEditData
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new draft."""
+        draft = self.data.draft
+        parent = self.data.parent
+
+        assert parent["id"]  # make sure we have an id to update on
+        # data and model keys/fields are the same
+        yield Operation(OperationType.UPDATE, RDMParentMetadata, parent)
+
+        forked_published = STATE.RECORDS.get(draft["json"]["id"])
+        draft_id = forked_published.get("id") or draft["id"]
+        assert draft_id
+        draft["id"] = draft_id
+
+        # the index and forked_version_id have been properly set from cached when the draft
+        # was created, therefore now they are only passed (from the draft) if given in the
+        # partial data
+        # the parent_id cannot change unless is a support operation (e.g. merge) which
+        # will not happen during migration
+        # therefore all fields come from the draft and match data/model keys/fields
+        yield Operation(OperationType.UPDATE, RDMDraftMetadata, draft)
+
+    def _resolve_references(self, **kwargs):
+        """Resolve references e.g communities slug names."""
+        # resolve parent communities slug
+        parent = self.data.parent
+        communities = parent["json"].get("communities")
+        if communities:
+            self.resolve_communities(communities)
+        self.resolve_draft_pids(self.data.draft)
+
+        # resolve parent and draft uuid from versioning table
+        state_parent = STATE.PARENTS.get(parent["json"]["id"])
+        self.data.draft["id"] = state_parent["next_draft_id"]
+        self.data.parent["id"] = state_parent["id"]
