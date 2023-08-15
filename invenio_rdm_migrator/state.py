@@ -133,6 +133,18 @@ class StateDB:
 
         assert result.rowcount == 1
 
+    def delete(self, table_name, key_attr, key_value):
+        """Delete an item from the state."""
+        table = self.tables[table_name]
+
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(
+                sa.delete(table).where(getattr(table.columns, key_attr) == key_value)
+            )
+            conn.commit()
+
+        assert result.rowcount == 1  # the update succeeded
+
     def update(self, table_name, key_attr, key_value, data):
         """Update an entry."""
         table = self.tables[table_name]
@@ -283,6 +295,10 @@ class StateEntity:
         self.state.update(
             self.table_name, self.pk_attr, key, {self.pk_attr: key, **data}
         )
+
+    def delete(self, key):
+        """Delete data row."""
+        self.state.delete(self.table_name, self.pk_attr, key)
 
 
 class StateValidator(ABC):

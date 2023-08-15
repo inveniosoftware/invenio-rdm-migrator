@@ -465,3 +465,13 @@ def test_buckets_state_invalid_entries(state):
         "0e12b4b6-9cc7-46df-9a04-c11c478de211",
         {},  # empty
     )
+
+
+def test_delete_bucket_state(state):
+    state.BUCKETS.add(
+        "0e12b4b6-9cc7-46df-9a04-c11c478de211",
+        {"draft_id": "d94f793c-47d2-48e2-9867-ca597b4ebb41"},
+    )
+
+    state.BUCKETS.delete("0e12b4b6-9cc7-46df-9a04-c11c478de211")
+    assert not state.BUCKETS.get("0e12b4b6-9cc7-46df-9a04-c11c478de211")
