@@ -230,6 +230,20 @@ class StateDB:
         )
 
         sa.Table(
+            "file_records",
+            metadata,
+            sa.Column("id", UUIDType, primary_key=True),
+            sa.Column("json", JSONType, default="{}"),
+            sa.Column("created", sa.String, nullable=False),
+            sa.Column("updated", sa.String, nullable=False),
+            sa.Column("version_id", sa.Integer, nullable=False),
+            sa.Column("key", sa.String, nullable=False),
+            sa.Column("record_id", UUIDType, nullable=False),
+            sa.Column("object_version_id", UUIDType, nullable=True),
+            sqlite_autoincrement=False,
+        )
+
+        sa.Table(
             "communities",
             metadata,
             sa.Column("slug", sa.String, primary_key=True),
@@ -339,6 +353,7 @@ class STATE:
     COMMUNITIES = None
     PIDS = None
     BUCKETS = None
+    FILE_RECORDS = None
 
     @classmethod
     def initialized_state(cls, state_db):
@@ -346,6 +361,7 @@ class STATE:
         cls.PARENTS = StateEntity(state_db, "parents", "recid")
         cls.RECORDS = StateEntity(state_db, "records", "recid")
         cls.BUCKETS = StateEntity(state_db, "buckets", "id")
+        cls.FILE_RECORDS = StateEntity(state_db, "file_records", "id")
         cls.COMMUNITIES = StateEntity(state_db, "communities", "slug")
         cls.PIDS = StateEntity(state_db, "pids", "pid_value")
         cls.VALUES = StateEntity(state_db, "global", "key")

@@ -475,3 +475,57 @@ def test_delete_bucket_state(state):
 
     state.BUCKETS.delete("0e12b4b6-9cc7-46df-9a04-c11c478de211")
     assert not state.BUCKETS.get("0e12b4b6-9cc7-46df-9a04-c11c478de211")
+
+
+###
+# File Records
+###
+
+
+def test_file_record_state(state):
+    state.FILE_RECORDS.add(
+        "e94b243e-9c0c-44df-bd1f-6decc374cf78",
+        {
+            "json": {},
+            "created": "2023-06-29T13:00:00",
+            "updated": "2023-06-29T14:00:00",
+            "version_id": 1,
+            "key": "IMG_3535.jpg",
+            "record_id": "93c09d1d-47d2-48e2-9867-ca597b4ebb41",
+            "object_version_id": "f8200dc7-55b6-4785-abd0-f3d13b143c98",
+        },
+    )
+
+    assert state.FILE_RECORDS.get("e94b243e-9c0c-44df-bd1f-6decc374cf78")
+
+
+def test_file_record_state_search(state):
+    state.FILE_RECORDS.add(
+        "e94b243e-9c0c-44df-bd1f-6decc374cf78",
+        {
+            "json": {},
+            "created": "2023-06-29T13:00:00",
+            "updated": "2023-06-29T14:00:00",
+            "version_id": 1,
+            "key": "IMG_3535.jpg",
+            "record_id": "93c09d1d-47d2-48e2-9867-ca597b4ebb41",
+            "object_version_id": "f8200dc7-55b6-4785-abd0-f3d13b143c98",
+        },
+    )
+    state.FILE_RECORDS.add(
+        "e94b243e-9c0c-44df-bd1f-6decc374cf79",
+        {
+            "json": {},
+            "created": "2023-06-29T13:00:00",
+            "updated": "2023-06-29T14:00:00",
+            "version_id": 1,
+            "key": "IMG_3535.jpg",
+            "record_id": "93c09d1d-47d2-48e2-9867-ca597b4ebb41",
+            "object_version_id": "f8200dc7-55b6-4785-abd0-f3d13b143c98",
+        },
+    )
+
+    files = state.FILE_RECORDS.search(
+        "record_id", "93c09d1d-47d2-48e2-9867-ca597b4ebb41"
+    )
+    assert len(list(files)) == 2
