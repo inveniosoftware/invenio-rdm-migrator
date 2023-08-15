@@ -18,8 +18,10 @@ from ....state import STATE
 from ...models.files import FilesBucket
 from ...models.pids import PersistentIdentifier
 from ...models.records import (
+    RDMDraftFile,
     RDMDraftMetadata,
     RDMParentMetadata,
+    RDMRecordFile,
     RDMRecordMetadata,
     RDMVersionState,
 )
@@ -305,12 +307,16 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
         # however, at DB level updating the bucket information would suffice
         # the new record would point to it and the previous draft would be deleted.
         assert self.data.bucket["locked"]
-        # delete bucket from STATE.BUCKET, it is not linked to a draft anymore?
+        # delete bucket from STATE.BUCKET
+        # it is not linked to a draft anymore and records cannot get file updates
+        STATE.BUCKETS.delete(self.data.bucket["id"])
         yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
 
-        # delete RDMDraftFiles
-
-        # create RDMRecordFiles
+        # TODO: impelement search on the state
+        files = STATE.FILE_RECORDS.search("draft_id", self.data.draft["id"])
+        for file in files:
+            yield Operation(OperationType.DELETE, RDMDraftFile, **file)
+            yield Operation(OperationType.INSERT, RDMRecordFile, **file)
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""

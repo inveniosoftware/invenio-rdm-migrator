@@ -7,6 +7,7 @@
 
 """Files actions module."""
 
+from copy import deepcopy
 from dataclasses import dataclass
 
 from ....actions import LoadAction, LoadData
@@ -46,4 +47,8 @@ class DraftFileUploadAction(LoadAction):
 
         cached_bucket = STATE.BUCKETS.get(self.data.bucket["id"])
         self.data.file_record["record_id"] = cached_bucket["draft_id"]
+
+        _cache_fr_data = deepcopy(self.data.file_record)
+        STATE.FILE_RECORDS.add(_cache_fr_data.pop("id"), _cache_fr_data)
+
         yield Operation(OperationType.INSERT, RDMDraftFile, self.data.file_record)
