@@ -101,9 +101,10 @@ def pid_data():
 def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data):
     data = dict(
         tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
+        draft_pid=pid_data,
+        draft_bucket=bucket_data,
         draft=draft_data,
+        parent_pid=pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
@@ -139,9 +140,10 @@ def test_create_draft_new_version(
     )
     data = dict(
         tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
+        draft_pid=pid_data,
+        draft_bucket=bucket_data,
         draft=draft_data,
+        parent_pid=pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
@@ -185,9 +187,10 @@ def test_create_draft_published_draft(
     )
     data = dict(
         tx_id=1,
-        pid=pid_data,
-        bucket=bucket_data,
+        draft_pid=pid_data,
+        draft_bucket=bucket_data,
         draft=draft_data,
+        parent_pid=pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
