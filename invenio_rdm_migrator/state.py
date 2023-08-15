@@ -112,6 +112,16 @@ class StateDB:
 
         return result
 
+    def search(self, table_name, column, value):
+        """Query a table by column."""
+        table = self.tables[table_name]
+        with self.mem_eng.connect() as conn:
+            result = conn.execute(
+                sa.select(table).where(getattr(table.columns, column) == value)
+            ).all()
+
+        return result
+
     def all(self, table_name):
         """Get all the data from the state.
 
@@ -280,6 +290,11 @@ class StateEntity:
     def get(self, key):
         """Get a row by key."""
         return self._row_as_dict(self.state.get(self.table_name, self.pk_attr, key))
+
+    def search(self, column, value):
+        """Search rows."""
+        for row in self.state.search(self.table_name, column, value):
+            yield self._row_as_dict(row)
 
     def all(self):
         """Get all rows."""
