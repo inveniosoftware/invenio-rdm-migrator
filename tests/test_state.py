@@ -86,7 +86,15 @@ def test_state_with_no_initial_db(tmp_dir):
 
     # check that no extra tables were created
     assert set(state.tables) == set(
-        {"parents", "records", "communities", "global", "pids", "buckets"}
+        {
+            "parents",
+            "records",
+            "communities",
+            "global",
+            "pids",
+            "buckets",
+            "file_records",
+        }
     )
 
 

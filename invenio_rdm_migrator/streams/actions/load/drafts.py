@@ -244,29 +244,28 @@ class DraftEditAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixi
         self.data.parent["id"] = state_parent["id"]
 
 
+@dataclass
 class RDMDraftPublishData(LoadData):
     """Draft publish action data."""
 
-    # bucket
-    record_bucket: dict
-    # metadata
+    bucket: dict
     parent: dict
     draft: dict
-    # pids
     parent_pid: dict
-    record_pid: dict
-    record_oai: dict
+    draft_pid: dict
+    draft_oai: dict
     parent_doi: Optional[dict] = None
-    record_doi: Optional[dict] = None
+    draft_doi: Optional[dict] = None
 
 
 class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
     """RDM publish creation."""
 
+    # IMPORTANT: at the moment it assumes publishing a new draft
+    # not taking into account forked_published or other cases
+
     name = "publish-draft"
     data_cls = RDMDraftPublishData
-
-    pks = []
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -277,28 +276,28 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
     def _generate_pid_rows(self, **kwargs):
         """Generates rows for a new draft."""
         # recid (draft) gets registered when creating a record, keeps the same pid
-        assert self.data.record_pid["status"] == "R"
+        assert self.data.draft_pid["status"] == "R"
         assert self.data.parent_pid["status"] == "R"
+        # no need to update parent pids, they are not in the state
         STATE.PIDS.update(self.data.draft_pid["pid_value"], {"status": "R"})
-        yield Operation(
-            OperationType.UPDATE, PersistentIdentifier, self.data.record_pid
-        )
+
+        yield Operation(OperationType.UPDATE, PersistentIdentifier, self.data.draft_pid)
         yield Operation(
             OperationType.UPDATE, PersistentIdentifier, self.data.parent_pid
         )
 
-        if self.data.record_doi:
+        if self.data.draft_doi:
             assert self.data.parent_doi  # cannot be one doi without the other
             yield Operation(
-                OperationType.INSERT, PersistentIdentifier, self.data.record_doi
+                OperationType.INSERT, PersistentIdentifier, self.data.draft_doi
             )
             yield Operation(
                 OperationType.INSERT, PersistentIdentifier, self.data.parent_doi
             )
 
-        if self.data.record_oai:
+        if self.data.draft_oai:
             yield Operation(
-                OperationType.INSERT, PersistentIdentifier, self.data.record_oai
+                OperationType.INSERT, PersistentIdentifier, self.data.draft_oai
             )
 
     def _generate_bucket_rows(self, **kwargs):
@@ -310,13 +309,15 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
         # delete bucket from STATE.BUCKET
         # it is not linked to a draft anymore and records cannot get file updates
         STATE.BUCKETS.delete(self.data.bucket["id"])
-        yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
+        # need to update the bucket (e.g. for locking it)
+        yield Operation(OperationType.UPDATE, FilesBucket, self.data.bucket)
 
         # TODO: impelement search on the state
-        files = STATE.FILE_RECORDS.search("draft_id", self.data.draft["id"])
+        files = STATE.FILE_RECORDS.search("record_id", self.data.draft["id"])
         for file in files:
-            yield Operation(OperationType.DELETE, RDMDraftFile, **file)
-            yield Operation(OperationType.INSERT, RDMRecordFile, **file)
+            yield Operation(OperationType.DELETE, RDMDraftFile, file)
+            yield Operation(OperationType.INSERT, RDMRecordFile, file)
+            STATE.FILE_RECORDS.delete(file["id"])
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -359,7 +360,6 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
             ),
         )
         # update parent
-        # might contain metadata updates (e.g. communities)
         yield Operation(
             OperationType.UPDATE,
             RDMParentMetadata,
@@ -373,15 +373,12 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
         )
 
         # update versioning
-        # not 100% sure this is correct
-        # if we publish a new draft, it would be
-        # not sure if next_draft_id=None always is the correct workflow
         STATE.PARENTS.update(
             parent["json"]["id"],
             {
-                "latest_index": parent["latest_index"],
-                "parent_id": parent["id"],
+                "id": parent["id"],
                 "latest_id": draft["id"],
+                "latest_index": draft["index"],
                 "next_draft_id": None,
             },
         )
@@ -389,13 +386,19 @@ class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesM
             OperationType.UPDATE,
             RDMVersionState,
             dict(
-                latest_index=parent["latest_index"],
                 parent_id=parent["id"],
                 latest_id=draft["id"],
+                latest_index=draft["index"],
                 next_draft_id=None,  # publishing a new record
             ),
         )
 
     def _resolve_references(self, **kwargs):
         """Resolve references e.g communities slug names."""
-        pass
+        # TODO: dup code, move to base DraftAction class?
+        # resolve parent communities slug
+        parent = self.data.parent
+        communities = parent["json"].get("communities")
+        if communities:
+            self.resolve_communities(communities)
+        self.resolve_draft_pids(self.data.draft)
