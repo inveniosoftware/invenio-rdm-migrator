@@ -7,8 +7,6 @@
 
 """Draft actions tests."""
 
-import pytest
-
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
 from invenio_rdm_migrator.streams.actions.load import DraftCreateAction, DraftEditAction
 from invenio_rdm_migrator.streams.models.files import FilesBucket
@@ -20,91 +18,15 @@ from invenio_rdm_migrator.streams.models.records import (
 )
 
 
-@pytest.fixture(scope="function")
-def draft_data():
-    """Draft data."""
-    return {
-        "id": "d94f793c-47d2-48e2-9867-ca597b4ebb41",
-        "json": {
-            "id": "1217215",
-            "$schema": "https://zenodo.org/schemas/deposits/records/record-v1.0.0.json",
-            "pids": {},
-            "files": {"enabled": True},
-            "metadata": {},
-            "access": {
-                "record": "public",
-                "files": "public",
-            },
-            "custom_fields": {},
-        },
-        "version_id": 1,
-        "index": 1,
-        "bucket_id": "0e12b4b6-9cc7-46df-9a04-c11c478de211",
-        "parent_id": "9493793c-47d2-48e2-9867-ca597b4ebb41",
-        "expires_at": None,
-        "fork_version_id": None,
-        "created": "2021-05-01T00:00:00",
-        "updated": "2021-05-01T00:00:00",
-    }
-
-
-@pytest.fixture(scope="function")
-def parent_data():
-    """Parent data."""
-    return {
-        "id": "9493793c-47d2-48e2-9867-ca597b4ebb41",
-        "json": {
-            "id": "1217214",
-            "pid": {"pk": 2, "pid_type": "recid", "status": "R", "obj_type": "rec"},
-            "access": {"owned_by": [{"user": 1234}]},
-            "communities": {"ids": ["zenodo", "migration"], "default": "zenodo"},
-        },
-        "version_id": 1,
-        "created": "2021-05-01T00:00:00",
-        "updated": "2021-05-01T00:00:00",
-    }
-
-
-@pytest.fixture(scope="function")
-def bucket_data():
-    """Bucket data."""
-    return {
-        "id": "0e12b4b6-9cc7-46df-9a04-c11c478de211",
-        "created": "2022-01-01T00:00:00",
-        "updated": "2022-01-01T00:00:00",
-        "default_location": 1,
-        "default_storage_class": "L",
-        "size": 0,
-        "quota_size": 50000000000,
-        "max_file_size": 50000000000,
-        "locked": False,
-        "deleted": False,
-    }
-
-
-@pytest.fixture(scope="function")
-def pid_data():
-    """PID data."""
-    return {
-        "id": 12132090,
-        "pid_type": "recid",
-        "pid_value": "1217215",
-        "pid_provider": None,
-        "status": "K",
-        "object_type": "rec",
-        "object_uuid": "d94f793c-47d2-48e2-9867-ca597b4ebb41",
-        "created": "2022-01-01T00:00:00",
-        "updated": "2022-01-01T00:00:00",
-    }
-
-
-def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data):
+def test_create_draft_new(
+    state, draft_data, parent_data, bucket_data, draft_pid_data, parent_pid_data
+):
     data = dict(
         tx_id=1,
-        draft_pid=pid_data,
+        draft_pid=draft_pid_data,
         draft_bucket=bucket_data,
         draft=draft_data,
-        parent_pid=pid_data,
+        parent_pid=parent_pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
@@ -127,7 +49,7 @@ def test_create_draft_new(state, draft_data, parent_data, bucket_data, pid_data)
 
 
 def test_create_draft_new_version(
-    state, draft_data, parent_data, bucket_data, pid_data
+    state, draft_data, parent_data, bucket_data, draft_pid_data, parent_pid_data
 ):
     # set existing parent so the action goes on the new version path
     state.PARENTS.add(
@@ -140,10 +62,10 @@ def test_create_draft_new_version(
     )
     data = dict(
         tx_id=1,
-        draft_pid=pid_data,
+        draft_pid=draft_pid_data,
         draft_bucket=bucket_data,
         draft=draft_data,
-        parent_pid=pid_data,
+        parent_pid=parent_pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
@@ -162,8 +84,8 @@ def test_create_draft_new_version(
     assert rows[4].model == RDMVersionState
 
 
-def test_create_draft_published_draft(
-    state, draft_data, parent_data, bucket_data, pid_data
+def test_create_draft_published_of_record(
+    state, draft_data, parent_data, bucket_data, draft_pid_data, parent_pid_data
 ):
     # set existing parent so the action goes on the new version path
     state.PARENTS.add(
@@ -187,10 +109,10 @@ def test_create_draft_published_draft(
     )
     data = dict(
         tx_id=1,
-        draft_pid=pid_data,
+        draft_pid=draft_pid_data,
         draft_bucket=bucket_data,
         draft=draft_data,
-        parent_pid=pid_data,
+        parent_pid=parent_pid_data,
         parent=parent_data,
     )
     action = DraftCreateAction(data)
