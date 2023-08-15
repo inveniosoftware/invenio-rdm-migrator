@@ -9,10 +9,9 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from functools import partial
 
 from ....actions import LoadAction, LoadData
-from ....load.ids import generate_pk, generate_recid, generate_uuid
+from ....load.ids import generate_pk, generate_uuid
 from ....load.postgresql.transactions.operations import Operation, OperationType
 from ....state import STATE
 from ...models.files import FilesBucket
@@ -29,10 +28,11 @@ from .parents import generate_parent_ops
 class RDMDraftCreateData(LoadData):
     """Draft create action data."""
 
-    pid: dict
-    bucket: dict
-    draft: dict
+    parent_pid: dict
     parent: dict
+    draft_pid: dict
+    draft: dict
+    draft_bucket: dict
 
 
 class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
@@ -42,11 +42,12 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
     data_cls = RDMDraftCreateData
 
     pks = [
-        ("pid", "id", generate_pk),
+        # not both parent.json.pid and draft.json.pid come filled in from the
+        # transform action to match parent_pid and draft_pid data.
+        ("draft_pid", "id", generate_pk),
         ("draft", "id", generate_uuid),
+        ("parent_pid", "id", generate_pk),
         ("parent", "id", generate_uuid),
-        ("parent", "json.pid", generate_recid),
-        ("draft", "json.pid", partial(generate_recid, status="N")),
     ]
 
     def _generate_rows(self, **kwargs):
@@ -57,7 +58,7 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
 
     def _generate_pid_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        pid = self.data.pid
+        pid = self.data.draft_pid
         if pid["pid_type"] != "depid":
             # note would raise an exception if it exists
             STATE.PIDS.add(
@@ -74,7 +75,7 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
 
     def _generate_bucket_rows(self, **kwargs):
         """Generates rows for a new draft."""
-        yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
+        yield Operation(OperationType.INSERT, FilesBucket, self.data.draft_bucket)
 
     def _generate_draft_rows(self, **kwargs):
         """Generates rows for a new draft."""
@@ -83,30 +84,25 @@ class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMi
         draft = self.data.draft
         parent = self.data.parent
 
-        # some legacy records have different pid value in deposit than record
-        # however _deposit.pid.value would contain the correct one
-        # if it is not legacy we get it from the current field (json.id)
-        recid = draft["json"]["id"]
-        forked_published = STATE.RECORDS.get(recid)
-
+        forked_published = STATE.RECORDS.get(draft["json"]["id"])
         existing_parent = STATE.PARENTS.get(parent["json"]["id"])
+
         # parent id
         #  a) draft of a published record, parent id = parent id of published
         #  b) new version, parent id = parent id of the previous version
         #  c) draft of a new record, parent id = given by pk func
-        # both values should be equal at first, the first is not calculated as pk func
+
+        # both values should be equal at first, the cannot be set in the transform step
+        # parent.id is calculated in the pks step
         draft["parent_id"] = parent["id"]
         if not existing_parent:  # case c
             STATE.PARENTS.add(
                 parent["json"]["id"],  # recid
-                {
-                    "id": parent["id"],
-                    "next_draft_id": draft["id"],
-                },
+                {"id": parent["id"], "next_draft_id": draft["id"]},
             )
             # drafts have a parent on save
             # on the other hand there is no community parent/request
-            yield from generate_parent_ops(parent)
+            yield from generate_parent_ops(parent, self.data.parent_pid)
 
         else:  # case a and b
             parent["id"] = existing_parent["id"]
