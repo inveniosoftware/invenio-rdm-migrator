@@ -55,7 +55,12 @@ def disk_db(tmp_dir):
         )
         conn.execute(
             insert(disk_meta.tables["communities"]).values(
-                {"slug": "test-comm", "id": "1234abcd-1234-5678-abcd-123abc456def"}
+                {
+                    "slug": "test-comm",
+                    "id": "1234abcd-1234-5678-abcd-123abc456def",
+                    "bucket_id": "1234abcd-1234-5678-abcd-123abc456def",
+                    "oai_set_id": 1,
+                }
             )
         )
         conn.execute(

@@ -20,6 +20,7 @@ class OAISet(Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     spec: Mapped[str] = mapped_column(nullable=False)
     name: Mapped[str] = mapped_column(nullable=True)
+    description: Mapped[str] = mapped_column(nullable=True)
     search_pattern: Mapped[str] = mapped_column(nullable=True)
     system_created: Mapped[bool] = mapped_column(nullable=False)
 

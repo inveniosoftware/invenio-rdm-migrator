@@ -79,6 +79,7 @@ def oai_set_data():
         "updated": "2023-06-29T14:00:00",
         "spec": "community-test-community",
         "name": "Test community",
+        "description": "Test community description",
     }
 
 

@@ -36,6 +36,7 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
     # it has four tables: communities, parent communities, communities_files and members
     expected__tablename__s = [
         "community_metadata",
+        "oaiserver_set",
         "communities_members",
         "rdm_parents_community",
         "communities_files",
@@ -49,7 +50,7 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
     # assert files were created and have the content
     # five files are created: one for the communities, members, files, files bucket, files object
     files = list(os.scandir(community_copy_load.tmp_dir))
-    assert len(files) == 5
+    assert len(files) == 6
 
     # assert communities metadata content
     with open(f"{community_copy_load.tmp_dir}/communities_metadata.csv", "r") as file:

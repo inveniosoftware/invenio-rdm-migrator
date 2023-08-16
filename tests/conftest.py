@@ -64,7 +64,7 @@ def communities_state(state):
         {
             "id": "12345678-abcd-1a2b-3c4d-123abc456def",
             "bucket_id": "12345678-abcd-1a2b-3c4d-123abc456def",
-            "oai_set_id": 1234,
+            "oai_set_id": 1,
             "community_file_id": None,
             "logo_object_version_id": None,
         },

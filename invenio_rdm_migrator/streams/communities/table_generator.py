@@ -60,7 +60,7 @@ class CommunityTableGenerator(TableGenerator):
         community = data["community"]
         community_id = community["id"]
         community_slug = community["slug"]
-        community_oai_set = community["oai_set"]
+        community_oai_set = data["oai_set"]
         community_files = data["community_files"]
         bucket = community_files["bucket"]
 
