@@ -247,7 +247,11 @@ class StateDB:
             "communities",
             metadata,
             sa.Column("slug", sa.String, primary_key=True),
-            sa.Column("id", UUIDType, unique=True),
+            sa.Column("id", UUIDType, unique=True, nullable=False),
+            sa.Column("bucket_id", UUIDType, unique=True, nullable=False),
+            sa.Column("oai_set_id", sa.Integer, unique=True, nullable=False),
+            sa.Column("community_file_id", UUIDType, unique=True),
+            sa.Column("logo_object_version_id", UUIDType, unique=True),
             sqlite_autoincrement=False,
         )
 

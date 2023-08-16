@@ -7,7 +7,7 @@
 
 """Invenio RDM migration user table load module."""
 
-from ...load.ids import generate_uuid, pid_pk
+from ...load.ids import generate_pk_for, generate_uuid, pid_pk
 from ...load.postgresql.bulk.generators import TableGenerator
 from ...state import STATE
 from ..models.communities import (
@@ -17,6 +17,7 @@ from ..models.communities import (
     FeaturedCommunity,
 )
 from ..models.files import FilesBucket, FilesObjectVersion
+from ..models.oai import OAISet
 
 
 def _generate_members_uuids(data):
@@ -41,6 +42,7 @@ class CommunityTableGenerator(TableGenerator):
                 Community,
                 CommunityMember,
                 FeaturedCommunity,
+                OAISet,
                 FilesBucket,
                 FilesObjectVersion,
                 CommunityFile,
@@ -58,15 +60,17 @@ class CommunityTableGenerator(TableGenerator):
         community = data["community"]
         community_id = community["id"]
         community_slug = community["slug"]
+        community_oai_set = community["oai_set"]
         community_files = data["community_files"]
         bucket = community_files["bucket"]
-
-        if not STATE.COMMUNITIES.get(community_slug):
-            STATE.COMMUNITIES.add(community_slug, {"id": community_id})
 
         community["bucket_id"] = bucket["id"]
         yield FilesBucket(**bucket)
         yield Community(**community)
+
+        community_oai_set["search_pattern"] = f"parent.communities.ids:{community_id}"
+        community_oai_set["system_created"] = True
+        yield OAISet(**community_oai_set)
 
         community_members = data["community_members"]
         for member in community_members:
@@ -79,10 +83,9 @@ class CommunityTableGenerator(TableGenerator):
             yield FeaturedCommunity(**featured_community)
 
         community_file = community_files.get("file")
+        file_object = community_files.get("file_object")
         # Not every community has a logo
         if community_file:
-            file_object = community_files["file_object"]
-
             file_object["bucket_id"] = bucket["id"]
             file_object["file_id"] = community_file["id"]
             yield FilesObjectVersion(**file_object)
@@ -90,3 +93,15 @@ class CommunityTableGenerator(TableGenerator):
             community_file["record_id"] = community_id
             community_file["object_version_id"] = file_object["version_id"]
             yield CommunityFile(**community_file)
+
+        if not STATE.COMMUNITIES.get(community_slug):
+            STATE.COMMUNITIES.add(
+                community_slug,
+                {
+                    "id": community_id,
+                    "bucket_id": bucket["id"],
+                    "oai_set_id": community_oai_set["id"],
+                    "community_file_id": (community_file or {}).get("id"),
+                    "logo_object_version_id": (file_object or {}).get("version_id"),
+                },
+            )

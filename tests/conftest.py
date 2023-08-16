@@ -58,13 +58,19 @@ def parents_state(state):
 
 @pytest.fixture(scope="function")
 def communities_state(state):
-    """Communities state.
+    """Communities state."""
+    state.COMMUNITIES.add(
+        "comm",
+        {
+            "id": "12345678-abcd-1a2b-3c4d-123abc456def",
+            "bucket_id": "12345678-abcd-1a2b-3c4d-123abc456def",
+            "oai_set_id": 1234,
+            "community_file_id": None,
+            "logo_object_version_id": None,
+        },
+    )
 
-    Keys are community slugs and values are UUIDs.
-    """
-    state.COMMUNITIES.add("comm", {"id": "12345678-abcd-1a2b-3c4d-123abc456def"})
-
-    return state
+    return state.COMMUNITIES
 
 
 @pytest.fixture(scope="function")

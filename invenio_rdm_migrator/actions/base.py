@@ -61,7 +61,8 @@ class LoadAction(Action, ABC):
         for attr_name, path, pk_func in self.pks:
             try:
                 attr = getattr(self.data, attr_name)
-                dict_set(attr, path, pk_func(attr))
+                if attr:
+                    dict_set(attr, path, pk_func(attr))
             except AttributeError:
                 logger = Logger.get_logger()
                 logger.exception(f"Attribute {attr_name} not found", exc_info=1)
