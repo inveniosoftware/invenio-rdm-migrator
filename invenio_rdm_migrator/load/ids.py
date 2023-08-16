@@ -32,8 +32,30 @@ def pid_pk():
 
 
 def generate_pk(data):
-    """Generate a primery key."""
+    """Generate a primary key."""
     return pid_pk()
+
+
+def generate_pk_for(model_cls):
+    """Generate an integer/serial primary key or a specific model.
+
+    Generated PKs values are stored in the global values state under they key format
+    "max_{model.__tablename__}_pk".
+    """
+
+    def _pk_gen(_):
+        state = STATE.VALUES
+        key = f"max_{model_cls.__tablename__}_pk"
+        state_value = state.get(key)
+        if not state_value:
+            value = 1_000_000
+            state.add(key, {"value": 1_000_000})
+        else:
+            value = state_value["value"] + 1
+            state.update(key, {"value": value})
+        return value
+
+    return _pk_gen
 
 
 def generate_recid(data, status="R"):
