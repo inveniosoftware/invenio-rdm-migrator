@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version 4.2.0
+
+- Rename `FileUploadAction` to `DraftFileUploadAction`.
+
 Version 4.1.0
 
 - Add file upload action.
