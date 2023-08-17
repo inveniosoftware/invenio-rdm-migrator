@@ -27,10 +27,10 @@ class FileUploadData(LoadData):
     file_record: dict
 
 
-class FileUploadAction(LoadAction):
+class DraftFileUploadAction(LoadAction):
     """RDM draft creation."""
 
-    name = "upload-file"
+    name = "draft-upload-file"
     data_cls = FileUploadData
     pks = [("file_record", "id", generate_uuid)]
 

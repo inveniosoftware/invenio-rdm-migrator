@@ -12,7 +12,7 @@ from uuid import UUID
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions.load import FileUploadAction
+from invenio_rdm_migrator.streams.actions.load import DraftFileUploadAction
 from invenio_rdm_migrator.streams.models.files import (
     FilesBucket,
     FilesInstance,
@@ -95,7 +95,7 @@ def test_upload_file_action(buckets_state, bucket_data, fi_data, ov_data, fr_dat
         file_instance=fi_data,
         file_record=fr_data,
     )
-    action = FileUploadAction(data)
+    action = DraftFileUploadAction(data)
     rows = list(action.prepare())
 
     assert len(rows) == 4
