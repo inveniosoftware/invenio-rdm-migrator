@@ -9,6 +9,11 @@
 Changes
 =======
 
+Version 4.1.0
+
+- Add file upload action.
+- Add draft edit action.
+
 Version 4.0.0
 
 - Namespace actions by load and transform.
