@@ -14,6 +14,8 @@ import pytest
 from invenio_rdm_migrator.state import STATE, StateDB
 from invenio_rdm_migrator.streams.records.state import ParentModelValidator
 
+pytest_plugins = ("invenio_rdm_migrator.testutils",)
+
 
 @pytest.fixture(scope="function")
 def tmp_dir():

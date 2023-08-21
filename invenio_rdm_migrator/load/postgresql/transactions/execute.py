@@ -18,10 +18,23 @@ from .operations import OperationType
 class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, **kwargs):
+    def __init__(self, db_uri, _session=None, **kwargs):
         """Constructor."""
         self.db_uri = db_uri
-        self._engine = create_engine(self.db_uri)
+        self._session = _session
+
+    @property
+    def _engine(self):
+        if self._engine is None:
+            self._engine = create_engine(self.db_uri)
+        return self._engine
+
+    @property
+    def session(self):
+        """DB session."""
+        if self._session is None:
+            self._session = Session(bind=self._engine)
+        return self._session
 
     def _cleanup(self, db=False):
         """No cleanup."""
@@ -29,7 +42,7 @@ class PostgreSQLTx(Load):
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
 
-    def _get_obj_by_pk(self, session, model, data):
+    def _get_obj_by_pk(self, model, data):
         """Get an object based on the primary key."""
         # this function accesses many private methods, variables, assumes indexes, etc.
         # pragmatic implementation, feel free to refactor.
@@ -37,7 +50,7 @@ class PostgreSQLTx(Load):
         for key in model.__mapper__.primary_key:
             pk[key.name] = data[key.name]
 
-        return session.get(model, pk)
+        return self.session.get(model, pk)
 
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
@@ -45,18 +58,17 @@ class PostgreSQLTx(Load):
 
         for action in transactions:
             operations = action.prepare()
-
-            with Session(self._engine) as session:
+            with self.session.begin():
                 for op in operations:
                     try:
                         if op.type == OperationType.INSERT:
                             obj = op.model(**op.data)
-                            session.add(obj)
+                            self.session.add(obj)
                         elif op.type == OperationType.DELETE:
-                            obj = self._get_obj_by_pk(session, op.model, op.data)
-                            session.delete(obj)
+                            obj = self._get_obj_by_pk(op.model, op.data)
+                            self.session.delete(obj)
                         elif op.type == OperationType.UPDATE:
-                            obj = self._get_obj_by_pk(session, op.model, op.data)
+                            obj = self._get_obj_by_pk(op.model, op.data)
                             # due to dictdiff/partial updates we only update those
                             # keys that changed the value. there is no instantiation
                             # of the data class with the op.data so they dont need
@@ -64,16 +76,16 @@ class PostgreSQLTx(Load):
                             for key, value in op.data.items():
                                 setattr(obj, key, value)
 
-                        session.flush()
+                        self.session.flush()
                     except Exception:
                         logger.exception(
                             f"Could not load {action.data.tx_id} ({action.name})",
                             exc_info=1,
                         )
-                        session.rollback()
+                        self.session.rollback()
                         raise
                 # commit all transaction group or none
-                session.commit()
+                self.session.commit()
 
     def run(self, entries, cleanup=False):
         """Load entries."""

@@ -14,12 +14,12 @@ from abc import ABC, abstractmethod
 class Load(ABC):
     """Base class for data loading."""
 
-    def _prepare(self):  # pragma: no cover
+    def _prepare(self, *args, **kwargs):  # pragma: no cover
         """Prepare data for loading."""
         pass
 
     @abstractmethod
-    def _load(self):  # pragma: no cover
+    def _load(self, *args, **kwargs):  # pragma: no cover
         """load data."""
         pass
 

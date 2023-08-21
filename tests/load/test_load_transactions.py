@@ -11,9 +11,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Mapped, Session, mapped_column
-from sqlalchemy.orm.exc import ObjectDeletedError
+from sqlalchemy.orm import Mapped, mapped_column
 
 from invenio_rdm_migrator.actions import LoadAction, LoadData
 from invenio_rdm_migrator.load.postgresql.models import Model
@@ -62,40 +60,31 @@ class TestModel(Model):
     test: Mapped[str]
 
 
-DB_URI = "postgresql+psycopg://invenio:invenio@localhost:5432/invenio"
-
-
 @pytest.fixture(scope="module")
-def db():
+def database(engine):
     tables = [TestModel]
-    eng = create_engine(DB_URI)
 
     # create tables
     for model in tables:
-        model.__table__.create(bind=eng, checkfirst=True)
+        model.__table__.create(bind=engine, checkfirst=True)
 
-    yield eng
+    yield engine
 
     # remove tables
     for model in tables:
-        model.__table__.drop(eng)
+        model.__table__.drop(engine)
 
 
 @pytest.fixture(scope="function")
-def test_item(db):
+def test_item(database, session):
     obj = TestModel(id=1, test="test item")
-    with Session(db) as session:
-        session.add(obj)
-        session.commit()
+    session.add(obj)
+    session.commit()
 
-    yield
 
-    with Session(db) as session:
-        session.delete(obj)
-        try:
-            session.commit()
-        except ObjectDeletedError:  # the object is deleted in the delete op test
-            pass
+@pytest.fixture(scope="function")
+def pg_tx(db_uri, session):
+    return PostgreSQLTx(db_uri=db_uri, _session=session)
 
 
 ###
@@ -103,41 +92,35 @@ def test_item(db):
 ###
 
 
-def test_load_transaction_insert(db):
+def test_load_transaction_insert(session, pg_tx, database):
     tx = [TestLoadAction(data={"tx_id": 1, "id": 101, "test": "insert test"})]
-    pg_tx = PostgreSQLTx(db_uri=DB_URI)
     pg_tx.run(tx)
 
-    with Session(pg_tx._engine) as session:
-        result = session.query(TestModel).all()
-        assert len(result) == 1
-        assert result[0].id == 101
-        assert result[0].test == "insert test"
+    result = session.query(TestModel).all()
+    assert len(result) == 1
+    assert result[0].id == 101
+    assert result[0].test == "insert test"
 
-        # suboptimal but pragmatic cleanup
-        session.delete(result[0])
-        session.commit()
+    # suboptimal but pragmatic cleanup
+    session.delete(result[0])
+    session.commit()
 
 
-def test_load_transaction_delete(db, test_item):
+def test_load_transaction_delete(pg_tx, session, database, test_item):
     tx = [TestLoadAction(data={"tx_id": 2, "id": 1})]
-    pg_tx = PostgreSQLTx(db_uri=DB_URI)
     pg_tx.run(tx)
 
-    with Session(pg_tx._engine) as session:
-        result = session.query(TestModel).all()
+    session.query(TestModel).all()
 
 
-def test_load_transaction_update(db, test_item):
+def test_load_transaction_update(pg_tx, session, database, test_item):
     tx = [TestLoadAction(data={"tx_id": 1, "id": 1, "test": "update test"})]
-    pg_tx = PostgreSQLTx(db_uri=DB_URI)
     pg_tx.run(tx)
 
-    with Session(pg_tx._engine) as session:
-        result = session.query(TestModel).all()
-        assert len(result) == 1
-        assert result[0].id == 1
-        assert result[0].test == "update test"
+    result = session.query(TestModel).all()
+    assert len(result) == 1
+    assert result[0].id == 1
+    assert result[0].test == "update test"
 
 
 # ###
@@ -145,27 +128,23 @@ def test_load_transaction_update(db, test_item):
 # ###
 
 
-def test_load_no_transaction(db):
-    pg_tx = PostgreSQLTx(DB_URI)
+def test_load_no_transaction(pg_tx, session, database):
     pg_tx.run([])
 
-    with Session(pg_tx._engine) as session:
-        result = session.query(TestModel).all()
-        assert len(result) == 0
+    result = session.query(TestModel).all()
+    assert len(result) == 0
 
 
-def test_load_transaction_multiple_actions(db):
+def test_load_transaction_multiple_actions(pg_tx, session, database):
     tx = [
         TestLoadAction(data={"tx_id": 1, "id": 101, "test": "first instance"}),
         TestLoadAction(data={"tx_id": 2, "id": 102, "test": "second instance"}),
     ]
-    pg_tx = PostgreSQLTx(DB_URI)
     pg_tx.run(tx)
 
-    with Session(pg_tx._engine) as session:
-        result = session.query(TestModel).all()
-        assert len(result) == 2
-        assert result[0].id == 101
-        assert result[0].test == "first instance"
-        assert result[1].id == 102
-        assert result[1].test == "second instance"
+    result = session.query(TestModel).all()
+    assert len(result) == 2
+    assert result[0].id == 101
+    assert result[0].test == "first instance"
+    assert result[1].id == 102
+    assert result[1].test == "second instance"
