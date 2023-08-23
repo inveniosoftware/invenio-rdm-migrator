@@ -55,8 +55,8 @@ class CommunityMember(Model):
     active: Mapped[bool]
     community_id: Mapped[UUID]
     user_id: Mapped[int]
-    group_id: Mapped[int]
-    request_id: Mapped[UUID]
+    group_id: Mapped[int] = mapped_column(nullable=True)
+    request_id: Mapped[UUID] = mapped_column(nullable=True)
 
 
 class FeaturedCommunity(Model):
