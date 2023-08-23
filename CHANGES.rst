@@ -9,6 +9,11 @@
 Changes
 =======
 
+Version 4.3.0
+
+- Add community basic CRUD actions.
+- Add DB session fixtures.
+
 Version 4.2.0
 
 - Rename `FileUploadAction` to `DraftFileUploadAction`.
