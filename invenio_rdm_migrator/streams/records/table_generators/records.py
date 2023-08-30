@@ -25,7 +25,7 @@ def _is_valid_uuid(value):
     try:
         UUID(value)
         return True
-    except:
+    except Exception:
         return False
 
 

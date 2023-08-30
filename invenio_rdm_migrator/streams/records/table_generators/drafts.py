@@ -23,7 +23,9 @@ from .references import CommunitiesReferencesMixin, PIDsReferencesMixin
 
 
 class RDMDraftTableGenerator(
-    TableGenerator, CommunitiesReferencesMixin, PIDsReferencesMixin
+    TableGenerator,
+    CommunitiesReferencesMixin,
+    PIDsReferencesMixin,
 ):
     """RDM Record and related tables load."""
 

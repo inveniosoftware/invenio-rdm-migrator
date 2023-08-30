@@ -9,6 +9,8 @@
 
 from datetime import datetime
 
+from invenio_rdm_migrator.load.ids import pid_pk
+
 from ...models.pids import PersistentIdentifier
 from ...models.records import RDMParentMetadata
 
@@ -29,6 +31,20 @@ def generate_parent_rows(parent):
         created=now,
         updated=now,
     )
+    # parent DOI
+    parent_doi = parent["json"].get("pids", {}).get("doi")
+    if parent_doi and parent_doi["identifier"]:
+        yield PersistentIdentifier(
+            id=pid_pk(),
+            pid_type="doi",
+            pid_value=parent_doi["identifier"],
+            status="R",
+            object_type="rec",
+            object_uuid=parent["id"],
+            created=now,
+            updated=now,
+        )
+
     # parent record
     yield RDMParentMetadata(
         id=parent["id"],
