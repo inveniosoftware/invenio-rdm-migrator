@@ -104,6 +104,16 @@ class UserEntry(Entry):
         pass
 
     @abstractmethod
+    def _blocked_at(self, entry):
+        """Returns the blocking/inactivation date."""
+        pass
+
+    @abstractmethod
+    def _verified_at(self, entry):
+        """Returns the verification date."""
+        pass
+
+    @abstractmethod
     def _username(self, entry):
         """Returns the username."""
         pass
@@ -139,6 +149,8 @@ class UserEntry(Entry):
             "active": self._active(entry),
             "password": self._password(entry),
             "confirmed_at": self._confirmed_at(entry),
+            "blocked_at": self._blocked_at(entry),
+            "verified_at": self._verified_at(entry),
             "username": self._username(entry),
             "displayname": self._displayname(entry),
             "profile": self._profile(entry),

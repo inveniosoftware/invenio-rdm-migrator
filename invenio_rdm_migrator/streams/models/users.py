@@ -29,6 +29,8 @@ class User(Model):
     password: Mapped[str]
     active: Mapped[bool]
     confirmed_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    blocked_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    verified_at: Mapped[str] = mapped_column(nullable=True)  # datetime
     version_id: Mapped[int]
     profile: Mapped[dict] = mapped_column(JSONB(), nullable=True)
     preferences: Mapped[dict] = mapped_column(JSONB(), nullable=True)
