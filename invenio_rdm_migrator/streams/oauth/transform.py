@@ -7,8 +7,6 @@
 
 """Invenio RDM migration record transform interfaces."""
 
-from abc import abstractmethod
-
 from ...transform import EncryptMixin, IdentityDictKeyMixin, Transform
 
 
@@ -19,9 +17,9 @@ class OAuthServerTokenTransform(Transform, EncryptMixin, IdentityDictKeyMixin):
         "deposit:actions": None,
         "deposit:extra_formats": None,
         "deposit:write": None,
-        "generate": None,
+        "generate": "tokens:generate",
         "user:email": "user:email",
-        "webhooks:event": None,
+        "webhooks:event": "webhooks:event",
     }
     """Keys are Invenio v3 scopes and values are new RDM scopes."""
 
