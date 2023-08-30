@@ -49,6 +49,7 @@ class CommunityTableGenerator(TableGenerator):
             ],
             pks=[
                 ("community.id", generate_uuid),
+                ("oai_set.id", generate_pk_for(OAISet)),
                 ("community_members", _generate_members_uuids),
                 ("featured_community.id", _generate_featured_community_id),
                 ("community_files.file_object.version_id", generate_uuid),

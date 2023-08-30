@@ -21,6 +21,11 @@ class CommunityTransform(Transform):
         pass
 
     @abstractmethod
+    def _oai_set(self, entry):
+        """Transform the community OAISet."""
+        pass
+
+    @abstractmethod
     def _community_members(self, entry):
         """Transform the community members."""
         pass
@@ -39,6 +44,7 @@ class CommunityTransform(Transform):
         """Transform a single entry."""
         return {
             "community": self._community(entry),
+            "oai_set": self._oai_set(entry),
             "community_files": self._community_files(entry),
             "community_members": self._community_members(entry),
             "featured_community": self._featured_community(entry),
@@ -273,6 +279,61 @@ class CommunityFileEntry(Entry):
             "json": self._json(entry),
             "version_id": self._version_id(entry),
             "key": self._key(entry),
+            "created": self._created(entry),
+            "updated": self._updated(entry),
+        }
+
+
+class OAISetEntry(Entry):
+    @abstractmethod
+    def _id(self, entry):
+        """Return the id."""
+        pass
+
+    @abstractmethod
+    def _spec(self, entry):
+        """Return the spec."""
+        pass
+
+    @abstractmethod
+    def _name(self, entry):
+        """Return the name."""
+        pass
+
+    @abstractmethod
+    def _description(self, entry):
+        """Return the description."""
+        pass
+
+    @abstractmethod
+    def _search_pattern(self, entry):
+        """Return the search pattern."""
+        pass
+
+    @abstractmethod
+    def _system_created(self, entry):
+        """Return if set is created by the system."""
+        pass
+
+    @abstractmethod
+    def _created(self, entry):
+        """Return the creation date."""
+        pass
+
+    @abstractmethod
+    def _updated(self, entry):
+        """Return the update date."""
+        pass
+
+    def transform(self, entry):
+        """Transforms a community file entry."""
+        return {
+            "id": self._id(entry),
+            "spec": self._spec(entry),
+            "name": self._name(entry),
+            "description": self._description(entry),
+            "search_pattern": self._search_pattern(entry),
+            "system_created": self._system_created(entry),
             "created": self._created(entry),
             "updated": self._updated(entry),
         }
