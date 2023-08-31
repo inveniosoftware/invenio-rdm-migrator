@@ -15,10 +15,9 @@ from ..state import STATE
 class EncryptMixin:
     """Enables re-encryption of values based on old and new secret keys."""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Constructor."""
         state = STATE.VALUES
-
         old_secret_key = state.get("old_secret_key")["value"]
         assert old_secret_key
         self.decrypt_engine = self._init_engine(old_secret_key)
@@ -26,6 +25,7 @@ class EncryptMixin:
         new_secret_key = state.get("new_secret_key")["value"]
         assert new_secret_key
         self.encrypt_engine = self._init_engine(new_secret_key)
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def _init_engine(secret_key):

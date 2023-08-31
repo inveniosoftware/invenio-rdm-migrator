@@ -9,11 +9,16 @@
 
 from abc import ABC, abstractmethod
 
+import pypeln
+
 from ..logging import Logger
 
 
 class Transform(ABC):
     """Base class for data transformation."""
+
+    def __init__(self, workers=None):
+        self._workers = workers
 
     @abstractmethod
     def _transform(self, entry):  # pragma: no cover
@@ -23,15 +28,35 @@ class Transform(ABC):
         """
         pass
 
-    def run(self, entries):
-        """Transform and yield one element at a time."""
-        for entry in entries:
+    def _multiprocess_transform(self, entries):
+        def _transform(entry):
             try:
-                yield self._transform(entry)
+                return self._transform(entry)
             except Exception:
                 logger = Logger.get_logger()
                 logger.exception(entry, exc_info=1)
-                continue
+
+        for result in pypeln.process.map(
+            _transform,
+            entries,
+            workers=self._workers,
+            maxsize=self._workers * 100,
+        ):
+            if result:
+                yield result
+
+    def run(self, entries):
+        """Transform and yield one element at a time."""
+        if self._workers is None:
+            for entry in entries:
+                try:
+                    yield self._transform(entry)
+                except Exception:
+                    logger = Logger.get_logger()
+                    logger.exception(entry, exc_info=1)
+                    continue
+        else:
+            yield from self._multiprocess_transform(entries)
 
 
 class Entry(ABC):
