@@ -7,6 +7,8 @@
 
 """Dataclasses models to generate table rows for OAI-PMH."""
 
+from dataclasses import InitVar
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -15,7 +17,7 @@ from ...load.postgresql.models import Model
 class OAISet(Model):
     """OAI set dataclass model."""
 
-    __tablename__ = "oaiserver_set"
+    __tablename__: InitVar[str] = "oaiserver_set"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     spec: Mapped[str] = mapped_column(nullable=False)
