@@ -286,6 +286,13 @@ class StateEntity:
         self.pk_attr = pk_attr
         self.table_name = table_name
         self._cache = {}
+        self._init_cache()
+
+    def _init_cache(self):
+        for row in self.state.all(self.table_name):
+            data = self._row_as_dict(row)
+            key = data[self.pk_attr]
+            self._cache[key] = data
 
     @classmethod
     def _row_as_dict(cls, row):
@@ -320,8 +327,8 @@ class StateEntity:
 
     def all(self):
         """Get all rows."""
-        for row in self.state.all(self.table_name):
-            yield self._row_as_dict(row)
+        for v in self._cache.values():
+            yield v
 
     def add(self, key, data):
         """Add data row."""
