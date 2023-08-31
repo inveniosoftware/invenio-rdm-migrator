@@ -50,14 +50,16 @@ class Runner:
         )
         STATE.initialized_state(self.state)
         # set up secret keys
-        STATE.VALUES.add(
-            "old_secret_key",
-            {"value": bytes(config.get("old_secret_key"), "utf-8")},
-        )
-        STATE.VALUES.add(
-            "new_secret_key",
-            {"value": bytes(config.get("new_secret_key"), "utf-8")},
-        )
+        if not STATE.VALUES.get("old_secret_key"):
+            STATE.VALUES.add(
+                "old_secret_key",
+                {"value": bytes(config.get("old_secret_key"), "utf-8")},
+            )
+        if not STATE.VALUES.get("new_secret_key"):
+            STATE.VALUES.add(
+                "new_secret_key",
+                {"value": bytes(config.get("new_secret_key"), "utf-8")},
+            )
 
         # start processing streams
         for definition in stream_definitions:
