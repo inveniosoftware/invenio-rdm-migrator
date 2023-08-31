@@ -63,6 +63,7 @@ class PostgreSQLCopyLoad(Load, AlterSequencesMixin):
 
     def _save_to_csv(self, entries):
         """Save the entries to a csv file."""
+        self.tmp_dir.mkdir(parents=True, exist_ok=True)
         # use this context manager to close all opened files at once
         with contextlib.ExitStack() as stack:
             output_files = {}

@@ -9,7 +9,7 @@
 
 from pathlib import Path
 
-import jsonlines
+import orjson
 
 from invenio_rdm_migrator.extract import Extract
 
@@ -26,6 +26,6 @@ class JSONLExtract(Extract):
 
     def run(self):
         """Yield one element at a time."""
-        with jsonlines.open(self.filepath, "r") as reader:
-            for line in reader.iter():
-                yield line
+        with open(self.filepath, "rb") as reader:
+            for line in reader:
+                yield orjson.loads(line)

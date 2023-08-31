@@ -45,7 +45,6 @@ class CommunitiesReferencesMixin:
                     f"Community with slug [{slug}] was not in state [{communities}]"
                 )
 
-
         communities["ids"] = _ids
 
 

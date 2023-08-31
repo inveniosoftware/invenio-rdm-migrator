@@ -8,12 +8,12 @@
 """Base table generator."""
 
 import csv
-import json
 from dataclasses import fields
 from datetime import datetime
 from uuid import UUID
 
-from .....utils import JSONEncoder
+import orjson
+
 from ...generators import PostgreSQLGenerator
 
 
@@ -24,7 +24,7 @@ def as_csv_row(dc):
         val = getattr(dc, f.name)
         if val:
             if issubclass(f.type, (dict,)):
-                val = json.dumps(val, cls=JSONEncoder)
+                val = orjson.dumps(val).decode("utf-8")
             elif issubclass(f.type, (datetime,)):
                 val = val.isoformat()
             elif issubclass(f.type, (UUID,)):
@@ -50,7 +50,6 @@ class TableGenerator(PostgreSQLGenerator):
             # resolve entry references
             self._resolve_references(entry)
 
-            tmp_dir.mkdir(parents=True, exist_ok=True)
             for entry in self._generate_rows(entry):
                 if entry.__tablename__ not in output_files:
                     fpath = tmp_dir / f"{entry.__tablename__}.csv"
