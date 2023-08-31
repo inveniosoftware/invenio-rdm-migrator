@@ -280,15 +280,18 @@ class StateDB:
 class StateEntity:
     """Helper class to query specific state tables."""
 
-    def __init__(self, state, table_name, pk_attr):
+    def __init__(self, state, table_name, pk_attr, cache=True):
         """Constructor."""
         self.state = state
         self.pk_attr = pk_attr
         self.table_name = table_name
-        self._cache = {}
-        self._init_cache()
+        self._cache = None
+        if cache:
+            self._cache = {}
+            self._init_cache()
 
     def _init_cache(self):
+        """Initialize the cache from state."""
         for row in self.state.all(self.table_name):
             data = self._row_as_dict(row)
             key = data[self.pk_attr]
@@ -314,11 +317,9 @@ class StateEntity:
 
     def get(self, key):
         """Get a row by key."""
-        if key in self._cache:
-            return self._cache[key]
-        result = self._row_as_dict(self.state.get(self.table_name, self.pk_attr, key))
-        self._cache[key] = result
-        return result
+        if self._cache is not None:
+            return self._cache.get(key, {})
+        return self._row_as_dict(self.state.get(self.table_name, self.pk_attr, key))
 
     def search(self, column, value):
         """Search rows."""
@@ -327,25 +328,35 @@ class StateEntity:
 
     def all(self):
         """Get all rows."""
-        for v in self._cache.values():
-            yield v
+        if self._cache is not None:
+            for v in self._cache.values():
+                yield v
+        else:
+            for row in self.state.all(self.table_name):
+                yield self._row_as_dict(row)
 
     def add(self, key, data):
         """Add data row."""
-        self.state.add(self.table_name, {self.pk_attr: key, **data})
-        self._cache[key] = data
+        if self._cache is not None:
+            self._cache[key] = data
+        else:
+            self.state.add(self.table_name, {self.pk_attr: key, **data})
 
     def update(self, key, data):
         """Add data row."""
-        self.state.update(
-            self.table_name, self.pk_attr, key, {self.pk_attr: key, **data}
-        )
-        self._cache[key].update(data)
+        if self._cache is not None:
+            self._cache[key].update(data)
+        else:
+            self.state.update(
+                self.table_name, self.pk_attr, key, {self.pk_attr: key, **data}
+            )
 
     def delete(self, key):
         """Delete data row."""
-        self.state.delete(self.table_name, self.pk_attr, key)
-        self._cache.pop(key, None)
+        if self._cache is not None:
+            self._cache.pop(key, None)
+        else:
+            self.state.delete(self.table_name, self.pk_attr, key)
 
 
 class StateValidator(ABC):
