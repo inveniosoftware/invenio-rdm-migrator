@@ -7,6 +7,8 @@
 
 """Invenio RDM records table generators references."""
 
+from invenio_rdm_migrator.logging import Logger
+
 from ....state import STATE
 
 
@@ -18,20 +20,29 @@ class CommunitiesReferencesMixin:
 
         Assumes the the table generator has a communities_state attribute.
         """
+        logger = Logger.get_logger()
         default_slug = communities.get("default")
-        default_id = STATE.COMMUNITIES.get(default_slug)
-        if not default_id:
-            # raise error without correct default community?
-            communities = {}
-
-        communities["default"] = default_id
+        if default_slug:
+            default_comm = STATE.COMMUNITIES.get(default_slug)
+            if "id" in default_comm:
+                communities["default"] = default_comm["id"]
+            else:
+                # raise error without correct default community?
+                logger.warning(
+                    f"Community with slug [{default_slug}] was not in state [{communities}]"
+                )
 
         communities_slugs = communities.get("ids", [])
         _ids = []
         for slug in communities_slugs:
-            _id = STATE.COMMUNITIES.get(slug)
-            if _id:
-                _ids.append(_id)
+            comm = STATE.COMMUNITIES.get(slug)
+            if "id" in comm:
+                _ids.append(comm["id"])
+            else:
+                logger.warning(
+                    f"Community with slug [{slug}] was not in state [{communities}]"
+                )
+
         communities["ids"] = _ids
 
 

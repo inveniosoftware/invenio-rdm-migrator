@@ -47,9 +47,9 @@ class RequestTableGenerator(TableGenerator):
         """
         # it assumes the data is transformed by an InclusionRequestEntry
         request_slug = data["json"]["receiver"]["community"]
-        community_id = STATE.COMMUNITIES.get(request_slug).get("id")
+        community = STATE.COMMUNITIES.get(request_slug).get("id")
 
-        data["json"]["receiver"]["community"] = community_id
+        data["json"]["receiver"]["community"] = community["id"]
 
     def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):
         """Compute rows."""
