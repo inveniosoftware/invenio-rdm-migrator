@@ -20,6 +20,7 @@ from ...models.pids import PersistentIdentifier
 from ...models.records import RDMDraftFile, RDMDraftMetadata, RDMParentMetadata
 from .parents import generate_parent_rows
 from .references import CommunitiesReferencesMixin, PIDsReferencesMixin
+from invenio_rdm_migrator.logging import Logger
 
 
 class RDMDraftTableGenerator(
@@ -76,7 +77,12 @@ class RDMDraftTableGenerator(
         # if there is a parent (else) but there is no record it means that it is a
         # draft of a new version
         elif not forked_published:
-            assert not state_parent.get("next_draft_id")  # it can only happen once
+            next_draft_id = state_parent.get("next_draft_id")
+            if not next_draft_id:
+                logger = Logger.get_logger()
+                logger.warning(f"[{state_parent=}] [{data=}]")
+                # assert not next_draft_id  # it can only happen once
+                return
             STATE.PARENTS.update(
                 parent["json"]["id"],
                 {
