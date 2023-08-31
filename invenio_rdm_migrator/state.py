@@ -109,7 +109,6 @@ class StateDB:
             result = conn.execute(
                 sa.select(table).where(getattr(table.columns, key_attr) == key_value)
             ).one_or_none()
-
         return result
 
     def search(self, table_name, column, value):
@@ -286,6 +285,7 @@ class StateEntity:
         self.state = state
         self.pk_attr = pk_attr
         self.table_name = table_name
+        self._cache = {}
 
     @classmethod
     def _row_as_dict(cls, row):
@@ -307,7 +307,11 @@ class StateEntity:
 
     def get(self, key):
         """Get a row by key."""
-        return self._row_as_dict(self.state.get(self.table_name, self.pk_attr, key))
+        if key in self._cache:
+            return self._cache[key]
+        result = self._row_as_dict(self.state.get(self.table_name, self.pk_attr, key))
+        self._cache[key] = result
+        return result
 
     def search(self, column, value):
         """Search rows."""
@@ -322,16 +326,19 @@ class StateEntity:
     def add(self, key, data):
         """Add data row."""
         self.state.add(self.table_name, {self.pk_attr: key, **data})
+        self._cache[key] = data
 
     def update(self, key, data):
         """Add data row."""
         self.state.update(
             self.table_name, self.pk_attr, key, {self.pk_attr: key, **data}
         )
+        self._cache[key].update(data)
 
     def delete(self, key):
         """Delete data row."""
         self.state.delete(self.table_name, self.pk_attr, key)
+        self._cache.pop(key, None)
 
 
 class StateValidator(ABC):
