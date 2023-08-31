@@ -132,11 +132,13 @@ class RDMDraftTableGenerator(
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
         # resolve parent communities slug
-        parent = data["parent"]
-        communities = parent["json"].get("communities")
-        if communities:
-            self.resolve_communities(communities)
-        self.resolve_draft_pids(data.get("draft"))
+        draft = data.get("draft")
+        if draft:
+            parent = data["parent"]
+            communities = parent["json"].get("communities")
+            if communities:
+                self.resolve_communities(communities)
+            self.resolve_draft_pids(draft)
 
     def insert_draft_files(self, db_uri=None):
         """Inserts draft files from buckets and object version."""

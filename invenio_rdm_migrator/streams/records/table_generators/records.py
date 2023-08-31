@@ -195,8 +195,9 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
 
     def _resolve_references(self, data, **kwargs):
         """Resolve references e.g communities slug names."""
-        # resolve parent communities slug
-        parent = data["parent"]
-        communities = parent["json"].get("communities")
-        if communities:
-            self.resolve_communities(communities)
+        if "record" in data:
+            # resolve parent communities slug
+            parent = data["parent"]
+            communities = parent["json"].get("communities")
+            if communities:
+                self.resolve_communities(communities)

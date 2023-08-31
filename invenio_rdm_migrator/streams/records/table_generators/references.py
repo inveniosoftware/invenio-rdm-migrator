@@ -31,6 +31,8 @@ class CommunitiesReferencesMixin:
                 logger.warning(
                     f"Community with slug [{default_slug}] was not in state [{communities}]"
                 )
+                communities.pop("default", None)
+                communities["ids"].remove(default_slug)
 
         communities_slugs = communities.get("ids", [])
         _ids = []
@@ -42,6 +44,7 @@ class CommunitiesReferencesMixin:
                 logger.warning(
                     f"Community with slug [{slug}] was not in state [{communities}]"
                 )
+
 
         communities["ids"] = _ids
 
