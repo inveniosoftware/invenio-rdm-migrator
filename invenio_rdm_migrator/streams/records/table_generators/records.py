@@ -153,6 +153,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             bucket_id=record["bucket_id"],
             media_bucket_id=record.get("media_bucket_id"),
             parent_id=parent_id,
+            deletion_status="P",
         )
         # recid
         yield PersistentIdentifier(

@@ -30,6 +30,7 @@ class RDMRecordMetadata(Model):
     bucket_id: Mapped[UUID]
     media_bucket_id: Mapped[UUID] = mapped_column(nullable=True)
     parent_id: Mapped[UUID]
+    deletion_status: Mapped[str]
 
 
 class RDMParentMetadata(Model):
