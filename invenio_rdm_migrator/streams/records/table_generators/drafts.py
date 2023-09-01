@@ -56,13 +56,10 @@ class RDMDraftTableGenerator(
         if not draft:
             return
 
-        # some legacy records have different pid value in deposit than record
-        # however _deposit.pid.value would contain the correct one
-        # if it is not legacy we get it from the current field (json.id)
         recid = draft["json"]["id"]
         forked_published = STATE.RECORDS.get(recid)
-
         state_parent = STATE.PARENTS.get(parent["json"]["id"])
+
         if not state_parent:
             STATE.PARENTS.add(
                 parent["json"]["id"],  # recid
@@ -74,21 +71,10 @@ class RDMDraftTableGenerator(
             # drafts have a parent on save
             # on the other hand there is no community parent/request
             yield from generate_parent_rows(parent)
-        # if there is a parent (else) but there is no record it means that it is a
+        # if there is a parent but there is no record it means that it is a
         # draft of a new version
-        elif not forked_published:
-            next_draft_id = state_parent.get("next_draft_id")
-            if not next_draft_id:
-                logger = Logger.get_logger()
-                logger.warning(f"[{state_parent=}] [{data=}]")
-                # assert not next_draft_id  # it can only happen once
-                return
-            STATE.PARENTS.update(
-                parent["json"]["id"],
-                {
-                    "next_draft_id": draft["id"],
-                },
-            )
+        elif state_parent and not forked_published:
+            STATE.PARENTS.update(parent["json"]["id"], {"next_draft_id": draft["id"]})
 
         # if its a draft of a published record, its parent should be parent id
         # if its a new version, its parent should be the one of the previous version

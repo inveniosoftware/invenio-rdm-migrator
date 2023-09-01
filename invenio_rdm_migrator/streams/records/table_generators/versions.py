@@ -22,10 +22,10 @@ class RDMVersionStateTableGenerator(TableGenerator):
     def _generate_rows(self, parent_entry, **kwargs):
         # Version state to be populated in the end from the final state
         yield RDMVersionState(
-            latest_index=parent_entry["latest_index"],
+            latest_index=parent_entry.get("latest_index"),
             parent_id=parent_entry["id"],
-            latest_id=parent_entry["latest_id"],
-            next_draft_id=parent_entry["next_draft_id"],
+            latest_id=parent_entry.get("latest_id"),
+            next_draft_id=parent_entry.get("next_draft_id"),
         )
 
     def prepare(self, tmp_dir, entry, stack, output_files, **kwargs):

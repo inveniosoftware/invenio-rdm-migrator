@@ -108,7 +108,8 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                     record_id = record["json"]["id"]
                     logger = Logger.get_logger()
                     logger.error(
-                        f"Record parent community not migrated. Record id[{record_id}]. parent community [{parent_comm_id}] parent default community [{parent_def_id}]."
+                        f"Record parent community not migrated. [{record_id=}]. "
+                        f"[{parent_comm_id=}], default community [{parent_def_id}]"
                     )
         else:
             if state_parent.get("latest_index") < record["index"]:
