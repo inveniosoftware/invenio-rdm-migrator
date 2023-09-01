@@ -10,13 +10,21 @@
 from datetime import datetime
 from uuid import UUID
 
+import psycopg
+
 from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.postgresql.bulk.generators import TableGenerator
 from ....logging import Logger
 from ....state import STATE
 from ...models.communities import RDMParentCommunityMetadata
+from ...models.files import FilesObjectVersion
 from ...models.pids import PersistentIdentifier
-from ...models.records import RDMParentMetadata, RDMRecordFile, RDMRecordMetadata
+from ...models.records import (
+    RDMParentMetadata,
+    RDMRecordFile,
+    RDMRecordMediaFile,
+    RDMRecordMetadata,
+)
 from .parents import generate_parent_rows
 from .references import CommunitiesReferencesMixin
 
@@ -59,6 +67,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                 RDMParentCommunityMetadata,
                 RDMRecordFile,
             ],
+            post_load_hooks=[self.insert_media_files],
             pks=[
                 ("record.id", generate_record_uuid),
                 ("parent.id", generate_uuid),
@@ -142,6 +151,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             version_id=record["version_id"],
             index=record["index"],
             bucket_id=record["bucket_id"],
+            media_bucket_id=record.get("media_bucket_id"),
             parent_id=parent_id,
         )
         # recid
@@ -202,3 +212,27 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             communities = parent["json"].get("communities")
             if communities:
                 self.resolve_communities(communities)
+
+    def insert_media_files(self, db_uri=None):
+        """Inserts record media files from buckets and object version."""
+        assert db_uri  # should have come from kwargs
+
+        with psycopg.connect(db_uri) as conn:
+            # the query needs to be split in 3 parts because the empty jsonb dict
+            # would cause problems with the string formatting
+            insert = f"""
+                INSERT INTO {RDMRecordMediaFile.__tablename__} (
+                    id, json, created, updated, version_id, key, record_id, object_version_id
+                )
+            """
+            select = "SELECT gen_random_uuid(), '{}'::jsonb, rrm.created, rrm.updated, 1, fo.key, rrm.id, fo.version_id"
+            from_and_join = f"""
+                FROM {RDMRecordMetadata.__tablename__} AS rrm
+                INNER JOIN {FilesObjectVersion.__tablename__} AS fo
+                ON rrm.media_bucket_id = fo.bucket_id AND fo.is_head = 'true'
+                WHERE rrm.media_bucket_id IS NOT NULL
+            """
+            # no return check, will raise if the sql statement fails
+            # id and json do not have defaults in DB even though if the programmatic
+            # models have them, so they need to be calculated
+            conn.execute(insert + select + from_and_join)

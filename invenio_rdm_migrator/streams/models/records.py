@@ -28,6 +28,7 @@ class RDMRecordMetadata(Model):
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
+    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True)
     parent_id: Mapped[UUID]
 
 
@@ -67,6 +68,7 @@ class RDMDraftMetadata(Model):
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
+    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True)
     parent_id: Mapped[UUID]
     expires_at: Mapped[str]
     # in a new version this value is None
@@ -88,6 +90,21 @@ class RDMRecordFile(Model):
     object_version_id: Mapped[UUID]
 
 
+class RDMRecordMediaFile(Model):
+    """RDM Record Media File dataclass model."""
+
+    __tablename__: InitVar[str] = "rdm_records_media_files"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    json: Mapped[dict] = mapped_column(JSONB())
+    created: Mapped[str]  # datetime
+    updated: Mapped[str]  # datetime
+    version_id: Mapped[int]
+    key: Mapped[str]
+    record_id: Mapped[UUID]
+    object_version_id: Mapped[UUID]
+
+
 class RDMDraftFile(Model):
     """RDM Draft File dataclass model."""
 
@@ -95,6 +112,21 @@ class RDMDraftFile(Model):
 
     # duplicated code to avoid dealing with sqlalchemy inheritance and fks
     # which in our case do not play any role
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    json: Mapped[dict] = mapped_column(JSONB(), nullable=True)
+    created: Mapped[str]  # datetime
+    updated: Mapped[str]  # datetime
+    version_id: Mapped[int]
+    key: Mapped[str]
+    record_id: Mapped[UUID]
+    object_version_id: Mapped[UUID] = mapped_column(nullable=True)
+
+
+class RDMDraftMediaFile(Model):
+    """RDM Draft Media File dataclass model."""
+
+    __tablename__: InitVar[str] = "rdm_drafts_media_files"
+
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(JSONB(), nullable=True)
     created: Mapped[str]  # datetime

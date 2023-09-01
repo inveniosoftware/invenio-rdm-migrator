@@ -103,8 +103,18 @@ class RDMRecordEntry(Entry):
         pass
 
     @abstractmethod
+    def _media_bucket_id(self, entry):
+        """Returns the bucket id of the record."""
+        pass
+
+    @abstractmethod
     def _files(self, entry):
         """Transform the files of a record."""
+        pass
+
+    @abstractmethod
+    def _media_files(self, entry):
+        """Transform the media files of a record."""
         pass
 
     @abstractmethod
@@ -136,10 +146,12 @@ class RDMRecordEntry(Entry):
             "version_id": self._version_id(entry),
             "index": self._index(entry),
             "bucket_id": self._bucket_id(entry),
+            "media_bucket_id": self._media_bucket_id(entry),
             "json": {
                 "id": self._recid(entry),
                 "pids": self._pids(entry),
                 "files": self._files(entry),
+                "media_files": self._media_files(entry),
                 "metadata": self._metadata(entry),
                 "access": self._access(entry),
                 "custom_fields": self._custom_fields(entry),
