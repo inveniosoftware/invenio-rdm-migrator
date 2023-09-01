@@ -26,7 +26,7 @@ class ExistingWebhookEventsCopyLoad(PostgreSQLCopyLoad):
             ],
             data_dir=data_dir,
             existing_data=True,
-            **kwargs
+            # **kwargs
         )
 
 
@@ -43,7 +43,7 @@ class ExistingGitHubRepositoriesCopyLoad(PostgreSQLCopyLoad):
             ],
             data_dir=data_dir,
             existing_data=True,
-            **kwargs
+            # **kwargs
         )
 
 
