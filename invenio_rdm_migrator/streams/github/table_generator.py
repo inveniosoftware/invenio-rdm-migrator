@@ -23,6 +23,6 @@ class ReleaseTableGenerator(TableGenerator):
         recid = data.pop("recid", None)
         release = dict(**data)
         if recid:
-            record = STATE.RECORDS.get(recid)
+            record = STATE.RECORDS.get(str(recid))
             release["record_id"] = record["id"]
         yield Release(**release)
