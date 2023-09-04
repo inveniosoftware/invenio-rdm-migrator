@@ -129,7 +129,9 @@ def test_single_record_generate_rows(
             version_id=1,
             index=1,
             bucket_id="bur3c0rd-1234-abcd-1ab2-1234abcd56ef",
+            media_bucket_id=None,
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
+            deletion_status="P",
         ),
         PersistentIdentifier(  # recid
             id=pid_2,
@@ -240,6 +242,7 @@ def test_single_draft_generate_rows(
             version_id=1,
             index=1,
             bucket_id="b0c73700-1234-abcd-1ab2-1234abcd56ef",
+            media_bucket_id=None,
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
             expires_at="2024-01-01 12:00:00.00000",
             fork_version_id=None,
@@ -335,7 +338,9 @@ def test_record_versions_and_old_draft_generate_rows(
             version_id=1,
             index=2,
             bucket_id="bur3c0rd-1234-abcd-1ab2-1234abcd56ef",
+            media_bucket_id=None,
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
+            deletion_status="P",
         ),
         PersistentIdentifier(  # recid
             id=1_000_002,  # this called is mocked and will not increment the counter
@@ -392,6 +397,7 @@ def test_record_versions_and_old_draft_generate_rows(
             version_id=1,
             index=1,
             bucket_id="b0c73700-1234-abcd-1ab2-1234abcd56ef",
+            media_bucket_id=None,
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
             expires_at="2024-01-01 12:00:00.00000",
             fork_version_id=1,
@@ -476,6 +482,7 @@ def test_record_and_new_version_draft_generate_rows(
             version_id=1,
             index=1,
             bucket_id="b0c73700-1234-abcd-1ab2-1234abcd56ef",
+            media_bucket_id=None,
             parent_id="12345678-abcd-1a2b-3c4d-123abc456def",
             expires_at="2024-01-01 12:00:00.00000",
             fork_version_id=None,
