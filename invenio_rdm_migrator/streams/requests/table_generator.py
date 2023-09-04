@@ -47,7 +47,7 @@ class RequestTableGenerator(TableGenerator):
         """
         # it assumes the data is transformed by an InclusionRequestEntry
         request_slug = data["json"]["receiver"]["community"]
-        community = STATE.COMMUNITIES.get(request_slug).get("id")
+        community = STATE.COMMUNITIES.get(request_slug)
 
         data["json"]["receiver"]["community"] = community["id"]
 
