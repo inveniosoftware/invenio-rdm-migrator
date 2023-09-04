@@ -19,6 +19,10 @@ class MockCommunityTransform(CommunityTransform):
         """Transform the community."""
         return {"key": "value"}
 
+    def _oai_set(self, entry):
+        """Transform the featured community."""
+        return {"key": "value"}
+
     def _community_members(self, entry):
         """Tramsform the community members."""
         return {"key": "value"}
@@ -40,6 +44,7 @@ def test_community_transform():
     result = MockCommunityTransform()._transform({})
     expected = {
         "community": {"key": "value"},
+        "oai_set": {"key": "value"},
         "community_members": {"key": "value"},
         "featured_community": {"key": "value"},
         "community_files": {
