@@ -135,7 +135,6 @@ class StateDB:
     def add(self, table_name, data):
         """Add key,data pair to the state."""
         table = self.tables[table_name]
-        self._validate(table, data)
         with self.mem_eng.connect() as conn:
             result = conn.execute(sa.insert(table).values(**data))
             conn.commit()
@@ -158,7 +157,6 @@ class StateDB:
         """Update an entry."""
         table = self.tables[table_name]
 
-        self._validate(table, data)
         with self.mem_eng.connect() as conn:
             result = conn.execute(
                 sa.update(table)
@@ -180,9 +178,9 @@ class StateDB:
         src_conn.close()
         dst_conn.close()
 
-    def _validate(self, table, data):
+    def validate(self, table_name, data):
         """Validate data for a specific table."""
-        validator = self.validators.get(table.name)
+        validator = self.validators.get(table_name)
         if validator:
             validator.validate(data)
 
@@ -337,13 +335,17 @@ class StateEntity:
 
     def add(self, key, data):
         """Add data row."""
+        self.state.validate(self.table_name, data)
         if self._cache is not None:
+            if key in self._cache:
+                raise ValueError("Key {key} already in state.")
             self._cache[key] = data
         else:
             self.state.add(self.table_name, {self.pk_attr: key, **data})
 
     def update(self, key, data):
         """Add data row."""
+        self.state.validate(self.table_name, data)
         if self._cache is not None:
             self._cache[key].update(data)
         else:
@@ -385,12 +387,12 @@ class STATE:
     FILE_RECORDS = None
 
     @classmethod
-    def initialized_state(cls, state_db):
+    def initialized_state(cls, state_db, cache=True):
         """Initializes state."""
-        cls.PARENTS = StateEntity(state_db, "parents", "recid")
-        cls.RECORDS = StateEntity(state_db, "records", "recid")
-        cls.BUCKETS = StateEntity(state_db, "buckets", "id")
-        cls.FILE_RECORDS = StateEntity(state_db, "file_records", "id")
-        cls.COMMUNITIES = StateEntity(state_db, "communities", "slug")
-        cls.PIDS = StateEntity(state_db, "pids", "pid_value")
-        cls.VALUES = StateEntity(state_db, "global", "key")
+        cls.PARENTS = StateEntity(state_db, "parents", "recid", cache=cache)
+        cls.RECORDS = StateEntity(state_db, "records", "recid", cache=cache)
+        cls.BUCKETS = StateEntity(state_db, "buckets", "id", cache=cache)
+        cls.FILE_RECORDS = StateEntity(state_db, "file_records", "id", cache=cache)
+        cls.COMMUNITIES = StateEntity(state_db, "communities", "slug", cache=cache)
+        cls.PIDS = StateEntity(state_db, "pids", "pid_value", cache=cache)
+        cls.VALUES = StateEntity(state_db, "global", "key", cache=cache)
