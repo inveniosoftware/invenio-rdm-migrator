@@ -47,7 +47,7 @@ def test_request_load_prepare(request_copy_load, transformed_incl_req_entry):
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "12345678-abcd-1a2b-3c4d-123abc456def,"
-            '"{""type"": ""community-inclusion"", ""title"": ""title"", ""topic"": {""record"": ""123456""}, ""status"": ""submitted"", ""receiver"": {""community"": ""12345678-abcd-1a2b-3c4d-123abc456def""}, ""created_by"": {""user"": ""3""}, ""$schema"": ""local://requests/request-v1.0.0.json""}"'
+            '"{""type"":""community-inclusion"",""title"":""title"",""topic"":{""record"":""123456""},""status"":""submitted"",""receiver"":{""community"":""12345678-abcd-1a2b-3c4d-123abc456def""},""created_by"":{""user"":""3""},""$schema"":""local://requests/request-v1.0.0.json""}"'
             ",01/01/2023,01/01/2023,1,1,01/01/2023\n"
         )
         content = file.read()

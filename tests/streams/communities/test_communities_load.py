@@ -57,7 +57,7 @@ def test_community_load_prepare(community_copy_load, transformed_community_entry
         # uuid, json, created, updated, version_id, number, expired_at
         expected = (
             "7357c033-abcd-1a2b-3c4d-123abc456def,"
-            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"": ""Migrator community"", ""description"": ""Migrator testing community"", ""page"": """", ""curation_policy"": """"}",1,migrator,7357c033-abcd-1a2b-3c4d-123abc456def\n'
+            '2023-01-01 12:00:00.00000,2023-01-31 12:00:00.00000,"{""title"":""Migrator community"",""description"":""Migrator testing community"",""page"":"""",""curation_policy"":""""}",1,migrator,7357c033-abcd-1a2b-3c4d-123abc456def\n'
         )
         content = file.read()
         assert content == expected
