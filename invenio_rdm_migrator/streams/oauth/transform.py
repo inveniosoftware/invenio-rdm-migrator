@@ -10,7 +10,7 @@
 from ...transform import EncryptMixin, IdentityDictKeyMixin, Transform
 
 
-class OAuthServerTokenTransform(Transform, EncryptMixin, IdentityDictKeyMixin):
+class OAuthServerTokenTransform(EncryptMixin, Transform, IdentityDictKeyMixin):
     """OAuth server token data transformation."""
 
     SCOPES_MAPPING = {

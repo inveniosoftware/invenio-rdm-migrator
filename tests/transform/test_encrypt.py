@@ -17,7 +17,7 @@ from invenio_rdm_migrator.transform import EncryptMixin, Transform
 def transform_with_mixin():
     """Test instance of a transform class with identity mixin"""
 
-    class FixtureTransform(Transform, EncryptMixin):
+    class FixtureTransform(EncryptMixin, Transform):
         """Transform fixture class."""
 
         def _token(self, entry):
