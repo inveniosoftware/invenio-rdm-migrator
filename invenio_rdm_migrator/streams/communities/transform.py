@@ -285,6 +285,8 @@ class CommunityFileEntry(Entry):
 
 
 class OAISetEntry(Entry):
+    """Community OAI Set entry."""
+
     @abstractmethod
     def _id(self, entry):
         """Return the id."""

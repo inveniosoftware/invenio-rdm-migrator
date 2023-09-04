@@ -18,6 +18,7 @@ class Transform(ABC):
     """Base class for data transformation."""
 
     def __init__(self, workers=None):
+        """Initialize base transform."""
         self._workers = workers
 
     @abstractmethod
