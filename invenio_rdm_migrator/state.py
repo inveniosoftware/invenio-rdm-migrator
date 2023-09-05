@@ -270,7 +270,7 @@ class StateDB:
             "global",
             metadata,
             sa.Column("key", sa.String, primary_key=True),
-            sa.Column("value", sa.Integer, primary_key=True),
+            sa.Column("value", sa.Integer),
             sqlite_autoincrement=False,
         )
 
