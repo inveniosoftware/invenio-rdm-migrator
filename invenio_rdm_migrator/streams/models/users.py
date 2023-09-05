@@ -9,7 +9,6 @@
 
 from dataclasses import InitVar
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -32,8 +31,8 @@ class User(Model):
     blocked_at: Mapped[str] = mapped_column(nullable=True)  # datetime
     verified_at: Mapped[str] = mapped_column(nullable=True)  # datetime
     version_id: Mapped[int]
-    profile: Mapped[dict] = mapped_column(JSONB(), nullable=True)
-    preferences: Mapped[dict] = mapped_column(JSONB(), nullable=True)
+    profile: Mapped[dict] = mapped_column(nullable=True)
+    preferences: Mapped[dict] = mapped_column(nullable=True)
 
 
 class LoginInformation(Model):

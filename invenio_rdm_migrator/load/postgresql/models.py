@@ -7,13 +7,13 @@
 
 """Invenio RDM migration PostgreSQL models module."""
 
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
-from sqlalchemy.types import JSON
 
 
 class Model(MappedAsDataclass, DeclarativeBase):
     """subclasses will be converted to dataclasses."""
 
     type_annotation_map = {
-        dict: JSON,
+        dict: JSONB,
     }

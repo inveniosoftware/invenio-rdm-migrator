@@ -8,7 +8,6 @@
 """Dataclasses OAuth models to generate table rows."""
 from dataclasses import InitVar
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -22,7 +21,7 @@ class RemoteAccount(Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int]
     client_id: Mapped[str]
-    extra_data: Mapped[dict] = mapped_column(JSONB())
+    extra_data: Mapped[dict]
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
 

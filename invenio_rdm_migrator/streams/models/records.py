@@ -10,7 +10,6 @@
 from dataclasses import InitVar
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -22,7 +21,7 @@ class RDMRecordMetadata(Model):
     __tablename__: InitVar[str] = "rdm_records_metadata"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -39,7 +38,7 @@ class RDMParentMetadata(Model):
     __tablename__: InitVar[str] = "rdm_parents_metadata"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -63,7 +62,7 @@ class RDMDraftMetadata(Model):
     __tablename__: InitVar[str] = "rdm_drafts_metadata"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -82,7 +81,7 @@ class RDMRecordFile(Model):
     __tablename__: InitVar[str] = "rdm_records_files"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict]
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -97,7 +96,7 @@ class RDMRecordMediaFile(Model):
     __tablename__: InitVar[str] = "rdm_records_media_files"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -114,7 +113,7 @@ class RDMDraftFile(Model):
     # duplicated code to avoid dealing with sqlalchemy inheritance and fks
     # which in our case do not play any role
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB(), nullable=True)
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
@@ -129,7 +128,7 @@ class RDMDraftMediaFile(Model):
     __tablename__: InitVar[str] = "rdm_drafts_media_files"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB(), nullable=True)
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]

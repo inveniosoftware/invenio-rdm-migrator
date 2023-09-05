@@ -10,7 +10,6 @@
 from dataclasses import InitVar
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -24,7 +23,7 @@ class Community(Model):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     slug: Mapped[str]
     bucket_id: Mapped[UUID] = mapped_column(primary_key=True)
@@ -48,7 +47,7 @@ class CommunityMember(Model):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     role: Mapped[str]
     visible: Mapped[bool]
@@ -79,7 +78,7 @@ class CommunityFile(Model):
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     key: Mapped[str] = mapped_column(primary_key=True)
     record_id: Mapped[UUID]

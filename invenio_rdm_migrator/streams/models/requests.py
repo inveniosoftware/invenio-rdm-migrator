@@ -10,7 +10,6 @@
 from dataclasses import InitVar
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -22,7 +21,7 @@ class RequestMetadata(Model):
     __tablename__: InitVar[str] = "request_metadata"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict] = mapped_column(nullable=True)
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]

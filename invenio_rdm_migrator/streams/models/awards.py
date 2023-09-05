@@ -10,7 +10,6 @@
 from dataclasses import InitVar
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ...load.postgresql.models import Model
@@ -23,7 +22,7 @@ class Awards(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     pid: Mapped[str]
-    json: Mapped[dict] = mapped_column(JSONB())
+    json: Mapped[dict]
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
     version_id: Mapped[int]
