@@ -49,17 +49,14 @@ class Runner:
             db_dir=self.state_dir, validators={"parents": ParentModelValidator}
         )
         STATE.initialized_state(self.state)
+
         # set up secret keys
-        if not STATE.VALUES.get("old_secret_key"):
-            STATE.VALUES.add(
-                "old_secret_key",
-                {"value": bytes(config.get("old_secret_key"), "utf-8")},
-            )
-        if not STATE.VALUES.get("new_secret_key"):
-            STATE.VALUES.add(
-                "new_secret_key",
-                {"value": bytes(config.get("new_secret_key"), "utf-8")},
-            )
+        for key in ("old_secret_key", "new_secret_key"):
+            stored_value = STATE.VALUES.get(key)
+            if stored_value:
+                STATE.VALUES.update(key, {"value": bytes(config.get(key), "utf-8")})
+            else:
+                STATE.VALUES.add(key, {"value": bytes(config.get(key), "utf-8")})
 
         # start processing streams
         for definition in stream_definitions:
