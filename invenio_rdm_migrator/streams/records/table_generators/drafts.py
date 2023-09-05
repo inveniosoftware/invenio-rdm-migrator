@@ -32,7 +32,7 @@ class RDMDraftTableGenerator(
     CommunitiesReferencesMixin,
     PIDsReferencesMixin,
 ):
-    """RDM Record and related wtables load."""
+    """RDM Record and related tables load."""
 
     def __init__(self):
         """Constructor."""

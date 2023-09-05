@@ -7,13 +7,11 @@
 
 """Utils tests."""
 
-import json
 import re
-from uuid import UUID
 
 import pytest
 
-from invenio_rdm_migrator.utils import JSONEncoder, dict_set, ts
+from invenio_rdm_migrator.utils import dict_set, ts
 
 ###
 # timestamp
@@ -32,49 +30,6 @@ def test_current_timestamp_fmt():
     value = ts(fmt="%Y-%m-%dT%H:%M:%S")
     exp = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
     assert exp.match(value)
-
-
-###
-# JSONEncoder
-###
-
-
-def test_no_uuid_values():
-    data = {"key1": "value1", "key2": 2, "key3": [1, 2, 3]}
-    encoded_data = JSONEncoder().encode(data)
-    assert encoded_data == json.dumps(data)
-
-
-def test_unknown_values():
-    class Unknown:
-        """Needed to trigger the encoder type error."""
-
-        pass
-
-    data = {"key": Unknown()}
-    pytest.raises(TypeError, JSONEncoder().encode, data)
-
-
-def test_uuid_values():
-    data = {
-        "key1": UUID("123e4567-e89b-12d3-a456-426655440000"),
-    }
-    expected_data = {
-        "key1": "123e4567-e89b-12d3-a456-426655440000",
-    }
-    encoded_data = JSONEncoder().encode(data)
-    assert encoded_data == json.dumps(expected_data)
-
-
-def test_nested_uuid_values():
-    data = {
-        "key1": {"key2": UUID("123e4567-e89b-12d3-a456-426655440000")},
-    }
-    expected_data = {
-        "key1": {"key2": "123e4567-e89b-12d3-a456-426655440000"},
-    }
-    encoded_data = JSONEncoder().encode(data)
-    assert encoded_data == json.dumps(expected_data)
 
 
 ###

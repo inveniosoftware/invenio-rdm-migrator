@@ -20,17 +20,6 @@ def ts(iso=True, fmt=None):
     return dt.isoformat() if iso else dt.timestamp()
 
 
-class JSONEncoder(json.JSONEncoder):
-    """Encoder to support UUID inside dictionaries."""
-
-    def default(self, o):
-        """Default encoding."""
-        if isinstance(o, UUID):
-            return str(o)
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, o)
-
-
 # PORT: from invenio_records.dictutils to avoid having an invenio constraint
 # it could cause troubles with sqlalchemy and psycompg version
 def parse_lookup_key(lookup_key):
