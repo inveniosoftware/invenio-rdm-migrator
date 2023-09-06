@@ -27,9 +27,9 @@ class RDMRecordMetadata(Model):
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
-    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True)
     parent_id: Mapped[UUID]
     deletion_status: Mapped[str]
+    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True, default=None)
 
 
 class RDMParentMetadata(Model):
@@ -68,11 +68,11 @@ class RDMDraftMetadata(Model):
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
-    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True)
     parent_id: Mapped[UUID]
     expires_at: Mapped[str]
     # in a new version this value is None
     fork_version_id: Mapped[int] = mapped_column(nullable=True)
+    media_bucket_id: Mapped[UUID] = mapped_column(nullable=True, default=None)
 
 
 class RDMRecordFile(Model):
