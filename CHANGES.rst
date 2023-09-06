@@ -9,6 +9,10 @@
 Changes
 =======
 
+Version 4.4.1
+
+- Fix default value for nullable model fields.
+
 Version 4.4.0
 
 - Add GitHub stream.
