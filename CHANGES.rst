@@ -9,6 +9,17 @@
 Changes
 =======
 
+Version 4.4.0
+
+- Add GitHub stream.
+- Add ``verified_at`` and ``blocked_at`` for usesr models.
+- Handle parent DOIs for records.
+- Add media files to records and drafts.
+- Add ``deletion_status`` to record models.
+- Switch to ``orjson`` for JSON dumping/loading.
+- Add multi-processing for transform.
+- Refactor state to also use Python dict for caching.
+
 Version 4.3.0
 
 - Add community basic CRUD actions.
