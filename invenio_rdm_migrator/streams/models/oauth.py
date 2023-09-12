@@ -47,7 +47,7 @@ class ServerClient(Model):
     name: Mapped[str]
     description: Mapped[str]
     website: Mapped[str]
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(nullable=True)
     client_id: Mapped[str] = mapped_column(primary_key=True)
     client_secret: Mapped[str]  # it is text, migrated as is
     is_confidential: Mapped[bool]
@@ -63,11 +63,11 @@ class ServerToken(Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     client_id: Mapped[str]
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(nullable=True)
     token_type: Mapped[str]
     access_token: Mapped[bytes]
-    refresh_token: Mapped[bytes]
-    expires: Mapped[str]  # datetime
+    refresh_token: Mapped[bytes] = mapped_column(nullable=True)
+    expires: Mapped[str] = mapped_column(nullable=True)  # datetime
     _scopes: Mapped[str]
     is_personal: Mapped[bool]
     is_internal: Mapped[bool]
