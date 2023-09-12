@@ -9,8 +9,6 @@
 
 from uuid import UUID
 
-import pytest
-
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
 from invenio_rdm_migrator.streams.actions.load import DraftFileUploadAction
 from invenio_rdm_migrator.streams.models.files import (
