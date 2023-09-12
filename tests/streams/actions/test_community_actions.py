@@ -9,7 +9,7 @@
 
 import pytest
 
-from invenio_rdm_migrator.load.ids import generate_pk_for, generate_uuid
+from invenio_rdm_migrator.load.ids import generate_uuid
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
 from invenio_rdm_migrator.streams.actions.load import (
     CommunityCreateAction,
