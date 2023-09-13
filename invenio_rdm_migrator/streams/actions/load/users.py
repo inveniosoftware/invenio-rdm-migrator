@@ -12,7 +12,6 @@ from typing import Optional
 
 from ....actions import LoadAction, LoadData
 from ....load.postgresql.transactions.operations import Operation, OperationType
-from ....transform import EncryptMixin
 from ...models.users import LoginInformation, SessionActivity, User
 
 # GLOBAL FIXME: partial updates would allow to remove the encrypt mixin from many of the
@@ -29,22 +28,14 @@ class UserData(LoadData):
     sessions: Optional[list] = None
 
 
-class UserRegistrationAction(LoadAction, EncryptMixin):
+class UserRegistrationAction(LoadAction):
     """Registers a user."""
 
     name = "register-user"
     data_cls = UserData
 
-    def __init__(self, data, **kwargs):
-        """Constructor."""
-        # Explicit calls, otherwise MRO only initializes LoadAction
-        LoadAction.__init__(self, data, **kwargs)
-        EncryptMixin.__init__(self)
-
     def _generate_rows(self, **kwargs):
         """Generates rows for a new user."""
-        self.data.user["password"] = self.re_encrypt(self.data.user["password"])
-
         yield Operation(OperationType.INSERT, User, self.data.user)
 
         if self.data.login_information:
@@ -60,22 +51,14 @@ class UserRegistrationAction(LoadAction, EncryptMixin):
 # - Password change (including re-encryption)
 # - User confirmation
 # - User deactivation
-class UserEditAction(LoadAction, EncryptMixin):
+class UserEditAction(LoadAction):
     """Registers a user."""
 
     name = "edit-user"
     data_cls = UserData
 
-    def __init__(self, data, **kwargs):
-        """Constructor."""
-        # Explicit calls, otherwise MRO only initializes LoadAction
-        LoadAction.__init__(self, data, **kwargs)
-        EncryptMixin.__init__(self)
-
     def _generate_rows(self, **kwargs):
         """Generates rows for a user edit."""
-        self.data.user["password"] = self.re_encrypt(self.data.user["password"])
-
         yield Operation(OperationType.UPDATE, User, self.data.user)
 
         if self.data.login_information:
@@ -106,7 +89,7 @@ class UserProfileEditAction(LoadAction):
         pass
 
 
-class UserDeactivationAction(LoadAction, EncryptMixin):
+class UserDeactivationAction(LoadAction):
     """Deactivate a user.
 
     For example, flag it as spam.
@@ -115,17 +98,9 @@ class UserDeactivationAction(LoadAction, EncryptMixin):
     name = "deactivate-user"
     data_cls = UserData
 
-    def __init__(self, data, **kwargs):
-        """Constructor."""
-        # Explicit calls, otherwise MRO only initializes LoadAction
-        LoadAction.__init__(self, data, **kwargs)
-        EncryptMixin.__init__(self)
-
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
         assert not self.data.user["active"]
-
-        self.data.user["password"] = self.re_encrypt(self.data.user["password"])
 
         yield Operation(OperationType.UPDATE, User, self.data.user)
 
