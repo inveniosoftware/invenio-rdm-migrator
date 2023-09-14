@@ -10,7 +10,7 @@
 from ...transform import EncryptMixin, IdentityDictKeyMixin, Transform
 
 
-class OAuthServerTokenTransform(EncryptMixin, Transform, IdentityDictKeyMixin):
+class OAuthServerTokenTransform(Transform, IdentityDictKeyMixin):
     """OAuth server token data transformation."""
 
     SCOPES_MAPPING = {
@@ -22,17 +22,6 @@ class OAuthServerTokenTransform(EncryptMixin, Transform, IdentityDictKeyMixin):
         "webhooks:event": "webhooks:event",
     }
     """Keys are Invenio v3 scopes and values are new RDM scopes."""
-
-    def _access_token(self, entry):
-        """Server access token."""
-        # as per DB constraints the token can be null even if it does not make sense to be
-        token = entry["access_token"]
-        return self.re_encrypt(token) if token else None
-
-    def _refresh_token(self, entry):
-        """Server refresh token."""
-        token = entry["refresh_token"]
-        return self.re_encrypt(token) if token else None
 
     def _scopes(self, entry):
         """Token scopes."""
@@ -61,13 +50,8 @@ class OAuthServerTokenTransform(EncryptMixin, Transform, IdentityDictKeyMixin):
         }
 
 
-class OAuthRemoteTokenTransform(Transform, EncryptMixin, IdentityDictKeyMixin):
+class OAuthRemoteTokenTransform(Transform, IdentityDictKeyMixin):
     """OAuth client remote token data transformation."""
-
-    def _access_token(self, entry):
-        """Remote access token."""
-        token = entry["access_token"]
-        return self.re_encrypt(token)
 
     def _transform(self, entry):
         """Transform a single entry."""
