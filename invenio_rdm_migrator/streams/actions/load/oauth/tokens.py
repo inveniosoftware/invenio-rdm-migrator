@@ -49,3 +49,16 @@ class OAuthServerTokenUpdateAction(LoadAction):
             yield Operation(OperationType.UPDATE, ServerClient, self.data.client)
         if self.data.token:
             yield Operation(OperationType.UPDATE, ServerToken, self.data.token)
+
+
+class OAuthServerTokenDeleteAction(LoadAction):
+    """Create a personal oauth token."""
+
+    name = "oauth-server-token-delete"
+    data_cls = OAuthTokenData
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new oauth token."""
+        assert not self.data.client and self.data.token
+
+        yield Operation(OperationType.DELETE, ServerToken, self.data.token)
