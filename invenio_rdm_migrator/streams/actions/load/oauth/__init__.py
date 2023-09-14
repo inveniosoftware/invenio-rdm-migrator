@@ -7,6 +7,6 @@
 
 """Invenio RDM migration OAuth2Server action stream."""
 
-from .tokens import OAuthTokenCreateAction
+from .tokens import OAuthServerTokenCreateAction
 
-__all__ = "OAuthTokenCreateAction"
+__all__ = "OAuthServerTokenCreateAction"
