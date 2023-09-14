@@ -40,7 +40,7 @@ class IdentityDictKeyMixin:
         if key.startswith("_"):
             key = key[1:]
 
-        return data[key]
+        return data.get(key)  # due to partial updates now keys might not be present
 
     def __getattr__(self, item):
         """Fallback to the dict access when the attr/func was not found in the class."""
