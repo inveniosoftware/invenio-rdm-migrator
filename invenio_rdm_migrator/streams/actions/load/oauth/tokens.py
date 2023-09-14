@@ -8,6 +8,7 @@
 """OAuth2Server tokens actions module."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 from .....actions import LoadAction, LoadData
 from .....load.postgresql.transactions.operations import Operation, OperationType
@@ -18,8 +19,8 @@ from ....models.oauth import ServerClient, ServerToken
 class OAuthTokenData(LoadData):
     """Community action data."""
 
-    client: dict
-    token: dict
+    client: Optional[dict] = None
+    token: Optional[dict] = None
 
 
 class OAuthServerTokenCreateAction(LoadAction):
@@ -30,5 +31,21 @@ class OAuthServerTokenCreateAction(LoadAction):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new oauth token."""
+        assert self.data.client and self.data.token
+
         yield Operation(OperationType.INSERT, ServerClient, self.data.client)
         yield Operation(OperationType.INSERT, ServerToken, self.data.token)
+
+
+class OAuthServerTokenUpdateAction(LoadAction):
+    """Create a personal oauth token."""
+
+    name = "oauth-server-token-update"
+    data_cls = OAuthTokenData
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new oauth token."""
+        if self.data.client:
+            yield Operation(OperationType.UPDATE, ServerClient, self.data.client)
+        if self.data.token:
+            yield Operation(OperationType.UPDATE, ServerToken, self.data.token)
