@@ -25,7 +25,13 @@ class OAuthServerTokenTransform(Transform, IdentityDictKeyMixin):
 
     def _scopes(self, entry):
         """Token scopes."""
-        scopes = entry.get("_scopes", "").split(" ")
+        scopes = entry.get("_scopes", "")
+
+        if scopes:  # account for cases where scopes = "", otherwise scopes = [""] fails
+            scopes = scopes.split(" ")
+        else:
+            return ""
+
         new_scopes = []
         for scope in scopes:
             new_scope = self.SCOPES_MAPPING[scope]
