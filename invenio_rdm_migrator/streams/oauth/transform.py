@@ -7,10 +7,10 @@
 
 """Invenio RDM migration record transform interfaces."""
 
-from ...transform import EncryptMixin, IdentityDictKeyMixin, Transform
+from ...transform import IdentityTransform
 
 
-class OAuthServerTokenTransform(Transform, IdentityDictKeyMixin):
+class OAuthServerTokenTransform(IdentityTransform):
     """OAuth server token data transformation."""
 
     SCOPES_MAPPING = {
@@ -42,30 +42,15 @@ class OAuthServerTokenTransform(Transform, IdentityDictKeyMixin):
 
     def _transform(self, entry):
         """Transform a single entry."""
-        return {
-            "id": self._id(entry),
-            "client_id": self._client_id(entry),
-            "user_id": self._user_id(entry),
-            "token_type": self._token_type(entry),
-            "access_token": self._access_token(entry),
-            "refresh_token": self._refresh_token(entry),
-            "expires": self._expires(entry),
-            "_scopes": self._scopes(entry),
-            "is_personal": self._is_personal(entry),
-            "is_internal": self._is_internal(entry),
-        }
+        data = super()._transform(entry)
+        if data.get("_scopes"):
+            data["_scopes"]: self._scopes(entry)
+
+        return data
 
 
-class OAuthRemoteTokenTransform(Transform, IdentityDictKeyMixin):
+class OAuthRemoteTokenTransform(IdentityTransform):
     """OAuth client remote token data transformation."""
 
-    def _transform(self, entry):
-        """Transform a single entry."""
-        return {
-            "id_remote_account": self._id_remote_account(entry),
-            "token_type": self._token_type(entry),
-            "access_token": self._access_token(entry),
-            "secret": self._secret(entry),
-            "created": self._created(entry),
-            "updated": self._updated(entry),
-        }
+    # left as is to avoid breaking compatibility
+    # behavior is the same
