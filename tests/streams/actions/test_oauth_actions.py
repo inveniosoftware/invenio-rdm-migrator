@@ -12,6 +12,7 @@ import pytest
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
 from invenio_rdm_migrator.streams.actions.load import (
     OAuthServerTokenCreateAction,
+    OAuthServerTokenDeleteAction,
     OAuthServerTokenUpdateAction,
 )
 from invenio_rdm_migrator.streams.models.oauth import ServerClient, ServerToken
@@ -109,3 +110,27 @@ def test_client_oauth_server_token_only_server(oauth_token_data):
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == ServerToken
+
+
+def test_delete_oauth_server_token(oauth_client_data, oauth_token_data):
+    data = dict(
+        tx_id=1,
+        token=oauth_token_data,
+    )
+    action = OAuthServerTokenDeleteAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 1
+    assert rows[0].type == OperationType.DELETE
+    assert rows[0].model == ServerToken
+
+
+def test_delete_oauth_server_token_w_client(oauth_client_data, oauth_token_data):
+    data = dict(
+        tx_id=1,
+        client=oauth_client_data,
+        token=oauth_token_data,
+    )
+    action = OAuthServerTokenDeleteAction(data)
+    with pytest.raises(AssertionError):
+        list(action.prepare())
