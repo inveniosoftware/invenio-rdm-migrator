@@ -45,15 +45,15 @@ class ServerClient(Model):
     __tablename__: InitVar[str] = "oauth2server_client"
 
     name: Mapped[str]
-    description: Mapped[str]
-    website: Mapped[str]
-    user_id: Mapped[int] = mapped_column(nullable=True)
     client_id: Mapped[str] = mapped_column(primary_key=True)
+    description: Mapped[str] = mapped_column(nullable=True)
+    website: Mapped[str] = mapped_column(nullable=True)
+    user_id: Mapped[int] = mapped_column(nullable=True)
     client_secret: Mapped[str]  # it is text, migrated as is
-    is_confidential: Mapped[bool]
-    is_internal: Mapped[bool]
-    _redirect_uris: Mapped[str]
-    _default_scopes: Mapped[str]
+    _redirect_uris: Mapped[str] = mapped_column(nullable=True)
+    _default_scopes: Mapped[str] = mapped_column(nullable=True)
+    is_internal: Mapped[bool] = mapped_column(nullable=True, default=False)
+    is_confidential: Mapped[bool] = mapped_column(nullable=True, default=True)
 
 
 class ServerToken(Model):
@@ -64,10 +64,10 @@ class ServerToken(Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     client_id: Mapped[str]
     user_id: Mapped[int] = mapped_column(nullable=True)
-    token_type: Mapped[str]
-    access_token: Mapped[bytes]
-    refresh_token: Mapped[bytes] = mapped_column(nullable=True)
+    access_token: Mapped[str] = mapped_column(nullable=True)
+    refresh_token: Mapped[str] = mapped_column(nullable=True)
     expires: Mapped[str] = mapped_column(nullable=True)  # datetime
-    _scopes: Mapped[str]
-    is_personal: Mapped[bool]
-    is_internal: Mapped[bool]
+    _scopes: Mapped[str] = mapped_column(nullable=True)
+    token_type: Mapped[str] = mapped_column(nullable=True, default="bearer")
+    is_personal: Mapped[bool] = mapped_column(nullable=True, default=False)
+    is_internal: Mapped[bool] = mapped_column(nullable=True, default=False)

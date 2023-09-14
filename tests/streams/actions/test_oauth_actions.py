@@ -50,7 +50,7 @@ def oauth_token_data():
     }
 
 
-def test_upload_file_action(oauth_client_data, oauth_token_data):
+def test_create_oauth_server_token(oauth_client_data, oauth_token_data):
     data = dict(
         tx_id=1,
         client=oauth_client_data,
