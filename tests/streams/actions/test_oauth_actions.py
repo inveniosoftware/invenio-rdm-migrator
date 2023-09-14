@@ -10,7 +10,7 @@
 import pytest
 
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
-from invenio_rdm_migrator.streams.actions.load import OAuthTokenCreateAction
+from invenio_rdm_migrator.streams.actions.load import OAuthServerTokenCreateAction
 from invenio_rdm_migrator.streams.models.oauth import ServerClient, ServerToken
 
 
@@ -56,7 +56,7 @@ def test_upload_file_action(oauth_client_data, oauth_token_data):
         client=oauth_client_data,
         token=oauth_token_data,
     )
-    action = OAuthTokenCreateAction(data)
+    action = OAuthServerTokenCreateAction(data)
     rows = list(action.prepare())
 
     assert len(rows) == 2

@@ -22,7 +22,7 @@ class OAuthTokenData(LoadData):
     token: dict
 
 
-class OAuthTokenCreateAction(LoadAction):
+class OAuthServerTokenCreateAction(LoadAction):
     """Create a personal oauth token."""
 
     name = "oauth-server-token-create"
