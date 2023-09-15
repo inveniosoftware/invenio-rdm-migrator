@@ -17,7 +17,7 @@ from ....models.oauth import ServerClient, ServerToken
 
 @dataclass
 class OAuthTokenData(LoadData):
-    """Community action data."""
+    """OAuth server token action data."""
 
     client: Optional[dict] = None
     token: Optional[dict] = None
