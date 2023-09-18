@@ -98,6 +98,7 @@ class Runner:
             try:
                 stream.run()
                 # on successful stream run, persist state
+                STATE.flush_cache()
                 self.state.save(filename=f"{stream.name}.db")
             except Exception:
                 Logger.get_logger().exception(

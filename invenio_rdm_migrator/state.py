@@ -7,6 +7,7 @@
 
 """Base state module."""
 
+import itertools
 from abc import ABC
 from pathlib import Path
 from uuid import UUID
@@ -35,6 +36,7 @@ class StateDB:
         # in any op (get, all, add, etc.)
         self._metadata = sa.MetaData()
         self._initialize_db(self._metadata)  # bind tables to metadata
+        self.logger = Logger.get_logger()
 
     @property
     def mem_eng(self):
@@ -44,9 +46,7 @@ class StateDB:
         """
         if not self._mem_eng:
             self._mem_eng = sa.create_engine("sqlite:///:memory:")
-
             self._load_from_disk()
-
         return self._mem_eng
 
     @property
@@ -57,8 +57,7 @@ class StateDB:
     def _load_from_disk(self):
         """Loads the database from disk into memory."""
         start = ts(iso=False)
-        logger = Logger.get_logger()
-        logger.info(f"Loading state from {self.db_filepath}.")
+        self.logger.info(f"Loading state from {self.db_filepath}.")
 
         disk_eng = sa.create_engine(f"sqlite:///{self.db_filepath}")
         self._metadata.create_all(disk_eng)  # create tables if not exist
@@ -66,8 +65,8 @@ class StateDB:
         self._copy_db(disk_eng, self.mem_eng)  # dump state into in-memory sqlite db
 
         end = ts(iso=False)
-        logger.info("Finished loading state.")
-        logger.info(f"State loading took {end-start} seconds.")
+        self.logger.info("Finished loading state.")
+        self.logger.info(f"State loading took {end-start} seconds.")
 
     def save(self, filename=None, filepath=None):
         """Save the current in-memory state to disk.
@@ -76,9 +75,7 @@ class StateDB:
         :param filename: name of the state file, it will be save to db_dir.
         :param filepath: full path, including file name, where to save the state db.
         """
-        logger = Logger.get_logger()
         start = ts(iso=False)
-
         # move current db state to backup
         disk_file = self.db_filepath
         if filepath:  # support overwriting the path
@@ -86,7 +83,7 @@ class StateDB:
         elif filename:  # support overwriting the file name
             disk_file = self.db_dir / filename
 
-        logger.info(f"Dumping state to {disk_file}.")
+        self.logger.info(f"Dumping state to {disk_file}.")
         backup_file = Path(self.db_filepath.name + ".backup")
         if self.db_filepath.exists():
             self.db_filepath.rename(backup_file)
@@ -99,8 +96,8 @@ class StateDB:
         backup_file.unlink(missing_ok=True)
 
         end = ts(iso=False)
-        logger.info("Finished dumping state.")
-        logger.info(f"State dumping took {end-start} seconds.")
+        self.logger.info("Finished dumping state.")
+        self.logger.info(f"State dumping took {end-start} seconds.")
 
     def get(self, table_name, key_attr, key_value):
         """Query a table by key."""
@@ -141,6 +138,24 @@ class StateDB:
 
         assert result.rowcount == 1
 
+    def add_many(self, table_name, data, chunk_size=1000):
+        """Add key,data pair to the state."""
+        table = self.tables[table_name]
+        data_iter = iter(data)
+        with self.mem_eng.connect() as conn:
+            while True:
+                chunk = tuple(itertools.islice(data_iter, chunk_size))
+                if not chunk:
+                    break
+                conn.execute(sa.insert(table), chunk)
+            conn.commit()
+
+    def clear(self, table_name):
+        """Clear a state table."""
+        table = self.tables[table_name]
+        with self.mem_eng.connect() as conn:
+            conn.execute(sa.delete(table))
+
     def delete(self, table_name, key_attr, key_value):
         """Delete an item from the state."""
         table = self.tables[table_name]
@@ -174,8 +189,6 @@ class StateDB:
         dst_conn = dest.raw_connection()
 
         src_conn.backup(dst_conn.connection)
-
-        src_conn.close()
         dst_conn.close()
 
     def validate(self, table_name, data):
@@ -296,6 +309,12 @@ class StateEntity:
             key = data[self.pk_attr]
             self._cache[key] = data
 
+    def _flush_cache(self):
+        """Flush cache to state."""
+        if self._cache is not None:
+            self.state.clear(self.table_name)
+            self.state.add_many(self.table_name, self.all())
+
     @classmethod
     def _row_as_dict(cls, row):
         """Transform a Row or LegacyRow into a dict."""
@@ -328,8 +347,8 @@ class StateEntity:
     def all(self):
         """Get all rows."""
         if self._cache is not None:
-            for v in self._cache.values():
-                yield v
+            for key, value in self._cache.items():
+                yield {self.pk_attr: key, **value}
         else:
             for row in self.state.all(self.table_name):
                 yield self._row_as_dict(row)
@@ -397,3 +416,17 @@ class STATE:
         cls.COMMUNITIES = StateEntity(state_db, "communities", "slug", cache=cache)
         cls.PIDS = StateEntity(state_db, "pids", "pid_value", cache=cache)
         cls.VALUES = StateEntity(state_db, "global", "key", cache=cache)
+
+    @classmethod
+    def flush_cache(cls):
+        """Flush state entity caches to state DB."""
+        for se in [
+            cls.PARENTS,
+            cls.RECORDS,
+            cls.BUCKETS,
+            cls.FILE_RECORDS,
+            cls.COMMUNITIES,
+            cls.PIDS,
+            cls.VALUES,
+        ]:
+            se._flush_cache()
