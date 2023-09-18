@@ -125,6 +125,11 @@ class RDMRecordEntry(Entry):
         """Transform the custom fields of a record."""
         pass
 
+    @abstractmethod
+    def _tombstone(self, entry):
+        """Transform the tombstone of a record."""
+        pass
+
     def transform(self, entry):
         """Transform a record single entry."""
         return {
@@ -143,6 +148,7 @@ class RDMRecordEntry(Entry):
                 "metadata": self._metadata(entry),
                 "access": self._access(entry),
                 "custom_fields": self._custom_fields(entry),
+                "tombstone": self._tombstone(entry),
             },
         }
 

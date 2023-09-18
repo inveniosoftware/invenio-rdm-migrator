@@ -20,8 +20,7 @@ class RDMRecordCopyLoad(PostgreSQLCopyLoad):
 
     def __init__(self, **kwargs):
         """Constructor."""
-        table_generators = [RDMRecordTableGenerator()]
-        super().__init__(table_generators=table_generators, **kwargs)
+        super().__init__(table_generators=[RDMRecordTableGenerator()], **kwargs)
 
 
 class RDMDraftCopyLoad(PostgreSQLCopyLoad):
@@ -29,5 +28,12 @@ class RDMDraftCopyLoad(PostgreSQLCopyLoad):
 
     def __init__(self, **kwargs):
         """Constructor."""
-        table_generators = [RDMDraftTableGenerator(), RDMVersionStateTableGenerator()]
-        super().__init__(table_generators=table_generators, **kwargs)
+        super().__init__(table_generators=[RDMDraftTableGenerator()], **kwargs)
+
+
+class RDMVersionStateCopyLoad(PostgreSQLCopyLoad):
+    """RDM Vesion state copy load."""
+
+    def __init__(self, **kwargs):
+        """Constructor."""
+        super().__init__(table_generators=[RDMVersionStateTableGenerator()], **kwargs)

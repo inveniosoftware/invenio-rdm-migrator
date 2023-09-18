@@ -7,11 +7,13 @@
 
 """Invenio RDM migration record stream."""
 
-from .load import RDMRecordCopyLoad
+from .load import RDMDraftCopyLoad, RDMRecordCopyLoad, RDMVersionStateCopyLoad
 from .transform import RDMRecordEntry, RDMRecordTransform
 
 __all__ = (
     "RDMRecordCopyLoad",
+    "RDMDraftCopyLoad",
+    "RDMVersionStateCopyLoad",
     "RDMRecordEntry",
     "RDMRecordTransform",
 )

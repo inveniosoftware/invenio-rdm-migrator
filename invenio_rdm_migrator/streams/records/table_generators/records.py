@@ -93,6 +93,8 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                 )
 
         parent_id = state_parent["id"] if state_parent else record["parent_id"]
+        deletion_status = "P" if record["json"].get("tombstone") is None else "D"
+
         # record
         STATE.RECORDS.add(
             record["json"]["id"],  # recid
@@ -115,7 +117,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             bucket_id=record["bucket_id"],
             media_bucket_id=record.get("media_bucket_id"),
             parent_id=parent_id,
-            deletion_status="P",
+            deletion_status=deletion_status,
         )
         # recid
         yield PersistentIdentifier(
