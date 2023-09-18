@@ -16,38 +16,35 @@ from ..models.oauth import RemoteAccount, RemoteToken, ServerClient, ServerToken
 
 
 class OAuthClientCopyLoad(PostgreSQLCopyLoad):
-    """OAuthClient loading of existing data.
-
-    It does not load the two tables with tokens, since they need rehashing.
-    """
+    """OAuthClient loading of existing data."""
 
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(
             table_generators=[
-                # it passes on prepare so entries wont have an effect on it
-                ExistingDataTableGenerator(tables=[RemoteAccount]),
-                # this tg will treat the entries passing through the stream
-                SingleTableGenerator(table=RemoteToken),
+                ExistingDataTableGenerator(tables=[RemoteAccount, RemoteToken]),
             ],
-            **kwargs
+            **kwargs,
         )
 
 
-class OAuthServerCopyLoad(PostgreSQLCopyLoad):
-    """OAuth2Server loading of existing data.
-
-    It does not load the two tables with tokens, since they need rehashing.
-    """
+class OAuthServerClientCopyLoad(PostgreSQLCopyLoad):
+    """OAuth2Server clients loading."""
 
     def __init__(self, **kwargs):
         """Constructor."""
         super().__init__(
-            table_generators=[
-                # it passes on prepare so entries wont have an effect on it
-                ExistingDataTableGenerator(tables=[ServerClient]),
-                # this tg will treat the entries passing through the stream
-                SingleTableGenerator(table=ServerToken),
-            ],
-            **kwargs
+            table_generators=[SingleTableGenerator(table=ServerClient)],
+            **kwargs,
+        )
+
+
+class OAuthServerTokenCopyLoad(PostgreSQLCopyLoad):
+    """OAuth2Server tokens loading."""
+
+    def __init__(self, **kwargs):
+        """Constructor."""
+        super().__init__(
+            table_generators=[SingleTableGenerator(table=ServerToken)],
+            **kwargs,
         )

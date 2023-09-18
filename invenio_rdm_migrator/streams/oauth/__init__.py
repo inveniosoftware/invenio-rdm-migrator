@@ -7,12 +7,17 @@
 
 """Invenio RDM migration OAuth stream."""
 
-from .load import OAuthClientCopyLoad, OAuthServerCopyLoad
-from .transform import OAuthRemoteTokenTransform, OAuthServerTokenTransform
+from .load import (
+    OAuthClientCopyLoad,
+    OAuthServerClientCopyLoad,
+    OAuthServerTokenCopyLoad,
+)
+from .transform import OAuthServerClientTransform, OAuthServerTokenTransform
 
 __all__ = (
     "OAuthClientCopyLoad",
-    "OAuthRemoteTokenTransform",
-    "OAuthServerCopyLoad",
+    "OAuthServerClientCopyLoad",
+    "OAuthServerTokenCopyLoad",
+    "OAuthServerClientTransform",
     "OAuthServerTokenTransform",
 )

@@ -10,7 +10,7 @@
 from ...transform import IdentityTransform
 
 
-class OAuthServerTokenTransform(IdentityTransform):
+class OAuthServerScopesMapMixin:
     """OAuth server token data transformation."""
 
     SCOPES_MAPPING = {
@@ -23,9 +23,9 @@ class OAuthServerTokenTransform(IdentityTransform):
     }
     """Keys are Invenio v3 scopes and values are new RDM scopes."""
 
-    def _scopes(self, entry):
+    def map_scopes(self, scopes):
         """Token scopes."""
-        scopes = entry.get("_scopes", "")
+        scopes = scopes or ""
 
         if scopes:  # account for cases where scopes = "", otherwise scopes = [""] fails
             scopes = scopes.split(" ")
@@ -40,17 +40,26 @@ class OAuthServerTokenTransform(IdentityTransform):
 
         return " ".join(new_scopes)
 
+
+class OAuthServerTokenTransform(IdentityTransform, OAuthServerScopesMapMixin):
+    """Transform OAuth server token."""
+
     def _transform(self, entry):
         """Transform a single entry."""
         data = super()._transform(entry)
-        if data.get("_scopes"):
-            data["_scopes"]: self._scopes(entry)
-
+        scopes = data.get("_scopes")
+        if scopes:
+            data["_scopes"] = self.map_scopes(scopes)
         return data
 
 
-class OAuthRemoteTokenTransform(IdentityTransform):
-    """OAuth client remote token data transformation."""
+class OAuthServerClientTransform(IdentityTransform, OAuthServerScopesMapMixin):
+    """Transform OAuth server client."""
 
-    # left as is to avoid breaking compatibility
-    # behavior is the same
+    def _transform(self, entry):
+        """Transform a single entry."""
+        data = super()._transform(entry)
+        scopes = data.get("_default_scopes")
+        if scopes:
+            data["_default_scopes"] = self.map_scopes(scopes)
+        return data
