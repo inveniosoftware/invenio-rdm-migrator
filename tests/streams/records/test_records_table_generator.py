@@ -11,7 +11,6 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from invenio_rdm_migrator.load.ids import pid_pk
-from invenio_rdm_migrator.streams.models.communities import RDMParentCommunityMetadata
 from invenio_rdm_migrator.streams.models.pids import PersistentIdentifier
 from invenio_rdm_migrator.streams.models.records import (
     RDMDraftMetadata,
@@ -96,11 +95,6 @@ def test_single_record_generate_rows(
             created="2023-01-01 12:00:00.00000",
             updated="2023-01-31 12:00:00.00000",
             version_id=1,
-        ),
-        RDMParentCommunityMetadata(  # parent community
-            community_id="12345678-abcd-1a2b-3c4d-123abc456def",
-            record_id="12345678-abcd-1a2b-3c4d-123abc456def",
-            request_id=None,
         ),
         RDMRecordMetadata(  # record
             id="2d6970ea-602d-4e8b-a918-063a59823386",
@@ -404,10 +398,10 @@ def test_record_versions_and_old_draft_generate_rows(
         ),
     ]
 
-    assert len(rows) == 12
+    assert len(rows) == 11
     # v1 rows not asserted since they are checked at test_single_record_generate_rows
-    assert rows[7:11] == expected_rows_v2
-    assert rows[11:12] == expected_rows_d_v1
+    assert rows[6:10] == expected_rows_v2
+    assert rows[10:11] == expected_rows_d_v1
 
     assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
     assert len(list(state.RECORDS.all())) == 2  # two added records
@@ -499,11 +493,11 @@ def test_record_and_new_version_draft_generate_rows(
         ),
     ]
 
-    assert len(rows) == 13
+    assert len(rows) == 12
 
     # v1 rows not asserted since they are checked at test_single_record_generate_rows
     # v2 rows not asserted since they are checked at test_record_versions_and_old_draft_generate_rows
-    assert rows[11:13] == expected_rows_d_v3
+    assert rows[10:12] == expected_rows_d_v3
 
     assert len(list(state.PARENTS.all())) == 2  # pre-existing and new
     assert len(list(state.RECORDS.all())) == 2  # two added records

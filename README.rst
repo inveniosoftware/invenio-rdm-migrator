@@ -177,8 +177,6 @@ its parent, its draft in case it exists and the files related them.
         "record": self._record(entry),
         "draft": self._draft(entry),
         "parent": self._parent(entry),
-        "record_files": self._record_files(entry),
-        "draft_files": self._draft_files(entry),
     }
 
 This means that you will need to implement the functions for each key. Note

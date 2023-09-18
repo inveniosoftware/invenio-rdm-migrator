@@ -47,7 +47,6 @@ def transformed_record_entry():
                 },
             },
         },
-        "record_files": {},
     }
 
 
@@ -115,7 +114,6 @@ def transformed_draft_entry():
             "expires_at": "2024-01-01 12:00:00.00000",
             "fork_version_id": None,
         },
-        "draft_files": {},
     }
 
 

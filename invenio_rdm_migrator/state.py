@@ -202,6 +202,7 @@ class StateDB:
             # could use default=0, but it could create uncontrolled scenarios
             sa.Column("latest_index", sa.Integer),
             sa.Column("next_draft_id", UUIDType),
+            sa.Column("communities", JSONType, default="[]"),
             sqlite_autoincrement=False,
         )
 

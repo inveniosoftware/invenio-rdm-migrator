@@ -30,16 +30,6 @@ class RDMRecordTransform(Transform):
         """Transform the draft."""
         pass
 
-    @abstractmethod
-    def _record_files(self, entry):
-        """Transform the record files."""
-        pass
-
-    @abstractmethod
-    def _draft_files(self, entry):
-        """Transform the draft files."""
-        pass
-
     def _transform(self, entry):
         """Transform a single entry."""
         # the functions receive the full record/data entry
@@ -51,8 +41,6 @@ class RDMRecordTransform(Transform):
             "record": self._record(entry),
             "draft": self._draft(entry),
             "parent": self._parent(entry),
-            "record_files": self._record_files(entry),
-            "draft_files": self._draft_files(entry),
         }
 
 

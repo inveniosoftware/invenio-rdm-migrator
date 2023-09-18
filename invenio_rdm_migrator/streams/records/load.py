@@ -16,13 +16,18 @@ from .table_generators import (
 
 
 class RDMRecordCopyLoad(PostgreSQLCopyLoad):
-    """PostgreSQL COPY load."""
+    """RDM record copy load."""
 
-    def __init__(self, versioning=True, **kwargs):
+    def __init__(self, **kwargs):
         """Constructor."""
-        table_generators = [RDMRecordTableGenerator(), RDMDraftTableGenerator()]
+        table_generators = [RDMRecordTableGenerator()]
+        super().__init__(table_generators=table_generators, **kwargs)
 
-        if versioning:
-            table_generators.append(RDMVersionStateTableGenerator())
 
+class RDMDraftCopyLoad(PostgreSQLCopyLoad):
+    """RDM draft copy load."""
+
+    def __init__(self, **kwargs):
+        """Constructor."""
+        table_generators = [RDMDraftTableGenerator(), RDMVersionStateTableGenerator()]
         super().__init__(table_generators=table_generators, **kwargs)
