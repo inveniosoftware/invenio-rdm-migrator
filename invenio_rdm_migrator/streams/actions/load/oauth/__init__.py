@@ -13,6 +13,7 @@ from .applications import (
     OAuthApplicationUpdateAction,
 )
 from .linked_accounts import (
+    OAuthGHDisconnectToken,
     OAuthLinkedAccountConnectAction,
     OAuthLinkedAccountDisconnectAction,
 )
@@ -26,6 +27,7 @@ __all__ = (
     "OAuthApplicationCreateAction",
     "OAuthApplicationDeleteAction",
     "OAuthApplicationUpdateAction",
+    "OAuthGHDisconnectToken",
     "OAuthLinkedAccountConnectAction",
     "OAuthLinkedAccountDisconnectAction",
     "OAuthServerTokenCreateAction",

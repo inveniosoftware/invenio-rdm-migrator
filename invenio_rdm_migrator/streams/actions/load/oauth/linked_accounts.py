@@ -8,10 +8,11 @@
 """OAuth client applications actions module."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 from .....actions import LoadAction, LoadData
 from .....load.postgresql.transactions.operations import Operation, OperationType
-from ....models.oauth import RemoteAccount, RemoteToken
+from ....models.oauth import RemoteAccount, RemoteToken, ServerToken
 from ....models.users import UserIdentity
 
 
@@ -21,7 +22,7 @@ class OAuthLinkedAccountData(LoadData):
 
     remote_account: dict
     remote_token: dict
-    user_identity: dict
+    user_identity: Optional[dict] = None
 
 
 class OAuthLinkedAccountConnectAction(LoadAction):
@@ -32,6 +33,8 @@ class OAuthLinkedAccountConnectAction(LoadAction):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new oauth token."""
+        assert self.data.user_identity
+
         yield Operation(OperationType.INSERT, RemoteAccount, self.data.remote_account)
         yield Operation(OperationType.INSERT, RemoteToken, self.data.remote_token)
         yield Operation(OperationType.INSERT, UserIdentity, self.data.user_identity)
@@ -45,6 +48,28 @@ class OAuthLinkedAccountDisconnectAction(LoadAction):
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new oauth token."""
-        yield Operation(OperationType.DELETE, UserIdentity, self.data.user_identity)
+        if self.data.user_identity:  # GH discconnet does not have it
+            yield Operation(OperationType.DELETE, UserIdentity, self.data.user_identity)
+
         yield Operation(OperationType.DELETE, RemoteToken, self.data.remote_token)
         yield Operation(OperationType.DELETE, RemoteAccount, self.data.remote_account)
+
+
+@dataclass
+class OAuthGHTokenDisconnectData(LoadData):
+    """OAuth GH disconnect token data."""
+
+    token: dict
+    user_identity: dict
+
+
+class OAuthGHDisconnectToken(LoadAction):
+    """Disconnect GH linked account server token and identity."""
+
+    name = "oauth-gh-application-disconnect"
+    data_cls = OAuthGHTokenDisconnectData
+
+    def _generate_rows(self, **kwargs):
+        """Generates rows for a new oauth token."""
+        yield Operation(OperationType.DELETE, UserIdentity, self.data.user_identity)
+        yield Operation(OperationType.DELETE, ServerToken, self.data.token)
