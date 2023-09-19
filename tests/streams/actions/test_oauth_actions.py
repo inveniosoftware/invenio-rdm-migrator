@@ -14,11 +14,19 @@ from invenio_rdm_migrator.streams.actions.load import (
     OAuthApplicationCreateAction,
     OAuthApplicationDeleteAction,
     OAuthApplicationUpdateAction,
+    OAuthLinkedAccountConnectAction,
+    OAuthLinkedAccountDisconnectAction,
     OAuthServerTokenCreateAction,
     OAuthServerTokenDeleteAction,
     OAuthServerTokenUpdateAction,
 )
-from invenio_rdm_migrator.streams.models.oauth import ServerClient, ServerToken
+from invenio_rdm_migrator.streams.models.oauth import (
+    RemoteAccount,
+    RemoteToken,
+    ServerClient,
+    ServerToken,
+)
+from invenio_rdm_migrator.streams.models.users import UserIdentity
 
 
 @pytest.fixture(scope="function")
@@ -176,3 +184,91 @@ def test_delete_oauth_application(oauth_client_data):
     assert len(rows) == 1
     assert rows[0].type == OperationType.DELETE
     assert rows[0].model == ServerClient
+
+
+###
+# OAuth Client
+###
+
+
+@pytest.fixture(scope="function")
+def oauth_remote_account():
+    """OAuth client remote account."""
+    return {
+        "id": 8546,
+        "user_id": 22858,
+        "client_id": "APP-MAX7XCD8Q98X4VT6",
+        "extra_data": '{"orcid": "0000-0002-5676-5956", "full_name": "Alex Ioannidis"}',
+        "created": "2023-06-29T13:00:00",
+        "updated": "2023-06-29T14:00:00",
+    }
+
+
+@pytest.fixture(scope="function")
+def oauth_remote_token():
+    """OAuth client remote token."""
+    return {
+        "id_remote_account": 8546,
+        "token_type": "",
+        "access_token": "R3RVeGc3K0RrM25rbXc4ZWxGM3oxYVA4LzcwVWpCNkM4aG8vRy9CNWxkZFFCMk9OR1d2d29lN3dKdWk2eEVTQQ==",
+        "secret": "",
+        "created": "2023-06-29T13:00:00",
+        "updated": "2023-06-29T14:00:00",
+    }
+
+
+@pytest.fixture(scope="function")
+def account_user_identity():
+    """OAuth client user identity."""
+    return {
+        "id": "0000-0002-5676-5956",
+        "method": "orcid",
+        "id_user": 22858,
+        "created": "2023-06-29T13:00:00",
+        "updated": "2023-06-29T14:00:00",
+    }
+
+
+def test_connect_oauth_account(
+    oauth_remote_account, oauth_remote_token, account_user_identity
+):
+    data = dict(
+        tx_id=1,
+        remote_account=oauth_remote_account,
+        remote_token=oauth_remote_token,
+        user_identity=account_user_identity,
+    )
+    action = OAuthLinkedAccountConnectAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 3
+    assert rows[0].type == OperationType.INSERT
+    assert rows[0].model == RemoteAccount
+    assert rows[1].type == OperationType.INSERT
+    assert rows[1].model == RemoteToken
+    assert rows[2].type == OperationType.INSERT
+    assert rows[2].model == UserIdentity
+
+    OAuthLinkedAccountConnectAction,
+    OAuthLinkedAccountDisconnectAction,
+
+
+def test_disconnect_oauth_account(
+    oauth_remote_account, oauth_remote_token, account_user_identity
+):
+    data = dict(
+        tx_id=1,
+        remote_account=oauth_remote_account,
+        remote_token=oauth_remote_token,
+        user_identity=account_user_identity,
+    )
+    action = OAuthLinkedAccountDisconnectAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 3
+    assert rows[0].type == OperationType.DELETE
+    assert rows[0].model == UserIdentity
+    assert rows[1].type == OperationType.DELETE
+    assert rows[1].model == RemoteToken
+    assert rows[2].type == OperationType.DELETE
+    assert rows[2].model == RemoteAccount

@@ -33,7 +33,7 @@ class RemoteToken(Model):
 
     id_remote_account: Mapped[int] = mapped_column(primary_key=True)
     token_type: Mapped[str] = mapped_column(primary_key=True)
-    access_token: Mapped[bytes]
+    access_token: Mapped[str]
     secret: Mapped[str]
     created: Mapped[str]  # datetime
     updated: Mapped[str]  # datetime
