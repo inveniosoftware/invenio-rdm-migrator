@@ -48,6 +48,7 @@ def test_generate_rows(state, transformed_community_entry_pks):
             version_id=1,
             slug="migrator",
             bucket_id="12345678-abcd-1a2b-3c4d-123abc456def",
+            deletion_status="P",
         ),
         OAISet(
             id=1,

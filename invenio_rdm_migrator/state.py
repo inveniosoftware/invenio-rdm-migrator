@@ -259,6 +259,7 @@ class StateDB:
             metadata,
             sa.Column("slug", sa.String, primary_key=True),
             sa.Column("id", UUIDType, unique=True, nullable=False),
+            sa.Column("owner_id", sa.Integer),
             sa.Column("bucket_id", UUIDType, unique=True, nullable=False),
             sa.Column("oai_set_id", sa.Integer, unique=True, nullable=False),
             sa.Column("community_file_id", UUIDType, unique=True),
@@ -292,7 +293,7 @@ class StateDB:
 class StateEntity:
     """Helper class to query specific state tables."""
 
-    def __init__(self, state, table_name, pk_attr, cache=True):
+    def __init__(self, state, table_name, pk_attr, cache=True, search_cache=True):
         """Constructor."""
         self.state = state
         self.pk_attr = pk_attr
@@ -301,6 +302,9 @@ class StateEntity:
         if cache:
             self._cache = {}
             self._init_cache()
+        self._search_cache = None
+        if search_cache:
+            self._search_cache = {}
 
     def _init_cache(self):
         """Initialize the cache from state."""
@@ -314,6 +318,8 @@ class StateEntity:
         if self._cache is not None:
             self.state.clear(self.table_name)
             self.state.add_many(self.table_name, self.all())
+        if self._search_cache is not None:
+            self._search_cache.clear()
 
     @classmethod
     def _row_as_dict(cls, row):
@@ -341,8 +347,15 @@ class StateEntity:
 
     def search(self, column, value):
         """Search rows."""
+        if self._search_cache is not None:
+            if (column, value) in self._search_cache:
+                return self._search_cache[(column, value)]
+            self._search_cache[(column, value)] = []
         for row in self.state.search(self.table_name, column, value):
-            yield self._row_as_dict(row)
+            row_dict = self._row_as_dict(row)
+            if self._search_cache is not None:
+                self._search_cache[(column, value)].append(row_dict)
+            yield row_dict
 
     def all(self):
         """Get all rows."""
@@ -407,15 +420,17 @@ class STATE:
     FILE_RECORDS = None
 
     @classmethod
-    def initialized_state(cls, state_db, cache=True):
+    def initialized_state(cls, state_db, cache=True, search_cache=True):
         """Initializes state."""
-        cls.PARENTS = StateEntity(state_db, "parents", "recid", cache=cache)
-        cls.RECORDS = StateEntity(state_db, "records", "recid", cache=cache)
-        cls.BUCKETS = StateEntity(state_db, "buckets", "id", cache=cache)
-        cls.FILE_RECORDS = StateEntity(state_db, "file_records", "id", cache=cache)
-        cls.COMMUNITIES = StateEntity(state_db, "communities", "slug", cache=cache)
-        cls.PIDS = StateEntity(state_db, "pids", "pid_value", cache=cache)
-        cls.VALUES = StateEntity(state_db, "global", "key", cache=cache)
+        state_kwargs = dict(cache=cache, search_cache=search_cache)
+
+        cls.PARENTS = StateEntity(state_db, "parents", "recid", **state_kwargs)
+        cls.RECORDS = StateEntity(state_db, "records", "recid", **state_kwargs)
+        cls.BUCKETS = StateEntity(state_db, "buckets", "id", **state_kwargs)
+        cls.FILE_RECORDS = StateEntity(state_db, "file_records", "id", **state_kwargs)
+        cls.COMMUNITIES = StateEntity(state_db, "communities", "slug", **state_kwargs)
+        cls.PIDS = StateEntity(state_db, "pids", "pid_value", **state_kwargs)
+        cls.VALUES = StateEntity(state_db, "global", "key", **state_kwargs)
 
     @classmethod
     def flush_cache(cls):

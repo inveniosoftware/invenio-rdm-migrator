@@ -27,6 +27,7 @@ def transformed_community_entry():
                 "curation_policy": "",
             },
             "bucket_id": "12345678-abcd-1a2b-3c4d-123abc456def",
+            "deletion_status": "P",
         },
         "oai_set": {
             "created": "2023-01-01 12:00:00.00000",

@@ -96,6 +96,7 @@ class CommunityCreateAction(LoadAction):
                 "id": community_id,
                 "bucket_id": bucket_id,
                 "oai_set_id": oai_set_id,
+                "owner_id": self.data.owner["user_id"],
                 "community_file_id": community_file_id,
                 "logo_object_version_id": logo_object_version_id,
             },

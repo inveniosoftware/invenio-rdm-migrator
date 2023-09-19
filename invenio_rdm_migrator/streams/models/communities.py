@@ -26,7 +26,8 @@ class Community(Model):
     json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     slug: Mapped[str]
-    bucket_id: Mapped[UUID] = mapped_column(primary_key=True)
+    bucket_id: Mapped[UUID]
+    deletion_status: Mapped[str]
 
 
 class RDMParentCommunityMetadata(Model):

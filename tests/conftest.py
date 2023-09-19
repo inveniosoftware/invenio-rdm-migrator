@@ -35,7 +35,7 @@ def state(tmp_dir):
     state_db = StateDB(
         db_dir=tmp_dir.name, validators={"parents": ParentModelValidator}
     )
-    STATE.initialized_state(state_db, cache=False)
+    STATE.initialized_state(state_db, cache=False, search_cache=False)
 
     return STATE
 
@@ -67,6 +67,7 @@ def communities_state(state):
             "id": "12345678-abcd-1a2b-3c4d-123abc456def",
             "bucket_id": "12345678-abcd-1a2b-3c4d-123abc456def",
             "oai_set_id": 1,
+            "owner_id": 1234,
             "community_file_id": None,
             "logo_object_version_id": None,
         },

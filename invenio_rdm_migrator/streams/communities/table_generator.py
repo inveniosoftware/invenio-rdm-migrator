@@ -77,6 +77,14 @@ class CommunityTableGenerator(TableGenerator):
         for member in community_members:
             member["community_id"] = community_id
             yield CommunityMember(**member)
+        community_owner = next(
+            (
+                m["user_id"]
+                for m in community_members
+                if m.get("role") == "owner" and m.get("user_id")
+            ),
+            None,
+        )
 
         featured_community = data["featured_community"]
         if featured_community.get("id"):
@@ -101,6 +109,7 @@ class CommunityTableGenerator(TableGenerator):
                 {
                     "id": community_id,
                     "bucket_id": bucket["id"],
+                    "owner_id": community_owner,
                     "oai_set_id": community_oai_set["id"],
                     "community_file_id": (community_file or {}).get("id"),
                     "logo_object_version_id": (file_object or {}).get("version_id"),

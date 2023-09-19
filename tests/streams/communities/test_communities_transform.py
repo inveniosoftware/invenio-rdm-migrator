@@ -87,6 +87,10 @@ class MockCommunityEntry(CommunityEntry):
         """Transform community 'bucket_id' field."""
         return 1
 
+    def _deletion_status(self, entry):
+        """Transform community 'deletion_status' field."""
+        return "P"
+
     def _metadata(self, entry):
         """Transform community 'metadata' field."""
         return {
@@ -116,6 +120,7 @@ def test_community_entry():
             },
         },
         "bucket_id": 1,
+        "deletion_status": "P",
     }
 
     assert not list(dictdiffer.diff(result, expected))

@@ -50,6 +50,7 @@ def community_data():
                 "curation_policy": "<p>Curation policy for test community</p>",
             },
         },
+        "deletion_status": "P",
         "version_id": 1,
     }
 
@@ -211,6 +212,7 @@ def test_create_community(
         "slug": slug,
         "id": c_id,
         "bucket_id": bucket_id,
+        "owner_id": 1234,
         "oai_set_id": oai_set_id,
         "community_file_id": cf_id,
         "logo_object_version_id": ov_id,
@@ -263,6 +265,7 @@ def test_create_community_no_logo(
         "slug": community_row.data["slug"],
         "id": c_id,
         "bucket_id": bucket_id,
+        "owner_id": 1234,
         "oai_set_id": oai_set_row.data["id"],
         "community_file_id": None,
         "logo_object_version_id": None,
@@ -287,6 +290,7 @@ def test_update_community(
     # remove/modify some keys from the community
     community_data.pop("created")
     community_data.pop("version_id")
+    community_data.pop("deletion_status")
     community_data["json"]["metadata"]["title"] = "Test community (v2)"
 
     data = dict(
@@ -327,6 +331,7 @@ def test_update_community(
         "slug": slug,
         "id": community_id,
         "bucket_id": bucket_id,
+        "owner_id": 1234,
         "oai_set_id": oai_set_id,
         "community_file_id": cf_id,
         "logo_object_version_id": ov_id,
@@ -348,6 +353,7 @@ def test_update_community_only_metadata(
     # remove/modify some keys from the community
     community_data.pop("created")
     community_data.pop("version_id")
+    community_data.pop("deletion_status")
     community_data["json"]["metadata"]["title"] = "Test community (v2)"
 
     data = dict(tx_id=1, community=community_data)
@@ -367,6 +373,7 @@ def test_update_community_only_metadata(
         "slug": slug,
         "id": community_id,
         "bucket_id": bucket_id,
+        "owner_id": 1234,
         "oai_set_id": oai_set_id,
         "community_file_id": None,
         "logo_object_version_id": None,
@@ -441,6 +448,7 @@ def test_update_community_update_existing_logo(
         "slug": slug,
         "id": community_id,
         "bucket_id": bucket_id,
+        "owner_id": 1234,
         "oai_set_id": oai_set_id,
         "community_file_id": community_file_id,
         "logo_object_version_id": new_ov_id,

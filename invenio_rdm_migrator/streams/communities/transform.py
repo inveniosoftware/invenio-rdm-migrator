@@ -102,6 +102,11 @@ class CommunityEntry(Entry):
         """
         pass
 
+    @abstractmethod
+    def _deletion_status(self, entry):
+        """Transform the deltion status a community."""
+        pass
+
     def transform(self, entry):
         """Transform a user single entry."""
         return {
@@ -115,6 +120,7 @@ class CommunityEntry(Entry):
                 "metadata": self._metadata(entry),
             },
             "bucket_id": self._bucket_id(entry),
+            "deletion_status": self._deletion_status(entry),
         }
 
 
