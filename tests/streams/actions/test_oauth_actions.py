@@ -14,6 +14,7 @@ from invenio_rdm_migrator.streams.actions.load import (
     OAuthApplicationCreateAction,
     OAuthApplicationDeleteAction,
     OAuthApplicationUpdateAction,
+    OAuthGHDisconnectToken,
     OAuthLinkedAccountConnectAction,
     OAuthLinkedAccountDisconnectAction,
     OAuthServerTokenCreateAction,
@@ -272,3 +273,19 @@ def test_disconnect_oauth_account(
     assert rows[1].model == RemoteToken
     assert rows[2].type == OperationType.DELETE
     assert rows[2].model == RemoteAccount
+
+
+def test_disconnect_gh_oauth_account(oauth_token_data, account_user_identity):
+    data = dict(
+        tx_id=1,
+        token=oauth_token_data,
+        user_identity=account_user_identity,
+    )
+    action = OAuthGHDisconnectToken(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 2
+    assert rows[0].type == OperationType.DELETE
+    assert rows[0].model == UserIdentity
+    assert rows[1].type == OperationType.DELETE
+    assert rows[1].model == ServerToken
