@@ -18,7 +18,7 @@ from ....models.oauth import ServerToken
 
 @dataclass
 class HookData(LoadData):
-    """File upload action data."""
+    """GitHub event hook action data."""
 
     gh_repository: Optional[dict] = None
     oauth_token: Optional[dict] = None

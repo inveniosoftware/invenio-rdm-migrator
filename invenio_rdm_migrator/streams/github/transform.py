@@ -7,7 +7,7 @@
 
 """Invenio RDM migration GtiHub transform interfaces."""
 
-from ...transform import Transform
+from ...transform import IdentityTransform, Transform
 
 
 class GitHubReleaseTransform(Transform):
@@ -68,3 +68,12 @@ class GitHubReleaseTransform(Transform):
             "recid": entry.get("recid"),
             "status": self._status(entry),
         }
+
+
+class GitHubRepositoryTransform(IdentityTransform):
+    """GitHub repository transformation."""
+
+    def _transform(self, entry):
+        """Transform a single entry."""
+        entry.pop("ping", None)  # in updates it is not present
+        return super()._transform(entry)
