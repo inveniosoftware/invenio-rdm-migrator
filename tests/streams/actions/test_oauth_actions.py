@@ -230,7 +230,7 @@ def account_user_identity():
     }
 
 
-def test_connect_oauth_account(
+def test_connect_minimal_oauth_account(
     oauth_remote_account, oauth_remote_token, account_user_identity
 ):
     data = dict(
@@ -250,8 +250,36 @@ def test_connect_oauth_account(
     assert rows[2].type == OperationType.INSERT
     assert rows[2].model == UserIdentity
 
-    OAuthLinkedAccountConnectAction,
-    OAuthLinkedAccountDisconnectAction,
+
+def test_connect_full_oauth_account(
+    oauth_remote_account,
+    oauth_remote_token,
+    account_user_identity,
+    oauth_client_data,
+    oauth_token_data,
+):
+    data = dict(
+        tx_id=1,
+        remote_account=oauth_remote_account,
+        remote_token=oauth_remote_token,
+        user_identity=account_user_identity,
+        server_client=oauth_client_data,
+        server_token=oauth_token_data,
+    )
+    action = OAuthLinkedAccountConnectAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 5
+    assert rows[0].type == OperationType.INSERT
+    assert rows[0].model == RemoteAccount
+    assert rows[1].type == OperationType.INSERT
+    assert rows[1].model == RemoteToken
+    assert rows[2].type == OperationType.INSERT
+    assert rows[2].model == UserIdentity
+    assert rows[3].type == OperationType.INSERT
+    assert rows[3].model == ServerClient
+    assert rows[4].type == OperationType.INSERT
+    assert rows[4].model == ServerToken
 
 
 def test_disconnect_oauth_account(
