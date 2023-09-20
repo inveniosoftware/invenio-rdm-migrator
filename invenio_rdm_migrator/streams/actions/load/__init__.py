@@ -14,6 +14,7 @@ from .communities import (
 )
 from .drafts import DraftCreateAction, DraftEditAction, DraftPublishAction
 from .files import DraftFileUploadAction
+from .github import HookEventCreateAction, HookEventUpdateAction, HookRepoUpdateAction
 from .oauth import (
     OAuthApplicationCreateAction,
     OAuthApplicationDeleteAction,
@@ -35,6 +36,9 @@ __all__ = (
     "DraftEditAction",
     "DraftFileUploadAction",
     "DraftPublishAction",
+    "HookEventCreateAction",
+    "HookEventUpdateAction",
+    "HookRepoUpdateAction",
     "OAuthApplicationCreateAction",
     "OAuthApplicationDeleteAction",
     "OAuthApplicationUpdateAction",
