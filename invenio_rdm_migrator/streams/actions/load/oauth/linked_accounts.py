@@ -12,7 +12,7 @@ from typing import Optional
 
 from .....actions import LoadAction, LoadData
 from .....load.postgresql.transactions.operations import Operation, OperationType
-from ....models.oauth import RemoteAccount, RemoteToken, ServerToken
+from ....models.oauth import RemoteAccount, RemoteToken, ServerClient, ServerToken
 from ....models.users import UserIdentity
 
 
@@ -23,6 +23,8 @@ class OAuthLinkedAccountData(LoadData):
     remote_account: dict
     remote_token: dict
     user_identity: Optional[dict] = None
+    server_token: Optional[dict] = None
+    server_client: Optional[dict] = None
 
 
 class OAuthLinkedAccountConnectAction(LoadAction):
@@ -38,6 +40,11 @@ class OAuthLinkedAccountConnectAction(LoadAction):
         yield Operation(OperationType.INSERT, RemoteAccount, self.data.remote_account)
         yield Operation(OperationType.INSERT, RemoteToken, self.data.remote_token)
         yield Operation(OperationType.INSERT, UserIdentity, self.data.user_identity)
+
+        if self.data.server_client:
+            yield Operation(OperationType.INSERT, ServerClient, self.data.server_client)
+        if self.data.server_token:
+            yield Operation(OperationType.INSERT, ServerToken, self.data.server_token)
 
 
 class OAuthLinkedAccountDisconnectAction(LoadAction):
