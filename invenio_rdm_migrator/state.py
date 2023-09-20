@@ -138,7 +138,7 @@ class StateDB:
 
         assert result.rowcount == 1
 
-    def add_many(self, table_name, data, chunk_size=1000):
+    def add_many(self, table_name, data, chunk_size=10_000):
         """Add key,data pair to the state."""
         table = self.tables[table_name]
         data_iter = iter(data)
@@ -260,10 +260,10 @@ class StateDB:
             sa.Column("slug", sa.String, primary_key=True),
             sa.Column("id", UUIDType, unique=True, nullable=False),
             sa.Column("owner_id", sa.Integer),
-            sa.Column("bucket_id", UUIDType, unique=True, nullable=False),
-            sa.Column("oai_set_id", sa.Integer, unique=True, nullable=False),
-            sa.Column("community_file_id", UUIDType, unique=True),
-            sa.Column("logo_object_version_id", UUIDType, unique=True),
+            sa.Column("bucket_id", UUIDType, nullable=False),
+            sa.Column("oai_set_id", sa.Integer, nullable=False),
+            sa.Column("community_file_id", UUIDType),
+            sa.Column("logo_object_version_id", UUIDType),
             sqlite_autoincrement=False,
         )
 
@@ -305,6 +305,8 @@ class StateEntity:
         self._search_cache = None
         if search_cache:
             self._search_cache = {}
+        self.logger = Logger.get_logger()
+
 
     def _init_cache(self):
         """Initialize the cache from state."""
@@ -315,11 +317,13 @@ class StateEntity:
 
     def _flush_cache(self):
         """Flush cache to state."""
+        self.logger.info(f"Flushing cache for [{self.table_name}]")
         if self._cache is not None:
             self.state.clear(self.table_name)
             self.state.add_many(self.table_name, self.all())
         if self._search_cache is not None:
             self._search_cache.clear()
+        self.logger.info(f"Flushing cache finished for [{self.table_name}]")
 
     @classmethod
     def _row_as_dict(cls, row):
