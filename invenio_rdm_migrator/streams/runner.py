@@ -44,12 +44,14 @@ class Runner:
         Logger.initialize(self.log_dir)
 
         self.db_uri = config.get("db_uri")
-        self.streams = []
         self.state = StateDB(
             db_dir=self.state_dir, validators={"parents": ParentModelValidator}
         )
-        STATE.initialized_state(self.state)
-
+        STATE.initialized_state(
+            self.state,
+            cache=config.get("state_cache", True),
+            search_cache=config.get("state_search_cache", True),
+        )
         # set up secret keys
         for key in ("old_secret_key", "new_secret_key"):
             stored_value = STATE.VALUES.get(key)
@@ -58,7 +60,8 @@ class Runner:
             else:
                 STATE.VALUES.add(key, {"value": bytes(config.get(key), "utf-8")})
 
-        # start processing streams
+        # start parsing streams
+        self.streams = []
         for definition in stream_definitions:
             if definition.name in config:
                 # get will return a None for e.g. files:

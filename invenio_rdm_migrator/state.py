@@ -141,20 +141,21 @@ class StateDB:
     def add_many(self, table_name, data, chunk_size=10_000):
         """Add key,data pair to the state."""
         table = self.tables[table_name]
-        data_iter = iter(data)
+        data_iter = ((dict.fromkeys(table.c.keys()) | v) for v in data)
         with self.mem_eng.connect() as conn:
-            while True:
-                chunk = tuple(itertools.islice(data_iter, chunk_size))
-                if not chunk:
-                    break
-                conn.execute(sa.insert(table), chunk)
-            conn.commit()
+            with conn.begin():
+                while True:
+                    chunk = tuple(itertools.islice(data_iter, chunk_size))
+                    if not chunk:
+                        break
+                    conn.execute(sa.insert(table), chunk)
 
     def clear(self, table_name):
         """Clear a state table."""
         table = self.tables[table_name]
         with self.mem_eng.connect() as conn:
             conn.execute(sa.delete(table))
+            conn.commit()
 
     def delete(self, table_name, key_attr, key_value):
         """Delete an item from the state."""
@@ -298,6 +299,7 @@ class StateEntity:
         self.state = state
         self.pk_attr = pk_attr
         self.table_name = table_name
+        self.logger = Logger.get_logger()
         self._cache = None
         if cache:
             self._cache = {}
@@ -305,15 +307,15 @@ class StateEntity:
         self._search_cache = None
         if search_cache:
             self._search_cache = {}
-        self.logger = Logger.get_logger()
-
 
     def _init_cache(self):
         """Initialize the cache from state."""
+        self.logger.info(f"Initializing cache for [{self.table_name}]")
         for row in self.state.all(self.table_name):
             data = self._row_as_dict(row)
             key = data[self.pk_attr]
             self._cache[key] = data
+        self.logger.info(f"Finished initializing cache for [{self.table_name}]")
 
     def _flush_cache(self):
         """Flush cache to state."""
