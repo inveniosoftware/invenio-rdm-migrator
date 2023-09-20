@@ -12,11 +12,12 @@ from .load import (
     ExistingWebhookEventsCopyLoad,
     GitHubReleasesCopyLoad,
 )
-from .transform import GitHubReleaseTransform
+from .transform import GitHubReleaseTransform, GitHubRepositoryTransform
 
 __all__ = (
     "ExistingWebhookEventsCopyLoad",
     "ExistingGitHubRepositoriesCopyLoad",
     "GitHubReleasesCopyLoad",
     "GitHubReleaseTransform",
+    "GitHubRepositoryTransform",
 )
