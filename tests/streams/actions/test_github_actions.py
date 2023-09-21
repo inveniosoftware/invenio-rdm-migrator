@@ -14,9 +14,15 @@ from invenio_rdm_migrator.streams.actions.load import (
     HookEventCreateAction,
     HookEventUpdateAction,
     HookRepoUpdateAction,
+    ReleaseReceiveAction,
+    ReleaseUpdateAction,
 )
-from invenio_rdm_migrator.streams.models.github import Repository, WebhookEvent
+from invenio_rdm_migrator.streams.models.github import Release, Repository, WebhookEvent
 from invenio_rdm_migrator.streams.models.oauth import ServerToken
+
+#
+# Hooks
+#
 
 
 @pytest.fixture(scope="function")
@@ -110,3 +116,47 @@ def test_github_hook_event_update(event_data):
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == WebhookEvent
+
+
+#
+# Releases
+#
+
+
+@pytest.fixture(scope="function")
+def gh_release_data():
+    """GitHub repository data."""
+    return {
+        "created": "2022-01-01T00:00:00",
+        "updated": "2022-01-01T00:00:00",
+        "id": "c9fc85cd-e8ec-4ba0-9a13-75a590f3fd15",
+        "release_id": 121854239,
+        "tag": "v4",
+        "errors": None,
+        "repository_id": "0d1b629d-7992-4650-b0b0-8908a0322bca",
+        "event_id": "1e596bad-1bb3-4749-8a5e-dd9f1552ebc2",
+        "record_id": None,
+        "status": "R",
+    }
+
+
+def test_github_release_receive(gh_repo_data, gh_release_data):
+    data = dict(tx_id=1, gh_release=gh_release_data, gh_repository=gh_repo_data)
+    action = ReleaseReceiveAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 2
+    assert rows[0].type == OperationType.UPDATE
+    assert rows[0].model == Repository
+    assert rows[1].type == OperationType.INSERT
+    assert rows[1].model == Release
+
+
+def test_github_release_update(gh_release_data):
+    data = dict(tx_id=1, gh_release=gh_release_data)
+    action = ReleaseUpdateAction(data)
+    rows = list(action.prepare())
+
+    assert len(rows) == 1
+    assert rows[0].type == OperationType.UPDATE
+    assert rows[0].model == Release
