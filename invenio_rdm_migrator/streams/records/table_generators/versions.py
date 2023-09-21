@@ -39,7 +39,7 @@ class RDMVersionStateTableGenerator(TableGenerator):
             next_draft_id=parent_entry.get("next_draft_id"),
         )
         # Generate parent community rows
-        communities = parent_entry.get("communities", [])
+        communities = parent_entry.get("communities") or []
         for comm_id in communities:
             if _is_valid_uuid(comm_id):
                 yield RDMParentCommunityMetadata(
