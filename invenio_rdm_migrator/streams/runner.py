@@ -75,10 +75,14 @@ class Runner:
                 extract = None
                 transform = None
                 if not existing_data:
-                    extract = definition.extract_cls(**stream_config.get("extract", {}))
-                    transform = definition.transform_cls(
-                        **stream_config.get("transform", {})
-                    )
+                    if definition.extract_cls:
+                        extract = definition.extract_cls(
+                            **stream_config.get("extract", {})
+                        )
+                    if definition.transform_cls:
+                        transform = definition.transform_cls(
+                            **stream_config.get("transform", {})
+                        )
 
                 self.streams.append(
                     Stream(
