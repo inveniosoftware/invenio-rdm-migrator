@@ -5,7 +5,7 @@
 # Invenio-RDM-Migrator is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
-"""Invenio RDM migration record table load module."""
+"""Invenio RDM migration deleted record load."""
 
 from datetime import datetime
 
@@ -13,15 +13,7 @@ from ....load.ids import generate_recid, generate_uuid, pid_pk
 from ....load.postgresql.bulk.generators import TableGenerator
 from ....state import STATE
 from ...models.pids import PersistentIdentifier
-from ...models.records import (
-    RDMParentMetadata,
-    RDMRecordFile,
-    RDMRecordMediaFile,
-    RDMRecordMetadata,
-)
-from .parents import generate_parent_rows
-from .references import CommunitiesReferencesMixin
-from .utils import InsertRecordFiles
+from ...models.records import RDMParentMetadata, RDMRecordMetadata
 
 
 def generate_record_uuid(data):
@@ -30,7 +22,7 @@ def generate_record_uuid(data):
     return _id if _id else generate_uuid(None)
 
 
-class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
+class RDMDeletedRecordTableGenerator(TableGenerator):
     """RDM Record and related tables load."""
 
     def __init__(self):
@@ -40,14 +32,6 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                 PersistentIdentifier,
                 RDMParentMetadata,
                 RDMRecordMetadata,
-            ],
-            post_load_hooks=[
-                InsertRecordFiles(RDMRecordMetadata, RDMRecordFile),
-                InsertRecordFiles(
-                    RDMRecordMetadata,
-                    RDMRecordMediaFile,
-                    bucket_fk="media_bucket_id",
-                ),
             ],
             pks=[
                 ("record.id", generate_record_uuid),
@@ -62,48 +46,72 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
         """Generates rows for a record."""
         now = datetime.utcnow().isoformat()
         parent = data["parent"]
-        record = data.get("record")
-
-        if not record:
-            return
-
-        record_pid = record["json"]["pid"]
+        record = data["record"]
 
         # Handle parent
-        state_parent = STATE.PARENTS.get(parent["json"]["id"])
+        parent_pid_value = parent["json"]["id"]
+        state_parent = STATE.PARENTS.get(parent_pid_value)
         if not state_parent:
-            STATE.PARENTS.add(
-                parent["json"]["id"],  # recid
-                {
-                    "id": parent["id"],
-                    "latest_index": record["index"],
-                    "latest_id": record["id"],
-                    "communities": parent.get("communities", {}).get("ids", []),
-                },
-            )
-            yield from generate_parent_rows(parent)
-        else:
-            if state_parent.get("latest_index") < record["index"]:
-                STATE.PARENTS.update(
-                    parent["json"]["id"],
+            if parent_pid_value:
+                STATE.PARENTS.add(
+                    parent["json"]["id"],  # recid
                     {
+                        "id": parent["id"],
                         "latest_index": record["index"],
                         "latest_id": record["id"],
+                        "communities": parent.get("communities", {}).get("ids", []),
                     },
                 )
+                parent_pid = parent["json"]["pid"]
+                yield PersistentIdentifier(
+                    id=parent_pid["pk"],
+                    pid_type=parent_pid["pid_type"],
+                    pid_value=parent["json"]["id"],
+                    status=parent_pid["status"],
+                    object_type=parent_pid["obj_type"],
+                    object_uuid=parent["id"],
+                    created=now,
+                    updated=now,
+                )
+            parent_doi = parent["json"].get("pids", {}).get("doi")
+            if parent_doi and parent_doi["identifier"]:
+                yield PersistentIdentifier(
+                    id=pid_pk(),
+                    pid_type="doi",
+                    pid_value=parent_doi["identifier"],
+                    status="R",
+                    object_type="rec",
+                    object_uuid=parent["id"],
+                    created=now,
+                    updated=now,
+                )
+
+            # parent record
+            yield RDMParentMetadata(
+                id=parent["id"],
+                json=parent["json"],
+                created=parent["created"],
+                updated=parent["updated"],
+                version_id=parent["version_id"],
+            )
         parent_id = state_parent["id"] if state_parent else record["parent_id"]
 
         # record
-        STATE.RECORDS.add(
-            record["json"]["id"],  # recid
-            {
-                "index": record["index"],
-                "id": record["id"],  # uuid
-                "parent_id": parent_id,  # parent uuid
-                "fork_version_id": record["version_id"],
-                "pids": record["json"]["pids"],
-            },
-        )
+        record_state = STATE.RECORDS.get(record["json"]["id"])
+        if not record_state:
+            STATE.RECORDS.add(
+                record["json"]["id"],  # recid
+                {
+                    "index": record["index"],
+                    "id": record["id"],  # uuid
+                    "parent_id": parent_id,  # parent uuid
+                    "fork_version_id": record["version_id"],
+                    "pids": record["json"].get("pids", {}),
+                },
+            )
+        else:
+            # Something is very wrong, we bail out
+            return
 
         yield RDMRecordMetadata(
             id=record["id"],
@@ -112,12 +120,13 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             updated=record["updated"],
             version_id=record["version_id"],
             index=record["index"],
-            bucket_id=record["bucket_id"],
+            bucket_id=record.get("bucket_id"),
             media_bucket_id=record.get("media_bucket_id"),
             parent_id=parent_id,
-            deletion_status="P",
+            deletion_status="D",
         )
         # recid
+        record_pid = record["json"]["pid"]
         yield PersistentIdentifier(
             id=record_pid["pk"],
             pid_type=record_pid["pid_type"],
@@ -129,7 +138,7 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
             updated=now,
         )
         # DOI
-        if "doi" in record["json"]["pids"]:
+        if "doi" in record["json"].get("pids", {}):
             yield PersistentIdentifier(
                 id=pid_pk(),
                 pid_type="doi",
@@ -140,24 +149,3 @@ class RDMRecordTableGenerator(TableGenerator, CommunitiesReferencesMixin):
                 created=now,
                 updated=now,
             )
-        # OAI
-        if "oai" in record["json"]["pids"]:
-            yield PersistentIdentifier(
-                id=pid_pk(),
-                pid_type="oai",
-                pid_value=record["json"]["pids"]["oai"]["identifier"],
-                status="R",
-                object_type="rec",
-                object_uuid=record["id"],
-                created=now,
-                updated=now,
-            )
-
-    def _resolve_references(self, data, **kwargs):
-        """Resolve references e.g communities slug names."""
-        if "record" in data:
-            # resolve parent communities slug
-            parent = data["parent"]
-            communities = parent["json"].get("communities")
-            if communities:
-                self.resolve_communities(communities)
