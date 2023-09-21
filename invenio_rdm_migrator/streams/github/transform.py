@@ -65,6 +65,7 @@ class GitHubReleaseTransform(Transform):
             "repository_id": self._repository_id(entry),
             "event_id": self._event_id(entry),
             "record_id": self._record_id(entry),
+            # needed for snapshot migration and state keeping
             "recid": entry.get("recid"),
             "status": self._status(entry),
         }
