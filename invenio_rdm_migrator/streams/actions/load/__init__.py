@@ -18,6 +18,7 @@ from .github import (
     HookEventCreateAction,
     HookEventUpdateAction,
     HookRepoUpdateAction,
+    ReleaseProcessAction,
     ReleaseReceiveAction,
     ReleaseUpdateAction,
 )
@@ -58,6 +59,7 @@ __all__ = (
     "OAuthServerTokenUpdateAction",
     "ReleaseReceiveAction",
     "ReleaseUpdateAction",
+    "ReleaseProcessAction",
     "UserDeactivationAction",
     "UserEditAction",
     "UserRegistrationAction",
