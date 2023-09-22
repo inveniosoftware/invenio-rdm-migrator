@@ -21,6 +21,7 @@ from .github import (
     ReleaseReceiveAction,
     ReleaseUpdateAction,
 )
+from .ignored import IgnoredAction
 from .oauth import (
     OAuthApplicationCreateAction,
     OAuthApplicationDeleteAction,
@@ -42,6 +43,7 @@ __all__ = (
     "DraftEditAction",
     "DraftFileUploadAction",
     "DraftPublishAction",
+    "IgnoredAction",
     "HookEventCreateAction",
     "HookEventUpdateAction",
     "HookRepoUpdateAction",
