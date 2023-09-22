@@ -8,6 +8,7 @@
 """Invenio RDM migration transaction extract classes."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -16,3 +17,4 @@ class Tx:
 
     id: int
     operations: list[dict]  # TODO: we could more narrowly define it later
+    commit_lsn: Optional[int] = None
