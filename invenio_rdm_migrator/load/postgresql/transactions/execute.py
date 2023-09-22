@@ -18,9 +18,10 @@ from .operations import OperationType
 class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, _session=None, **kwargs):
+    def __init__(self, db_uri, _session=None, dry=True, **kwargs):
         """Constructor."""
         self.db_uri = db_uri
+        self.dry = dry
         self._session = _session
 
     @property
@@ -76,16 +77,19 @@ class PostgreSQLTx(Load):
                             for key, value in op.data.items():
                                 setattr(obj, key, value)
 
-                        self.session.flush()
+                        if not self.dry:
+                            self.session.flush()
                     except Exception:
                         logger.exception(
                             f"Could not load {action.data.tx_id} ({action.name})",
                             exc_info=1,
                         )
-                        self.session.rollback()
+                        if not self.dry:
+                            self.session.rollback()
                         raise
                 # commit all transaction group or none
-                self.session.commit()
+                if not self.dry:
+                    self.session.commit()
 
     def run(self, entries, cleanup=False):
         """Load entries."""
