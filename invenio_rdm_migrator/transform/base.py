@@ -63,6 +63,36 @@ class Transform(ABC):
 class Entry(ABC):
     """Base entry class."""
 
+    def __init__(self, partial=False):
+        """Constructor.
+
+        :param partial: a boolean enabling partial transformations, i.e. missing keys.
+        """
+        self.partial = partial
+
+    def _load_partial(
+        self, entry: dict, obj: dict, keys: list[str], prefix: str = None
+    ):
+        for key in keys:
+            if isinstance(key, tuple):
+                key, func_key = key
+            else:
+                func_key = key
+            func = getattr(self, "_" + func_key)
+            try:
+                val = func(entry)
+                if prefix:
+                    obj.setdefault(prefix, {})
+                    obj[prefix][key] = val
+                else:
+                    obj[key] = val
+            # this might mask nested missing keys, it is still a partial transformation
+            # full one (with more validation) should be checked on a record
+            except KeyError as ex:
+                if not self.partial:
+                    raise KeyError(ex)
+                pass
+
     @abstractmethod
     def transform(self, entry):  # pragma: no cover
         """Transform entry."""

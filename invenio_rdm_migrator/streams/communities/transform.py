@@ -109,19 +109,26 @@ class CommunityEntry(Entry):
 
     def transform(self, entry):
         """Transform a user single entry."""
-        return {
-            "created": self._created(entry),
-            "updated": self._updated(entry),
-            "version_id": self._version_id(entry),
-            "slug": self._slug(entry),
-            "json": {
-                "files": self._files(entry),
-                "access": self._access(entry),
-                "metadata": self._metadata(entry),
-            },
-            "bucket_id": self._bucket_id(entry),
-            "deletion_status": self._deletion_status(entry),
-        }
+        transformed = {}
+        self._load_partial(
+            entry,
+            transformed,
+            [
+                "created",
+                "updated",
+                "version_id",
+                "slug",
+                "bucket_id",
+                "deletion_status",
+            ],
+        )
+        self._load_partial(
+            entry,
+            transformed,
+            ["files", "metadata", "access"],
+            prefix="json",
+        )
+        return transformed
 
 
 class CommunityMemberEntry(Entry):

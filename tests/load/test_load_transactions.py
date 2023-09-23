@@ -84,7 +84,7 @@ def test_item(database, session):
 
 @pytest.fixture(scope="function")
 def pg_tx(db_uri, session):
-    return PostgreSQLTx(db_uri=db_uri, _session=session)
+    return PostgreSQLTx(db_uri=db_uri, _session=session, dry=False)
 
 
 ###
