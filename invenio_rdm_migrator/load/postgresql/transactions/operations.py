@@ -7,6 +7,7 @@
 
 """PostgreSQL Transaction load operations."""
 
+from dataclasses import dataclass
 from enum import Enum
 
 from ..models import Model
@@ -32,14 +33,10 @@ class OperationType(str, Enum):
         return f"{self.__class__.__name__}.{self.name}"
 
 
+@dataclass
 class Operation:
-    """SQL operation.
+    """SQL operation."""
 
-    A transaction is composed by one or more operations.
-    """
-
-    def __init__(self, type: OperationType, model: Model, data: dict):
-        """Constructor."""
-        self.type = type
-        self.model = model
-        self.data = data
+    type: OperationType
+    model: type[Model]
+    data: dict

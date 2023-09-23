@@ -77,7 +77,7 @@ class PostgreSQLTx(Load):
                             self.session.expunge_all()
                     except Exception:
                         logger.exception(
-                            f"Could not load {action.data.tx_id} ({action.name})",
+                            f"Could not load {action.data.tx_id} ({action.name}): {op}",
                             exc_info=1,
                         )
                         if not self.dry:
