@@ -11,9 +11,9 @@
 class MultipleActionMatches(Exception):
     """More than one match for one transaction."""
 
-    def __init__(self, tx):
+    def __init__(self, tx, matched_classes):
         """Constructor."""
-        super().__init__(f"Multiple action matches for {tx}")
+        super().__init__(f"Multiple action matches for {tx}: {matched_classes}")
 
 
 class NoActionMatch(Exception):

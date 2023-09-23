@@ -20,17 +20,17 @@ class BaseTxTransform(Transform, ABC):
     actions: list[TransformAction] = []
 
     def _detect_action(self, tx):
-        match_cnt = 0
-        match_cls = None
+        match_classes = []
         for action_cls in self.actions:
             if action_cls.matches_action(tx):
-                match_cnt += 1
-                match_cls = action_cls
+                match_classes.append(action_cls)
 
-        if match_cnt > 1:
-            raise MultipleActionMatches(tx)
+        if len(match_classes) == 0:
+            raise NoActionMatch(tx)
+        elif len(match_classes) > 1:
+            raise MultipleActionMatches(tx, match_classes)
 
-        return match_cls  # return the first matched class
+        return match_classes[0]  # return the one and only matched class
 
     def _transform(self, tx):
         """Transform action.
@@ -39,8 +39,5 @@ class BaseTxTransform(Transform, ABC):
         :returns: an instance of LoadAction.
         """
         action_cls = self._detect_action(tx)
-        if not action_cls:
-            raise NoActionMatch(tx)
-
         action = action_cls(tx)
         return action.transform()
