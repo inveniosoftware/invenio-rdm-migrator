@@ -17,10 +17,11 @@ from .files import DraftFileUploadAction
 from .github import (
     HookEventCreateAction,
     HookEventUpdateAction,
-    HookRepoUpdateAction,
     ReleaseProcessAction,
     ReleaseReceiveAction,
     ReleaseUpdateAction,
+    RepoCreateAction,
+    RepoUpdateAction,
 )
 from .ignored import IgnoredAction
 from .oauth import (
@@ -47,7 +48,8 @@ __all__ = (
     "IgnoredAction",
     "HookEventCreateAction",
     "HookEventUpdateAction",
-    "HookRepoUpdateAction",
+    "RepoCreateAction",
+    "RepoUpdateAction",
     "OAuthApplicationCreateAction",
     "OAuthApplicationDeleteAction",
     "OAuthApplicationUpdateAction",

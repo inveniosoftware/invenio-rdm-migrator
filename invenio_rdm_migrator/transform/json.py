@@ -17,4 +17,5 @@ class JSONTransformMixin:
     def _load_json_fields(fields, data):
         """Load json fields."""
         for field in fields:
-            data[field] = json.loads(data[field])
+            if data.get(field):
+                data[field] = json.loads(data[field])

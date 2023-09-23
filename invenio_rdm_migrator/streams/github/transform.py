@@ -76,5 +76,6 @@ class GitHubRepositoryTransform(IdentityTransform):
 
     def _transform(self, entry):
         """Transform a single entry."""
+        # `ping` column has been removed in RDM
         entry.pop("ping", None)  # in updates it is not present
         return super()._transform(entry)

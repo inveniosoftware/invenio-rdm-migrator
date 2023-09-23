@@ -7,13 +7,19 @@
 
 """GitHub actions module."""
 
-from .hooks import HookEventCreateAction, HookEventUpdateAction, HookRepoUpdateAction
+from .hooks import (
+    HookEventCreateAction,
+    HookEventUpdateAction,
+    RepoCreateAction,
+    RepoUpdateAction,
+)
 from .releases import ReleaseProcessAction, ReleaseReceiveAction, ReleaseUpdateAction
 
 __all__ = (
     "HookEventCreateAction",
     "HookEventUpdateAction",
-    "HookRepoUpdateAction",
+    "RepoCreateAction",
+    "RepoUpdateAction",
     "ReleaseReceiveAction",
     "ReleaseUpdateAction",
     "ReleaseProcessAction",

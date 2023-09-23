@@ -13,9 +13,10 @@ from invenio_rdm_migrator.load.postgresql.transactions.operations import Operati
 from invenio_rdm_migrator.streams.actions.load import (
     HookEventCreateAction,
     HookEventUpdateAction,
-    HookRepoUpdateAction,
     ReleaseReceiveAction,
     ReleaseUpdateAction,
+    RepoCreateAction,
+    RepoUpdateAction,
 )
 from invenio_rdm_migrator.streams.models.github import Release, Repository, WebhookEvent
 from invenio_rdm_migrator.streams.models.oauth import ServerToken
@@ -23,24 +24,6 @@ from invenio_rdm_migrator.streams.models.oauth import ServerToken
 #
 # Hooks
 #
-
-
-@pytest.fixture(scope="function")
-def oauth_token_data():
-    """OAuth2Server token data."""
-
-    return {
-        "id": 156666,
-        "client_id": "cH4ng3DZPeBjqj7uMB1JWXavhxebu6V0mwMtvMr",
-        "user_id": 123456,
-        "token_type": "bearer",
-        "access_token": "cH4ng3DzbXd4QTcrRjFMcTVMRHl3QlY2Rkdib0VwREY4aDhPcHo2dUt2ZnZ3OVVPa1BvRDl0L1NRZmFrdXNIU2hJR2JWc0NHZDZSVEhVT2JQcmdjS1E9PQ==",
-        "refresh_token": None,
-        "expires": None,
-        "_scopes": "tokens:generate user:email",
-        "is_personal": True,
-        "is_internal": False,
-    }
 
 
 @pytest.fixture(scope="function")
@@ -78,7 +61,7 @@ def event_data():
 
 def test_github_repo_update(gh_repo_data):
     data = dict(tx_id=1, gh_repository=gh_repo_data)
-    action = HookRepoUpdateAction(data)
+    action = RepoUpdateAction(data)
     rows = list(action.prepare())
 
     assert len(rows) == 1
@@ -96,16 +79,14 @@ def test_github_hook_event_create_wo_token(event_data):
     assert rows[0].model == WebhookEvent
 
 
-def test_github_hook_event_create_w_token(event_data, oauth_token_data):
-    data = dict(tx_id=1, webhook_event=event_data, oauth_token=oauth_token_data)
+def test_github_hook_event_create_w_token(event_data):
+    data = dict(tx_id=1, webhook_event=event_data)
     action = HookEventCreateAction(data)
     rows = list(action.prepare())
 
-    assert len(rows) == 2
-    assert rows[0].type == OperationType.UPDATE
-    assert rows[0].model == ServerToken
-    assert rows[1].type == OperationType.INSERT
-    assert rows[1].model == WebhookEvent
+    assert len(rows) == 1
+    assert rows[0].type == OperationType.INSERT
+    assert rows[0].model == WebhookEvent
 
 
 def test_github_hook_event_update(event_data):
