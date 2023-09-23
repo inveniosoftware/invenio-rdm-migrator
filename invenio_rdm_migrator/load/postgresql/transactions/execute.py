@@ -7,6 +7,7 @@
 
 """PostgreSQL Execute load."""
 
+import sqlalchemy as sa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -37,40 +38,46 @@ class PostgreSQLTx(Load):
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
 
+    def _get_obj_pk(self, model, data):
+        """Get an object's primary key as a dict."""
+        return {col.name: data[col.name] for col in model.__mapper__.primary_key}
+
+    def _get_obj_pk_clauses(self, model, data):
+        """Get an object's primary key as a dict."""
+        return [col == data[col.name] for col in model.__mapper__.primary_key]
+
     def _get_obj_by_pk(self, model, data):
         """Get an object based on the primary key."""
-        # this function accesses many private methods, variables, assumes indexes, etc.
-        # pragmatic implementation, feel free to refactor.
-        pk = {}
-        for key in model.__mapper__.primary_key:
-            pk[key.name] = data[key.name]
-
-        return self.session.get(model, pk)
+        return self.session.get(model, self._get_obj_pk(model, data))
 
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
+        exec_kwargs = dict(execution_options={"synchronize_session": False})
 
         for action in transactions:
             operations = action.prepare()
-            with self.session.begin():
+            with self.session.begin(), self.session.no_autoflush:
                 for op in operations:
                     try:
                         if op.type == OperationType.INSERT:
-                            obj = op.model(**op.data)
-                            self.session.add(obj)
+                            self.session.execute(
+                                sa.insert(op.model),
+                                [op.data],
+                                **exec_kwargs,
+                            )
                         elif op.type == OperationType.DELETE:
-                            obj = self._get_obj_by_pk(op.model, op.data)
-                            self.session.delete(obj)
+                            pk_clauses = self._get_obj_pk_clauses(op.model, op.data)
+                            self.session.execute(
+                                sa.delete(op.model).where(*pk_clauses),
+                                **exec_kwargs,
+                            )
                         elif op.type == OperationType.UPDATE:
-                            obj = self._get_obj_by_pk(op.model, op.data)
-                            # due to dictdiff/partial updates we only update those
-                            # keys that changed the value. there is no instantiation
-                            # of the data class with the op.data so they dont need
-                            # values to be defined as optional
-                            for key, value in op.data.items():
-                                setattr(obj, key, value)
-
+                            self.session.execute(
+                                sa.update(op.model),
+                                [op.data],
+                                **exec_kwargs,
+                            )
                         if not self.dry:
                             self.session.flush()
                         else:
