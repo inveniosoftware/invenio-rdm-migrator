@@ -7,6 +7,7 @@
 
 """Dataclasses models to generate table rows."""
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -25,8 +26,8 @@ class PersistentIdentifier(Model):
     status: Mapped[str]
     object_type: Mapped[str] = mapped_column(nullable=True)
     object_uuid: Mapped[UUID] = mapped_column(nullable=True)
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     # default since we do not take it into account in many places
     # ant it's not in the data
     pid_provider: Mapped[str] = mapped_column(nullable=True, default=None)

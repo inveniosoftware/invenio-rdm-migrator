@@ -38,18 +38,6 @@ class PostgreSQLTx(Load):
         logger.debug("PostgreSQLExecute does not implement _cleanup()")
         pass
 
-    def _get_obj_pk(self, model, data):
-        """Get an object's primary key as a dict."""
-        return {col.name: data[col.name] for col in model.__mapper__.primary_key}
-
-    def _get_obj_pk_clauses(self, model, data):
-        """Get an object's primary key as a dict."""
-        return [col == data[col.name] for col in model.__mapper__.primary_key]
-
-    def _get_obj_by_pk(self, model, data):
-        """Get an object based on the primary key."""
-        return self.session.get(model, self._get_obj_pk(model, data))
-
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
@@ -63,19 +51,18 @@ class PostgreSQLTx(Load):
                         if op.type == OperationType.INSERT:
                             self.session.execute(
                                 sa.insert(op.model),
-                                [op.data],
+                                [op.as_row_dict()],
                                 **exec_kwargs,
                             )
                         elif op.type == OperationType.DELETE:
-                            pk_clauses = self._get_obj_pk_clauses(op.model, op.data)
                             self.session.execute(
-                                sa.delete(op.model).where(*pk_clauses),
+                                sa.delete(op.model).where(*op.pk_clauses),
                                 **exec_kwargs,
                             )
                         elif op.type == OperationType.UPDATE:
                             self.session.execute(
                                 sa.update(op.model),
-                                [op.data],
+                                [op.as_row_dict()],
                                 **exec_kwargs,
                             )
                         if not self.dry:

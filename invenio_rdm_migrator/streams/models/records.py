@@ -8,6 +8,7 @@
 """Dataclasses record models to generate table rows."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,8 +23,8 @@ class RDMRecordMetadata(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
@@ -39,8 +40,8 @@ class RDMParentMetadata(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
 
 
@@ -63,13 +64,13 @@ class RDMDraftMetadata(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     index: Mapped[int]
     bucket_id: Mapped[UUID]
     parent_id: Mapped[UUID]
-    expires_at: Mapped[str]
+    expires_at: Mapped[datetime]
     # in a new version this value is None
     fork_version_id: Mapped[int] = mapped_column(nullable=True)
     media_bucket_id: Mapped[UUID] = mapped_column(nullable=True, default=None)
@@ -82,8 +83,8 @@ class RDMRecordFile(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict]
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     key: Mapped[str]
     record_id: Mapped[UUID]
@@ -97,8 +98,8 @@ class RDMRecordMediaFile(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     key: Mapped[str]
     record_id: Mapped[UUID]
@@ -114,8 +115,8 @@ class RDMDraftFile(Model):
     # which in our case do not play any role
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     key: Mapped[str]
     record_id: Mapped[UUID]
@@ -129,8 +130,8 @@ class RDMDraftMediaFile(Model):
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]
     key: Mapped[str]
     record_id: Mapped[UUID]

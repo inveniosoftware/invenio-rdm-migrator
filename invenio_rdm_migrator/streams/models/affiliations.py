@@ -8,6 +8,7 @@
 """Affiliation model."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,6 +24,6 @@ class Affiliation(Model):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     pid: Mapped[str]
     json: Mapped[dict]
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     version_id: Mapped[int]

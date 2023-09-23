@@ -8,6 +8,7 @@
 """Dataclasses user models to generate table rows."""
 
 from dataclasses import InitVar
+from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,19 +21,19 @@ class User(Model):
     __tablename__: InitVar[str] = "accounts_user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     username: Mapped[str] = mapped_column(nullable=True)
     displayname: Mapped[str] = mapped_column(nullable=True)
     email: Mapped[str]
     password: Mapped[str]
     active: Mapped[bool]
-    confirmed_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    confirmed_at: Mapped[datetime] = mapped_column(nullable=True)
     version_id: Mapped[int]
     profile: Mapped[dict] = mapped_column(nullable=True)
     preferences: Mapped[dict] = mapped_column(nullable=True)
-    blocked_at: Mapped[str] = mapped_column(nullable=True, default=None)  # datetime
-    verified_at: Mapped[str] = mapped_column(nullable=True, default=None)  # datetime
+    blocked_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
+    verified_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
 
 
 class LoginInformation(Model):
@@ -42,8 +43,8 @@ class LoginInformation(Model):
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
     # the initial creation has them all to None
-    last_login_at: Mapped[str] = mapped_column(nullable=True)  # datetime
-    current_login_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    last_login_at: Mapped[datetime] = mapped_column(nullable=True)
+    current_login_at: Mapped[datetime] = mapped_column(nullable=True)
     last_login_ip: Mapped[str] = mapped_column(nullable=True)
     current_login_ip: Mapped[str] = mapped_column(nullable=True)
     login_count: Mapped[int]
@@ -55,8 +56,8 @@ class SessionActivity(Model):
     __tablename__: InitVar[str] = "accounts_user_session_activity"
 
     user_id: Mapped[int]
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     sid_s: Mapped[str] = mapped_column(primary_key=True)
     ip: Mapped[str] = mapped_column(nullable=True)
     country: Mapped[str] = mapped_column(nullable=True)
@@ -71,8 +72,8 @@ class UserIdentity(Model):
 
     __tablename__: InitVar[str] = "accounts_useridentity"
 
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     id: Mapped[str] = mapped_column(primary_key=True)
     method: Mapped[str] = mapped_column(primary_key=True)
     id_user: Mapped[int]

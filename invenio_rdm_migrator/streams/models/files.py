@@ -8,6 +8,7 @@
 """Files models."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,8 +23,8 @@ class FilesBucket(Model):
     __tablename__: InitVar[str] = "files_bucket"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     default_location: Mapped[int]
     default_storage_class: Mapped[str]
     size: Mapped[int]
@@ -39,15 +40,15 @@ class FilesInstance(Model):
     __tablename__: InitVar[str] = "files_files"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     uri: Mapped[str] = mapped_column(nullable=True)
     storage_class: Mapped[str] = mapped_column(nullable=True)
     size: Mapped[int] = mapped_column(nullable=True)
     checksum: Mapped[str] = mapped_column(nullable=True)
     readable: Mapped[bool]
     writable: Mapped[bool]
-    last_check_at: Mapped[str] = mapped_column(nullable=True)  # datetime
+    last_check_at: Mapped[datetime] = mapped_column(nullable=True)
     last_check: Mapped[bool]
 
 
@@ -57,8 +58,8 @@ class FilesObjectVersion(Model):
     __tablename__: InitVar[str] = "files_object"
 
     version_id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     key: Mapped[str]
     bucket_id: Mapped[UUID]
     file_id: Mapped[UUID] = mapped_column(nullable=True)

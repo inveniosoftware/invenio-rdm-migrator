@@ -8,6 +8,7 @@
 """Communities models."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,8 +22,8 @@ class Community(Model):
     __tablename__: InitVar[str] = "communities_metadata"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     slug: Mapped[str]
@@ -46,8 +47,8 @@ class CommunityMember(Model):
     __tablename__: InitVar[str] = "communities_members"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
     role: Mapped[str]
@@ -66,9 +67,9 @@ class FeaturedCommunity(Model):
 
     community_id: Mapped[UUID]
     id: Mapped[int] = mapped_column(primary_key=True)
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
-    start_date: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
+    start_date: Mapped[datetime]
 
 
 class CommunityFile(Model):
@@ -76,8 +77,8 @@ class CommunityFile(Model):
 
     __tablename__: InitVar[str] = "communities_files"
 
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]

@@ -7,6 +7,7 @@
 
 """Dataclasses OAuth models to generate table rows."""
 from dataclasses import InitVar
+from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,8 +23,8 @@ class RemoteAccount(Model):
     user_id: Mapped[int]
     client_id: Mapped[str]
     extra_data: Mapped[dict]
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
 
 
 class RemoteToken(Model):
@@ -35,8 +36,8 @@ class RemoteToken(Model):
     token_type: Mapped[str] = mapped_column(primary_key=True)
     access_token: Mapped[str]
     secret: Mapped[str]
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
 
 
 class ServerClient(Model):
@@ -66,7 +67,7 @@ class ServerToken(Model):
     user_id: Mapped[int] = mapped_column(nullable=True)
     access_token: Mapped[str] = mapped_column(nullable=True)
     refresh_token: Mapped[str] = mapped_column(nullable=True)
-    expires: Mapped[str] = mapped_column(nullable=True)  # datetime
+    expires: Mapped[datetime] = mapped_column(nullable=True)
     _scopes: Mapped[str] = mapped_column(nullable=True)
     token_type: Mapped[str] = mapped_column(nullable=True, default="bearer")
     is_personal: Mapped[bool] = mapped_column(nullable=True, default=False)

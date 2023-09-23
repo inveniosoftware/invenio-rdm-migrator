@@ -7,8 +7,6 @@
 
 """Invenio RDM migration transform interfaces."""
 
-from functools import partial
-
 from .base import Transform
 
 

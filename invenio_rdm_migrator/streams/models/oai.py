@@ -8,6 +8,7 @@
 """Dataclasses models to generate table rows for OAI-PMH."""
 
 from dataclasses import InitVar
+from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,5 +27,5 @@ class OAISet(Model):
     search_pattern: Mapped[str] = mapped_column(nullable=True)
     system_created: Mapped[bool] = mapped_column(nullable=False)
 
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[datetime]
+    updated: Mapped[datetime]

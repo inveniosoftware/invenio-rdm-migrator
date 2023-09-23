@@ -8,6 +8,7 @@
 """Name model."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,8 +21,8 @@ class Name(Model):
 
     __tablename__: InitVar[str] = "name_metadata"
 
-    created: Mapped[str]  # datetime
-    updated: Mapped[str]  # datetime
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict]
     version_id: Mapped[int]

@@ -8,6 +8,7 @@
 """Dataclasses models to generate table rows for OAI-PMH."""
 
 from dataclasses import InitVar
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,8 +22,8 @@ class WebhookEvent(Model):
     __tablename__: InitVar[str] = "webhooks_events"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     receiver_id: Mapped[str]
     user_id: Mapped[int] = mapped_column(nullable=True)
     payload: Mapped[dict] = mapped_column(nullable=True)
@@ -38,8 +39,8 @@ class Repository(Model):
     __tablename__: InitVar[str] = "github_repositories"
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     github_id: Mapped[int] = mapped_column(nullable=True)
     name: Mapped[str]
     user_id: Mapped[int] = mapped_column(nullable=True)
@@ -51,8 +52,8 @@ class Release(Model):
 
     __tablename__: InitVar[str] = "github_releases"
 
-    created: Mapped[str]
-    updated: Mapped[str]
+    created: Mapped[datetime]
+    updated: Mapped[datetime]
     id: Mapped[UUID] = mapped_column(primary_key=True)
     release_id: Mapped[int] = mapped_column(nullable=True)
     tag: Mapped[str] = mapped_column(nullable=True)

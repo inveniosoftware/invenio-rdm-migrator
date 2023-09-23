@@ -25,7 +25,7 @@ def as_csv_row(dc):
         if val:
             if issubclass(f.type, (dict,)):
                 val = orjson.dumps(val).decode("utf-8")
-            elif issubclass(f.type, (datetime,)):
+            elif issubclass(f.type, (datetime,)) and isinstance(val, (datetime,)):
                 val = val.isoformat()
             elif issubclass(f.type, (UUID,)):
                 val = str(val)
