@@ -44,34 +44,50 @@ class PostgreSQLTx(Load):
         exec_kwargs = dict(execution_options={"synchronize_session": False})
 
         for action in transactions:
-            operations = action.prepare()
+            operations = []
+            try:
+                operations = list(action.prepare())
+            except Exception:
+                logger.exception(
+                    f"Could not load {action.data} ({action.name})",
+                    exc_info=1,
+                )
+
             with self.session.begin(), self.session.no_autoflush:
                 for op in operations:
                     try:
                         if op.type == OperationType.INSERT:
-                            self.session.execute(
-                                sa.insert(op.model),
-                                [op.as_row_dict()],
-                                **exec_kwargs,
-                            )
+                            row = op.as_row_dict()
+                            logger.info(f"INSERT {op.model}: {row}")
+                            if not self.dry:
+                                self.session.execute(
+                                    sa.insert(op.model),
+                                    [row],
+                                    **exec_kwargs,
+                                )
                         elif op.type == OperationType.DELETE:
-                            self.session.execute(
-                                sa.delete(op.model).where(*op.pk_clauses),
-                                **exec_kwargs,
-                            )
+                            logger.info(f"DELETE {op.model}: {op.data}")
+                            if not self.dry:
+                                self.session.execute(
+                                    sa.delete(op.model).where(*op.pk_clauses),
+                                    **exec_kwargs,
+                                )
                         elif op.type == OperationType.UPDATE:
-                            self.session.execute(
-                                sa.update(op.model),
-                                [op.as_row_dict()],
-                                **exec_kwargs,
-                            )
+                            row = op.as_row_dict()
+                            logger.info(f"UDPATE {op.model}: {op.data}")
+                            if not self.dry:
+                                self.session.execute(
+                                    sa.update(op.model),
+                                    [row],
+                                    **exec_kwargs,
+                                )
                         if not self.dry:
                             self.session.flush()
                         else:
                             self.session.expunge_all()
                     except Exception:
                         logger.exception(
-                            f"Could not load {action.data.tx_id} ({action.name}): {op}",
+                            f"Could not load {action.data} ({action.name})",
                             exc_info=1,
                         )
                         if not self.dry:

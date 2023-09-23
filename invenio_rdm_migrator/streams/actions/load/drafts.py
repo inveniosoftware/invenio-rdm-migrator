@@ -233,7 +233,7 @@ class DraftEditAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixi
         """Resolve references e.g communities slug names."""
         # resolve parent communities slug
         parent = self.data.parent
-        communities = parent["json"].get("communities")
+        communities = parent.get("json").get("communities")
         if communities:
             self.resolve_communities(communities)
         self.resolve_draft_pids(self.data.draft)
