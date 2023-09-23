@@ -27,6 +27,10 @@ class OperationType(str, Enum):
         """Return its value."""
         return self.value
 
+    def __repr__(self):
+        """Eval-friendly enum representation."""
+        return f"{self.__class__.__name__}.{self.name}"
+
 
 class Operation:
     """SQL operation.
