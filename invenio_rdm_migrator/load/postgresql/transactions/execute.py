@@ -25,16 +25,10 @@ class PostgreSQLTx(Load):
         self._session = _session
 
     @property
-    def _engine(self):
-        if self._engine is None:
-            self._engine = create_engine(self.db_uri)
-        return self._engine
-
-    @property
     def session(self):
         """DB session."""
         if self._session is None:
-            self._session = Session(bind=self._engine)
+            self._session = Session(bind=create_engine(self.db_uri))
         return self._session
 
     def _cleanup(self, db=False):
@@ -79,6 +73,8 @@ class PostgreSQLTx(Load):
 
                         if not self.dry:
                             self.session.flush()
+                        else:
+                            self.session.expunge_all()
                     except Exception:
                         logger.exception(
                             f"Could not load {action.data.tx_id} ({action.name})",

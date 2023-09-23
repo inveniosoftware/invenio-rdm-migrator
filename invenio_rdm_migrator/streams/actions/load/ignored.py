@@ -30,3 +30,4 @@ class IgnoredAction(LoadAction):
 
     def _generate_rows(self, **kwargs):
         """Yields nothing."""
+        yield from iter(())
