@@ -40,10 +40,10 @@ class DraftFileUploadAction(LoadAction):
         # if we were to use the state for consistency checks
         # the bucket should already exist
         yield Operation(OperationType.UPDATE, FilesBucket, self.data.bucket)
+        yield Operation(OperationType.INSERT, FilesInstance, self.data.file_instance)
         yield Operation(
             OperationType.INSERT, FilesObjectVersion, self.data.object_version
         )
-        yield Operation(OperationType.INSERT, FilesInstance, self.data.file_instance)
 
         cached_bucket = STATE.BUCKETS.get(self.data.bucket["id"])
         self.data.file_record["record_id"] = cached_bucket["draft_id"]
