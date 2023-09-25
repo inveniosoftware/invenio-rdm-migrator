@@ -27,11 +27,11 @@ class FilesBucket(Model):
     updated: Mapped[datetime]
     default_location: Mapped[int]
     default_storage_class: Mapped[str]
-    size: Mapped[int]
-    quota_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
-    max_file_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
+    size: Mapped[int] = mapped_column(BigInteger(), nullable=False)
     locked: Mapped[bool]
     deleted: Mapped[bool]
+    quota_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
+    max_file_size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
 
 
 class FilesInstance(Model):
@@ -44,7 +44,7 @@ class FilesInstance(Model):
     updated: Mapped[datetime]
     uri: Mapped[str] = mapped_column(nullable=True)
     storage_class: Mapped[str] = mapped_column(nullable=True)
-    size: Mapped[int] = mapped_column(nullable=True)
+    size: Mapped[int] = mapped_column(BigInteger(), nullable=True)
     checksum: Mapped[str] = mapped_column(nullable=True)
     readable: Mapped[bool]
     writable: Mapped[bool]
