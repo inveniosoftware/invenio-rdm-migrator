@@ -19,10 +19,11 @@ from .operations import OperationType
 class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, _session=None, dry=True, **kwargs):
+    def __init__(self, db_uri, _session=None, dry=True, raise_on_db_error=False, **kwargs):
         """Constructor."""
         self.db_uri = db_uri
         self.dry = dry
+        self.raise_on_db_error = raise_on_db_error
         self._session = _session
 
     @property
@@ -54,8 +55,8 @@ class PostgreSQLTx(Load):
                 )
 
             with self.session.begin(), self.session.no_autoflush:
-                for op in operations:
-                    try:
+                try:
+                    for op in operations:
                         if op.type == OperationType.INSERT:
                             row = op.as_row_dict()
                             logger.info(f"INSERT {op.model}: {row}")
@@ -85,17 +86,18 @@ class PostgreSQLTx(Load):
                             self.session.flush()
                         else:
                             self.session.expunge_all()
-                    except Exception:
-                        logger.exception(
-                            f"Could not load {action.data} ({action.name})",
-                            exc_info=1,
-                        )
-                        if not self.dry:
-                            self.session.rollback()
+                    # commit all transaction group or none
+                    if not self.dry:
+                        self.session.commit()
+                except Exception as ex:
+                    logger.exception(
+                        f"Could not load {action.data} ({action.name}), {ex}",
+                        exc_info=True,
+                    )
+                    if not self.dry:
+                        self.session.rollback()
+                    if self.raise_on_db_error:
                         raise
-                # commit all transaction group or none
-                if not self.dry:
-                    self.session.commit()
 
     def run(self, entries, cleanup=False):
         """Load entries."""
