@@ -70,9 +70,9 @@ class RDMDraftMetadata(Model):
     index: Mapped[int]
     bucket_id: Mapped[UUID]
     parent_id: Mapped[UUID]
-    expires_at: Mapped[datetime]
+    expires_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
     # in a new version this value is None
-    fork_version_id: Mapped[int] = mapped_column(nullable=True)
+    fork_version_id: Mapped[int] = mapped_column(nullable=True, default=None)
     media_bucket_id: Mapped[UUID] = mapped_column(nullable=True, default=None)
 
 
