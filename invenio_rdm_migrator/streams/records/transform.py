@@ -47,6 +47,10 @@ class RDMRecordTransform(Transform):
 class RDMRecordEntry(Entry):
     """Transform a single record entry."""
 
+    def _schema(self, entry):
+        """Return JSONSchema of the record."""
+        return "local://records/record-v6.0.0.json"
+
     @abstractmethod
     def _id(self, entry):
         """Returns the rdm record uuid."""
@@ -136,6 +140,7 @@ class RDMRecordEntry(Entry):
             "bucket_id": self._bucket_id(entry),
             "media_bucket_id": self._media_bucket_id(entry),
             "json": {
+                "$schema": self._schema(entry),
                 "id": self._recid(entry),
                 "pids": self._pids(entry),
                 "files": self._files(entry),

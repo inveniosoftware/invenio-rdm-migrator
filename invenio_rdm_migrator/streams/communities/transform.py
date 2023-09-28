@@ -54,6 +54,10 @@ class CommunityTransform(Transform):
 class CommunityEntry(Entry):
     """Transform a single community entry."""
 
+    def _schema(self, entry):
+        """Return JSONSchema of the community."""
+        return "local://communities/communities-v1.0.0.json"
+
     @abstractmethod
     def _created(self, entry):
         """Returns the creation date."""
@@ -125,7 +129,7 @@ class CommunityEntry(Entry):
         self._load_partial(
             entry,
             transformed,
-            ["files", "metadata", "access"],
+            [("$schema", "schema"), "files", "metadata", "access"],
             prefix="json",
         )
         return transformed

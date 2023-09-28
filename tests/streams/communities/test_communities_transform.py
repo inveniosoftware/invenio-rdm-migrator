@@ -110,6 +110,7 @@ def test_community_entry():
         "version_id": 1,
         "slug": "migrator",
         "json": {
+            "$schema": "local://communities/communities-v1.0.0.json",
             "files": None,
             "access": None,
             "metadata": {
