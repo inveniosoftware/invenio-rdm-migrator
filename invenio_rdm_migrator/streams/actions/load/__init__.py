@@ -12,8 +12,13 @@ from .communities import (
     CommunityDeleteAction,
     CommunityUpdateAction,
 )
-from .drafts import DraftCreateAction, DraftEditAction, DraftPublishAction
-from .files import DraftFileUploadAction
+from .drafts import DraftCreateAction, DraftEditAction, DraftPublishNewAction
+from .files import (
+    FileDeleteAction,
+    FileUploadAction,
+    MediaFileDeleteAction,
+    MediaFileUploadAction,
+)
 from .github import (
     HookEventCreateAction,
     HookEventUpdateAction,
@@ -43,8 +48,11 @@ __all__ = (
     "CommunityUpdateAction",
     "DraftCreateAction",
     "DraftEditAction",
-    "DraftFileUploadAction",
-    "DraftPublishAction",
+    "FileUploadAction",
+    "FileDeleteAction",
+    "MediaFileUploadAction",
+    "MediaFileDeleteAction",
+    "DraftPublishNewAction",
     "IgnoredAction",
     "HookEventCreateAction",
     "HookEventUpdateAction",

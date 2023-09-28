@@ -46,31 +46,49 @@ def test_files_load_prepare(files_copy_load, transformed_files_entry):
     with open(f"{files_copy_load.tmp_dir}/files_bucket.csv", "r") as file:
         # id, created, updated, default_location, default_storage_class, size, quota_size, max_file_size,locked, deleted
         expected = (
-            "1," "2023-04-19," "2023-04-19," "1," "L," "1234," "," "," "False," "False"
+            "1",
+            "2023-04-19",
+            "2023-04-19",
+            "1",
+            "L",
+            "1234",
+            "False",
+            "False",
+            "",
+            "",
         )
         content = file.read().rstrip()
-        assert content == expected
+        assert content == ",".join(expected)
     # assert files object version content
     with open(f"{files_copy_load.tmp_dir}/files_files.csv", "r") as file:
         # id, created, updated, uri, storage_class, size, checksum, readable, writable, last_check_at, last_check
         expected = (
-            "3,"
-            "2023-04-19,"
-            "2023-04-19,"
-            "path/to/file,"
-            "L,"
-            "1234,"
-            "md5:abcd1234,"
-            "True,"
-            "True,"
-            ","
-            "False"
+            "3",
+            "2023-04-19",
+            "2023-04-19",
+            "path/to/file",
+            "L",
+            "1234",
+            "md5:abcd1234",
+            "True",
+            "True",
+            "",
+            "False",
         )
         content = file.read().rstrip()
-        assert content == expected
+        assert content == ",".join(expected)
     # assert files instance content
     with open(f"{files_copy_load.tmp_dir}/files_object.csv", "r") as file:
         #  version_id, created, updated, key, bucket_id, file_id, _mimetype, is_head
-        expected = "2," "2023-04-19," "2023-04-19," "file.txt," "1," "3," "," "True"
+        expected = (
+            "2",
+            "2023-04-19",
+            "2023-04-19",
+            "file.txt",
+            "1",
+            "3",
+            "",
+            "True",
+        )
         content = file.read().rstrip()
-        assert content == expected
+        assert content == ",".join(expected)
