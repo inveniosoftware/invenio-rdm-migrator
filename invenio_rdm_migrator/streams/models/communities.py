@@ -82,6 +82,6 @@ class CommunityFile(Model):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     json: Mapped[dict] = mapped_column(nullable=True)
     version_id: Mapped[int]
-    key: Mapped[str] = mapped_column(primary_key=True)
+    key: Mapped[str]
     record_id: Mapped[UUID]
     object_version_id: Mapped[UUID]

@@ -62,7 +62,7 @@ class LoadAction(Action, ABC):
         self.data = self.data_cls(**data)
         super().__init__()
 
-    def _generate_pks(self):
+    def _generate_pks(self, session: orm.Session = None):
         for attr_name, path, pk_func in self.pks:
             try:
                 attr = getattr(self.data, attr_name)
@@ -75,24 +75,24 @@ class LoadAction(Action, ABC):
                 logger = Logger.get_logger()
                 logger.exception(f"Path {path} not found on record", exc_info=1)
 
-    def _resolve_references(self, **kwargs):  # pragma: no cover
+    def _resolve_references(self, session: orm.Session = None, **kwargs):
         """Resolve references e.g communities slug names."""
         pass
 
     @abstractmethod
-    def _generate_rows(self, **kwargs):  # pragma: no cover
+    def _generate_rows(self, session: orm.Session = None, **kwargs):
         """Yield generated rows."""
 
-    def prepare(self, **kwargs):
+    def prepare(self, session: orm.Session, **kwargs):
         """Generate the SQL statements required to persist the action.
 
         Any required data should be part of the instance attributes.
         """
         # is_db_empty would come in play and make _generate_pks optional
-        self._generate_pks()
+        self._generate_pks(session=session)
         # resolve entry references
-        self._resolve_references()
-        yield from self._generate_rows(**kwargs)
+        self._resolve_references(session=session)
+        yield from self._generate_rows(session=session, **kwargs)
 
 
 class TransformAction(Action, DatetimeMixin, ABC):

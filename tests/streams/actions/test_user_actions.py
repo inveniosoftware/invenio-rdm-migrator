@@ -84,10 +84,10 @@ def sessions_data():
     ]
 
 
-def test_register_new_user(secret_keys_state, user_data, login_info_data):
-    data = dict(tx_id=1, user=user_data, login_information=login_info_data)
+def test_register_new_user(session, secret_keys_state, user_data, login_info_data):
+    data = dict(user=user_data, login_information=login_info_data)
     action = UserRegistrationAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 2
     assert rows[0].type == OperationType.INSERT
     assert rows[0].model == User
@@ -95,10 +95,10 @@ def test_register_new_user(secret_keys_state, user_data, login_info_data):
     assert rows[1].model == LoginInformation
 
 
-def test_edit_user(secret_keys_state, user_data, login_info_data):
-    data = dict(tx_id=1, user=user_data, login_information=login_info_data)
+def test_edit_user(session, secret_keys_state, user_data, login_info_data):
+    data = dict(user=user_data, login_information=login_info_data)
     action = UserEditAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 2
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == User
@@ -106,14 +106,14 @@ def test_edit_user(secret_keys_state, user_data, login_info_data):
     assert rows[1].model == LoginInformation
 
 
-def test_deactivate_user(secret_keys_state, user_data, sessions_data):
+def test_deactivate_user(session, secret_keys_state, user_data, sessions_data):
     # prepare
     user_data["active"] = False
 
     # test
-    data = dict(tx_id=1, user=user_data, sessions=sessions_data)
+    data = dict(user=user_data, sessions=sessions_data)
     action = UserDeactivationAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 3
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == User

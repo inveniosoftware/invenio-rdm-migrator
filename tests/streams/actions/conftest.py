@@ -9,6 +9,40 @@
 
 import pytest
 
+from invenio_rdm_migrator.streams.models.communities import (
+    Community,
+    CommunityFile,
+    CommunityMember,
+    FeaturedCommunity,
+    RDMParentCommunityMetadata,
+)
+from invenio_rdm_migrator.streams.models.files import (
+    FilesBucket,
+    FilesInstance,
+    FilesObjectVersion,
+)
+from invenio_rdm_migrator.streams.models.github import Release, Repository, WebhookEvent
+from invenio_rdm_migrator.streams.models.oai import OAISet
+from invenio_rdm_migrator.streams.models.oauth import (
+    RemoteAccount,
+    RemoteToken,
+    ServerClient,
+    ServerToken,
+)
+from invenio_rdm_migrator.streams.models.pids import PersistentIdentifier
+from invenio_rdm_migrator.streams.models.records import (
+    RDMDraftFile,
+    RDMDraftMetadata,
+    RDMParentMetadata,
+    RDMVersionState,
+)
+from invenio_rdm_migrator.streams.models.users import (
+    LoginInformation,
+    SessionActivity,
+    User,
+    UserIdentity,
+)
+
 
 ###
 # Draft
@@ -233,3 +267,52 @@ def fr_data(ov_data):
         "record_id": None,
         "object_version_id": ov_data["version_id"],
     }
+
+
+@pytest.fixture(scope="session")
+def database(engine):
+    """Setup database.
+
+    Scope: module
+
+    Normally, tests should use the function-scoped :py:data:`db` fixture
+    instead. This fixture takes care of creating the database/tables and
+    removing the tables once tests are done.
+    """
+    tables = [
+        Community,
+        CommunityFile,
+        CommunityMember,
+        FeaturedCommunity,
+        FilesBucket,
+        FilesInstance,
+        FilesObjectVersion,
+        LoginInformation,
+        OAISet,
+        PersistentIdentifier,
+        RDMDraftMetadata,
+        RDMDraftFile,
+        RDMParentMetadata,
+        RDMVersionState,
+        RDMParentCommunityMetadata,
+        RemoteAccount,
+        RemoteToken,
+        Release,
+        Repository,
+        ServerClient,
+        ServerToken,
+        SessionActivity,
+        User,
+        UserIdentity,
+        WebhookEvent,
+    ]
+
+    # create tables
+    for model in tables:
+        model.__table__.create(bind=engine, checkfirst=True)
+
+    yield
+
+    # remove tables
+    for model in tables:
+        model.__table__.drop(engine)

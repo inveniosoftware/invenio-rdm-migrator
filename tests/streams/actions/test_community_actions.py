@@ -7,7 +7,12 @@
 
 """Community actions tests."""
 
+from types import SimpleNamespace
+from uuid import uuid4
+
 import pytest
+import sqlalchemy as sa
+from testutils import assert_model_count
 
 from invenio_rdm_migrator.load.ids import generate_uuid
 from invenio_rdm_migrator.load.postgresql.transactions.operations import OperationType
@@ -78,7 +83,7 @@ def oai_set_data():
     return {
         "created": "2023-06-29T13:00:00",
         "updated": "2023-06-29T14:00:00",
-        "spec": "community-test-community",
+        "spec": "user-test-community",
         "name": "Test community",
         "description": "Test community description",
     }
@@ -137,6 +142,8 @@ def ov_data(fi_data):
 def community_file_data():
     """Community file data."""
     return {
+        "created": "2023-06-29T13:00:00",
+        "updated": "2023-06-29T14:00:00",
         "json": {},
         "record_id": None,
         "version_id": 1,
@@ -144,8 +151,79 @@ def community_file_data():
     }
 
 
+@pytest.fixture(scope="function")
+def existing_community(
+    session,
+    database,
+    pg_tx,
+    community_data,
+    owner_data,
+    bucket_data,
+    oai_set_data,
+    community_file_data,
+    fi_data,
+    ov_data,
+):
+    pg_tx.run(
+        [
+            CommunityCreateAction(
+                dict(
+                    community=community_data,
+                    owner=owner_data,
+                    bucket=bucket_data,
+                    oai_set=oai_set_data,
+                    community_file=community_file_data,
+                    file_instance=fi_data,
+                    object_version=ov_data,
+                )
+            )
+        ]
+    )
+    return SimpleNamespace(
+        bucket=session.scalar(sa.select(FilesBucket)),
+        oai_set=session.scalar(sa.select(OAISet)),
+        community=session.scalar(sa.select(Community)),
+        member=session.scalar(sa.select(CommunityMember)),
+        file_instance=session.scalar(sa.select(FilesInstance)),
+        community_file=session.scalar(sa.select(CommunityFile)),
+        object_version=session.scalar(sa.select(FilesObjectVersion)),
+    )
+
+
+@pytest.fixture(scope="function")
+def existing_community_without_logo(
+    session,
+    database,
+    pg_tx,
+    community_data,
+    owner_data,
+    bucket_data,
+    oai_set_data,
+):
+    pg_tx.run(
+        [
+            CommunityCreateAction(
+                dict(
+                    community=community_data,
+                    owner=owner_data,
+                    bucket=bucket_data,
+                    oai_set=oai_set_data,
+                )
+            )
+        ]
+    )
+    return SimpleNamespace(
+        bucket=session.scalar(sa.select(FilesBucket)),
+        oai_set=session.scalar(sa.select(OAISet)),
+        community=session.scalar(sa.select(Community)),
+        member=session.scalar(sa.select(CommunityMember)),
+    )
+
+
 def test_create_community(
-    communities_state,
+    session,
+    database,
+    pg_tx,
     community_data,
     owner_data,
     oai_set_data,
@@ -156,7 +234,6 @@ def test_create_community(
 ):
     """Test community create action."""
     data = dict(
-        tx_id=1,
         community=community_data,
         owner=owner_data,
         bucket=bucket_data,
@@ -167,7 +244,7 @@ def test_create_community(
     )
 
     action = CommunityCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 7
 
     bucket_row, community_row, oai_set_row, owner_row, fi_row, ov_row, cf_row = rows
@@ -177,15 +254,12 @@ def test_create_community(
     assert bucket_row.model == FilesBucket
 
     c_id = community_row.data["id"]
-    slug = community_row.data["slug"]
     assert community_row.type == OperationType.INSERT
     assert community_row.model == Community
     assert community_row.data["bucket_id"] == bucket_id
 
-    oai_set_id = oai_set_row.data["id"]
     assert oai_set_row.type == OperationType.INSERT
     assert oai_set_row.model == OAISet
-    assert oai_set_id
     assert oai_set_row.data["search_pattern"] == f"parent.communities.ids:{c_id}"
     assert oai_set_row.data["system_created"] is True
 
@@ -201,26 +275,25 @@ def test_create_community(
     assert ov_row.model == FilesObjectVersion
     assert ov_row.data["bucket_id"] == bucket_id
 
-    cf_id = cf_row.data["id"]
     assert cf_row.type == OperationType.INSERT
     assert cf_row.model == CommunityFile
     assert cf_row.data["record_id"] == c_id
     assert cf_row.data["object_version_id"] == ov_id
 
-    # Community is in the state
-    assert communities_state.get(slug) == {
-        "slug": slug,
-        "id": c_id,
-        "bucket_id": bucket_id,
-        "owner_id": 1234,
-        "oai_set_id": oai_set_id,
-        "community_file_id": cf_id,
-        "logo_object_version_id": ov_id,
-    }
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 1)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 1)
+    assert_model_count(session, FilesObjectVersion, 1)
+    assert_model_count(session, CommunityFile, 1)
 
 
 def test_create_community_no_logo(
-    communities_state,
+    session,
+    database,
+    pg_tx,
     community_data,
     owner_data,
     oai_set_data,
@@ -228,7 +301,6 @@ def test_create_community_no_logo(
 ):
     """Test community create action w/o logo."""
     data = dict(
-        tx_id=1,
         community=community_data,
         owner=owner_data,
         bucket=bucket_data,
@@ -236,7 +308,7 @@ def test_create_community_no_logo(
     )
 
     action = CommunityCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 4
 
     bucket_row, community_row, oai_set_row, owner_row = rows
@@ -252,7 +324,6 @@ def test_create_community_no_logo(
 
     assert oai_set_row.type == OperationType.INSERT
     assert oai_set_row.model == OAISet
-    assert oai_set_row.data["id"]
     assert oai_set_row.data["search_pattern"] == f"parent.communities.ids:{c_id}"
     assert oai_set_row.data["system_created"] is True
 
@@ -260,32 +331,31 @@ def test_create_community_no_logo(
     assert owner_row.model == CommunityMember
     assert owner_row.data["community_id"] == c_id
 
-    # Community is in the state
-    assert communities_state.get(community_row.data["slug"]) == {
-        "slug": community_row.data["slug"],
-        "id": c_id,
-        "bucket_id": bucket_id,
-        "owner_id": 1234,
-        "oai_set_id": oai_set_row.data["id"],
-        "community_file_id": None,
-        "logo_object_version_id": None,
-    }
+    # Run the actions
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 1)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 0)
+    assert_model_count(session, FilesObjectVersion, 0)
+    assert_model_count(session, CommunityFile, 0)
 
 
 def test_update_community(
-    communities_state,
+    session,
+    database,
+    pg_tx,
     community_data,
+    existing_community_without_logo,
     fi_data,
     ov_data,
     community_file_data,
 ):
     """Test community update action."""
-    # Use a community that's already in the state
-    slug = community_data["slug"] = "comm"
-    state = communities_state.get(slug)
-    community_id = state["id"]
-    bucket_id = state["bucket_id"]
-    oai_set_id = state["oai_set_id"]
+    # Use a community that's already in the DB
+    community_id = str(existing_community_without_logo.community.id)
+    bucket_id = str(existing_community_without_logo.bucket.id)
 
     # remove/modify some keys from the community
     community_data.pop("created")
@@ -294,23 +364,22 @@ def test_update_community(
     community_data["json"]["metadata"]["title"] = "Test community (v2)"
 
     data = dict(
-        tx_id=1,
         community=community_data,
         community_file=community_file_data,
         file_instance=fi_data,
         object_version=ov_data,
     )
     action = CommunityUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 4
 
     community_row, fi_row, ov_row, cf_row = rows
 
     assert community_row.type == OperationType.UPDATE
     assert community_row.model == Community
-    assert community_row.data["id"] == community_id
-    # Only the PK and the updated values ae present
-    assert community_row.data.keys() == {"id", "updated", "json", "slug"}
+    assert str(community_row.data["id"]) == community_id
+    # Only the PK and the updated values are present
+    assert community_row.data.keys() == {"id", "updated", "json", "slug", "bucket_id"}
 
     assert fi_row.type == OperationType.INSERT
     assert fi_row.model == FilesInstance
@@ -318,37 +387,34 @@ def test_update_community(
     ov_id = ov_row.data["version_id"]
     assert ov_row.type == OperationType.INSERT
     assert ov_row.model == FilesObjectVersion
-    assert ov_row.data["bucket_id"] == bucket_id
+    assert str(ov_row.data["bucket_id"]) == bucket_id
 
-    cf_id = cf_row.data["id"]
     assert cf_row.type == OperationType.INSERT
     assert cf_row.model == CommunityFile
-    assert cf_row.data["record_id"] == community_id
-    assert cf_row.data["object_version_id"] == ov_id
+    assert str(cf_row.data["record_id"]) == community_id
+    assert str(cf_row.data["object_version_id"]) == ov_id
 
-    # Community state has been updated with the file PKs
-    assert communities_state.get(slug) == {
-        "slug": slug,
-        "id": community_id,
-        "bucket_id": bucket_id,
-        "owner_id": 1234,
-        "oai_set_id": oai_set_id,
-        "community_file_id": cf_id,
-        "logo_object_version_id": ov_id,
-    }
+    # Run the actions
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 1)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 1)
+    assert_model_count(session, FilesObjectVersion, 1)
+    assert_model_count(session, CommunityFile, 1)
 
 
 def test_update_community_only_metadata(
-    communities_state,
+    session,
+    database,
+    pg_tx,
+    existing_community,
     community_data,
 ):
     """Test community update action for only metadata."""
-    # Use a community that's already in the state
-    slug = community_data["slug"] = "comm"
-    state = communities_state.get(slug)
-    community_id = state["id"]
-    bucket_id = state["bucket_id"]
-    oai_set_id = state["oai_set_id"]
+    # Use a community that's already in the DB
+    community_id = str(existing_community.community.id)
 
     # remove/modify some keys from the community
     community_data.pop("created")
@@ -356,65 +422,58 @@ def test_update_community_only_metadata(
     community_data.pop("deletion_status")
     community_data["json"]["metadata"]["title"] = "Test community (v2)"
 
-    data = dict(tx_id=1, community=community_data)
+    data = dict(community=community_data)
     action = CommunityUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 1
 
     (community_row,) = rows
 
     assert community_row.type == OperationType.UPDATE
     assert community_row.model == Community
-    assert community_row.data["id"] == community_id
-    assert community_row.data.keys() == {"id", "updated", "json", "slug"}
+    assert str(community_row.data["id"]) == community_id
+    assert community_row.data.keys() == {"id", "updated", "json", "slug", "bucket_id"}
 
-    # Community state has been updated with the file PKs
-    assert communities_state.get(slug) == {
-        "slug": slug,
-        "id": community_id,
-        "bucket_id": bucket_id,
-        "owner_id": 1234,
-        "oai_set_id": oai_set_id,
-        "community_file_id": None,
-        "logo_object_version_id": None,
-    }
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 1)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 1)
+    assert_model_count(session, FilesObjectVersion, 1)
+    assert_model_count(session, CommunityFile, 1)
 
 
 def test_update_community_update_existing_logo(
+    session,
+    database,
     communities_state,
     community_data,
+    existing_community,
+    pg_tx,
     fi_data,
     ov_data,
     community_file_data,
 ):
     """Test community update action for a community with an existing logo."""
     # Use a community that's already in the state
-    slug = community_data["slug"] = "comm"
-    state = communities_state.get(slug)
-    community_id = state["id"]
-    bucket_id = state["bucket_id"]
-    oai_set_id = state["oai_set_id"]
+    community_id = str(existing_community.community.id)
+    bucket_id = str(existing_community.bucket.id)
 
     # Add existing logo file PKs
-    community_file_id = generate_uuid(None)
     old_logo_object_version_id = generate_uuid(None)
-    communities_state.update(
-        slug,
-        {
-            "community_file_id": community_file_id,
-            "logo_object_version_id": old_logo_object_version_id,
-        },
-    )
 
+    fi_data["id"] = str(uuid4())
+    ov_data["version_id"] = str(uuid4())
+    ov_data["file_id"] = fi_data["id"]
     data = dict(
-        tx_id=1,
         community=community_data,
         community_file=community_file_data,
         file_instance=fi_data,
         object_version=ov_data,
     )
     action = CommunityUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 5
 
     community_row, fi_row, old_ov_row, new_ov_row, cf_row = rows
@@ -435,89 +494,84 @@ def test_update_community_update_existing_logo(
     assert new_ov_id != old_logo_object_version_id
     assert new_ov_row.type == OperationType.INSERT
     assert new_ov_row.model == FilesObjectVersion
-    assert new_ov_row.data["bucket_id"] == bucket_id
+    assert str(new_ov_row.data["bucket_id"]) == bucket_id
 
-    assert cf_row.data["id"] == community_file_id
     assert cf_row.type == OperationType.UPDATE
     assert cf_row.model == CommunityFile
-    assert cf_row.data["record_id"] == community_id
-    assert cf_row.data["object_version_id"] == new_ov_id
+    assert str(cf_row.data["record_id"]) == community_id
+    assert str(cf_row.data["object_version_id"]) == new_ov_id
 
-    # Community state has been updated with the file PKs
-    assert communities_state.get(slug) == {
-        "slug": slug,
-        "id": community_id,
-        "bucket_id": bucket_id,
-        "owner_id": 1234,
-        "oai_set_id": oai_set_id,
-        "community_file_id": community_file_id,
-        "logo_object_version_id": new_ov_id,
-    }
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 1)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 2)
+    assert_model_count(session, FilesObjectVersion, 2)
+    assert_model_count(session, CommunityFile, 1)
 
 
 def test_delete_community(
-    communities_state,
+    session,
+    database,
     community_data,
+    pg_tx,
+    existing_community_without_logo,
 ):
     """Test community delete action."""
-    # Use a community that's already in the state
-    slug = community_data["slug"] = "comm"
-    state = communities_state.get(slug)
-    community_id = state["id"]
-    oai_set_id = state["oai_set_id"]
-
-    data = dict(tx_id=1, community=community_data)
+    # Use a community that's already in the DB
+    community_id = str(existing_community_without_logo.community.id)
+    oai_set_id = existing_community_without_logo.oai_set.id
+    data = dict(community=community_data)
     action = CommunityDeleteAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 2
 
     community_row, oai_set_row = rows
 
     assert community_row.type == OperationType.UPDATE
     assert community_row.model == Community
-    assert community_row.data["id"] == community_id
+    assert str(community_row.data["id"]) == community_id
     assert community_row.data["json"] is None
 
     assert oai_set_row.type == OperationType.DELETE
     assert oai_set_row.model == OAISet
     assert oai_set_row.data["id"] == oai_set_id
 
-    # Community state is not deleted
-    assert communities_state.get(slug)
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 0)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 0)
+    assert_model_count(session, FilesObjectVersion, 0)
+    assert_model_count(session, CommunityFile, 0)
 
 
 def test_delete_community_with_logo(
-    communities_state,
+    session,
+    database,
+    pg_tx,
     community_data,
+    existing_community,
 ):
     """Test community delete action for community with logo."""
     # Use a community that's already in the state
-    slug = community_data["slug"] = "comm"
-    state = communities_state.get(slug)
-    community_id = state["id"]
-    oai_set_id = state["oai_set_id"]
+    community_id = str(existing_community.community.id)
+    oai_set_id = existing_community.oai_set.id
+    logo_object_version_id = str(existing_community.object_version.version_id)
+    community_file_id = str(existing_community.community_file.id)
 
-    # Add existing logo file PKs
-    community_file_id = generate_uuid(None)
-    logo_object_version_id = generate_uuid(None)
-    communities_state.update(
-        slug,
-        {
-            "community_file_id": community_file_id,
-            "logo_object_version_id": logo_object_version_id,
-        },
-    )
-
-    data = dict(tx_id=1, community=community_data)
+    data = dict(community=community_data)
     action = CommunityDeleteAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
     assert len(rows) == 4
 
     community_row, oai_set_row, ov_row, cf_row = rows
 
     assert community_row.type == OperationType.UPDATE
     assert community_row.model == Community
-    assert community_row.data["id"] == community_id
+    assert str(community_row.data["id"]) == community_id
     assert community_row.data["json"] is None
 
     assert oai_set_row.type == OperationType.DELETE
@@ -526,11 +580,87 @@ def test_delete_community_with_logo(
 
     assert ov_row.type == OperationType.DELETE
     assert ov_row.model == FilesObjectVersion
-    assert ov_row.data["version_id"] == logo_object_version_id
+    assert str(ov_row.data["version_id"]) == logo_object_version_id
 
     assert cf_row.type == OperationType.DELETE
     assert cf_row.model == CommunityFile
-    assert cf_row.data["id"] == community_file_id
+    assert str(cf_row.data["id"]) == community_file_id
 
-    # Community state is not deleted
-    assert communities_state.get(slug)
+    pg_tx.run([action])
+    assert_model_count(session, FilesBucket, 1)
+    assert_model_count(session, Community, 1)
+    assert_model_count(session, OAISet, 0)
+    assert_model_count(session, CommunityMember, 1)
+    assert_model_count(session, FilesInstance, 1)
+    assert_model_count(session, FilesObjectVersion, 0)
+    assert_model_count(session, CommunityFile, 0)
+
+
+def test_create_community_dry(
+    session,
+    database,
+    pg_tx_dry,
+    community_data,
+    owner_data,
+    oai_set_data,
+    bucket_data,
+    fi_data,
+    ov_data,
+    community_file_data,
+):
+    """Test community create action."""
+    data = dict(
+        community=community_data,
+        owner=owner_data,
+        bucket=bucket_data,
+        oai_set=oai_set_data,
+        community_file=community_file_data,
+        file_instance=fi_data,
+        object_version=ov_data,
+    )
+
+    action = CommunityCreateAction(data)
+    rows = list(action.prepare(session))
+    assert len(rows) == 7
+
+    bucket_row, community_row, oai_set_row, owner_row, fi_row, ov_row, cf_row = rows
+
+    bucket_id = bucket_row.data["id"]
+    assert bucket_row.type == OperationType.INSERT
+    assert bucket_row.model == FilesBucket
+
+    c_id = community_row.data["id"]
+    assert community_row.type == OperationType.INSERT
+    assert community_row.model == Community
+    assert community_row.data["bucket_id"] == bucket_id
+
+    assert oai_set_row.type == OperationType.INSERT
+    assert oai_set_row.model == OAISet
+    assert oai_set_row.data["search_pattern"] == f"parent.communities.ids:{c_id}"
+    assert oai_set_row.data["system_created"] is True
+
+    assert owner_row.type == OperationType.INSERT
+    assert owner_row.model == CommunityMember
+    assert owner_row.data["community_id"] == c_id
+
+    assert fi_row.type == OperationType.INSERT
+    assert fi_row.model == FilesInstance
+
+    ov_id = ov_row.data["version_id"]
+    assert ov_row.type == OperationType.INSERT
+    assert ov_row.model == FilesObjectVersion
+    assert ov_row.data["bucket_id"] == bucket_id
+
+    assert cf_row.type == OperationType.INSERT
+    assert cf_row.model == CommunityFile
+    assert cf_row.data["record_id"] == c_id
+    assert cf_row.data["object_version_id"] == ov_id
+
+    pg_tx_dry.run([action])
+    assert_model_count(session, FilesBucket, 0)
+    assert_model_count(session, Community, 0)
+    assert_model_count(session, OAISet, 0)
+    assert_model_count(session, CommunityMember, 0)
+    assert_model_count(session, FilesInstance, 0)
+    assert_model_count(session, FilesObjectVersion, 0)
+    assert_model_count(session, CommunityFile, 0)

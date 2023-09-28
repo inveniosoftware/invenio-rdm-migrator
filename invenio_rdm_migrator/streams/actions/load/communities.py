@@ -10,10 +10,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import sqlalchemy as sa
+
 from ....actions import LoadAction, LoadData
-from ....load.ids import generate_pk_for, generate_uuid
+from ....load.ids import generate_uuid
 from ....load.postgresql.transactions.operations import Operation, OperationType
-from ....state import STATE
 from ...models.communities import Community, CommunityFile, CommunityMember
 from ...models.files import FilesBucket, FilesInstance, FilesObjectVersion
 from ...models.oai import OAISet
@@ -39,7 +40,6 @@ class CommunityCreateAction(LoadAction):
     pks = [
         ("community", "id", generate_uuid),
         ("owner", "id", generate_uuid),
-        ("oai_set", "id", generate_pk_for(OAISet)),
         ("bucket", "id", generate_uuid),
         ("community_file", "id", generate_uuid),
     ]
@@ -50,8 +50,6 @@ class CommunityCreateAction(LoadAction):
     def _generate_rows(self, **kwargs):
         """Generates rows for a new community."""
         community_id = self.data.community["id"]
-        slug = self.data.community["slug"]
-        community_file_id = None
         logo_object_version_id = None
 
         # Fill-in the community bucket
@@ -61,7 +59,6 @@ class CommunityCreateAction(LoadAction):
         yield Operation(OperationType.INSERT, FilesBucket, self.data.bucket)
         yield Operation(OperationType.INSERT, Community, self.data.community)
 
-        oai_set_id = self.data.oai_set["id"]
         self.data.oai_set["search_pattern"] = f"parent.communities.ids:{community_id}"
         self.data.oai_set["system_created"] = True
         yield Operation(OperationType.INSERT, OAISet, self.data.oai_set)
@@ -84,23 +81,9 @@ class CommunityCreateAction(LoadAction):
             yield Operation(OperationType.INSERT, FilesObjectVersion, object_version)
 
             community_file = self.data.community_file
-            community_file_id = community_file["id"]
             community_file["record_id"] = community_id
             community_file["object_version_id"] = logo_object_version_id
             yield Operation(OperationType.INSERT, CommunityFile, community_file)
-
-        # Add to state
-        STATE.COMMUNITIES.add(
-            slug,
-            {
-                "id": community_id,
-                "bucket_id": bucket_id,
-                "oai_set_id": oai_set_id,
-                "owner_id": self.data.owner["user_id"],
-                "community_file_id": community_file_id,
-                "logo_object_version_id": logo_object_version_id,
-            },
-        )
 
 
 @dataclass
@@ -113,7 +96,6 @@ class CommunityUpdateData(LoadData):
     file_instance: Optional[dict] = None
     object_version: Optional[dict] = None
 
-    # Filled-in by the action
     old_object_version_id: Optional[str] = None
 
 
@@ -122,26 +104,32 @@ class CommunityUpdateAction(LoadAction):
 
     name = "community-update"
     data_cls = CommunityUpdateData
+    data: CommunityUpdateData
 
     pks = [
         # We generate a ComunityFile.id, just in case there was no logo before
         ("community_file", "id", generate_uuid),
     ]
 
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, session, **kwargs):
         slug = self.data.community["slug"]
-        state = STATE.COMMUNITIES.get(slug)
-        self.data.community.setdefault("id", state["id"])
+        community = session.scalars(
+            sa.select(Community).where(Community.slug == slug)
+        ).one_or_none()
+        self.data.community.setdefault("id", community.id)
 
         # if it's also a logo update we need to resolve more PKs/FKs
         if self.data.community_file:
-            self.data.old_object_version_id = state["logo_object_version_id"]
-            self.data.object_version["bucket_id"] = state["bucket_id"]
+            self.data.object_version["bucket_id"] = community.bucket_id
 
+            community_file = session.scalars(
+                sa.select(CommunityFile).where(CommunityFile.record_id == community.id)
+            ).one_or_none()
             # If there was a logo already, we reuse the community file PK
-            if state["community_file_id"]:
-                self.data.community_file["id"] = state["community_file_id"]
-            self.data.community_file["record_id"] = state["id"]
+            if community_file:
+                self.data.old_object_version_id = community_file.object_version_id
+                self.data.community_file["id"] = community_file.id
+            self.data.community_file["record_id"] = community.id
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new community."""
@@ -187,15 +175,6 @@ class CommunityUpdateAction(LoadAction):
                     self.data.community_file,
                 )
 
-            # Update the logo state
-            STATE.COMMUNITIES.update(
-                self.data.community["slug"],
-                {
-                    "community_file_id": self.data.community_file["id"],
-                    "logo_object_version_id": self.data.object_version["version_id"],
-                },
-            )
-
 
 @dataclass
 class CommunityDeleteData(LoadData):
@@ -214,17 +193,28 @@ class CommunityDeleteAction(LoadAction):
 
     name = "community-delete"
     data_cls = CommunityDeleteData
+    data: CommunityDeleteData
 
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, session, **kwargs):
         slug = self.data.community["slug"]
-        state = STATE.COMMUNITIES.get(slug)
-        self.data.community.setdefault("id", state["id"])
-        self.data.oai_set_id = state["oai_set_id"]
-        self.data.community_file_id = state["community_file_id"]
-        self.data.object_version_id = state["logo_object_version_id"]
+        community = session.scalars(
+            sa.select(Community).where(Community.slug == slug)
+        ).one_or_none()
+        self.data.community.setdefault("id", community.id)
 
-    def _generate_rows(self, **kwargs):
-        """Generates rows for deleting a communitoy."""
+        self.data.oai_set_id = session.scalars(
+            sa.select(OAISet.id).where(OAISet.spec == f"user-{slug}")
+        ).one_or_none()
+
+        community_file = session.scalars(
+            sa.select(CommunityFile).where(Community.id == community.id)
+        ).one_or_none()
+        if community_file:
+            self.data.community_file_id = community_file.id
+            self.data.object_version_id = community_file.object_version_id
+
+    def _generate_rows(self, session, **kwargs):
+        """Generates rows for deleting a community."""
         # Only soft-delete by setting `json = NULL`
         self.data.community["json"] = None
         yield Operation(OperationType.UPDATE, Community, self.data.community)
@@ -244,8 +234,6 @@ class CommunityDeleteAction(LoadAction):
                 CommunityFile,
                 {"id": self.data.community_file_id},
             )
-
-        # NOTE: We don't update the state actually
 
 
 class CommunityRecordAcceptAction(LoadAction):

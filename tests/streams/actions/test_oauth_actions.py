@@ -66,14 +66,13 @@ def oauth_token_data():
     }
 
 
-def test_create_oauth_server_token(oauth_client_data, oauth_token_data):
+def test_create_oauth_server_token(session, oauth_client_data, oauth_token_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
         token=oauth_token_data,
     )
     action = OAuthServerTokenCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 2
     assert rows[0].type == OperationType.INSERT
@@ -82,14 +81,13 @@ def test_create_oauth_server_token(oauth_client_data, oauth_token_data):
     assert rows[1].model == ServerToken
 
 
-def test_client_oauth_server_token(oauth_client_data, oauth_token_data):
+def test_client_oauth_server_token(session, oauth_client_data, oauth_token_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
         token=oauth_token_data,
     )
     action = OAuthServerTokenUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 2
     assert rows[0].type == OperationType.UPDATE
@@ -98,89 +96,84 @@ def test_client_oauth_server_token(oauth_client_data, oauth_token_data):
     assert rows[1].model == ServerToken
 
 
-def test_client_oauth_server_token_only_client(oauth_client_data):
+def test_client_oauth_server_token_only_client(session, oauth_client_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
     )
     action = OAuthServerTokenUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == ServerClient
 
 
-def test_client_oauth_server_token_only_server(oauth_token_data):
+def test_client_oauth_server_token_only_server(session, oauth_token_data):
     data = dict(
-        tx_id=1,
         token=oauth_token_data,
     )
     action = OAuthServerTokenUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == ServerToken
 
 
-def test_delete_oauth_server_token(oauth_client_data, oauth_token_data):
+def test_delete_oauth_server_token(session, oauth_client_data, oauth_token_data):
     data = dict(
-        tx_id=1,
         token=oauth_token_data,
     )
     action = OAuthServerTokenDeleteAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.DELETE
     assert rows[0].model == ServerToken
 
 
-def test_delete_oauth_server_token_w_client(oauth_client_data, oauth_token_data):
+def test_delete_oauth_server_token_w_client(
+    session, oauth_client_data, oauth_token_data
+):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
         token=oauth_token_data,
     )
     action = OAuthServerTokenDeleteAction(data)
     with pytest.raises(AssertionError):
-        list(action.prepare())
+        list(action.prepare(session))
 
 
-def test_create_oauth_application(oauth_client_data):
+def test_create_oauth_application(session, oauth_client_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
     )
     action = OAuthApplicationCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.INSERT
     assert rows[0].model == ServerClient
 
 
-def test_update_oauth_application(oauth_client_data):
+def test_update_oauth_application(session, oauth_client_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
     )
     action = OAuthApplicationUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == ServerClient
 
 
-def test_delete_oauth_application(oauth_client_data):
+def test_delete_oauth_application(session, oauth_client_data):
     data = dict(
-        tx_id=1,
         client=oauth_client_data,
     )
     action = OAuthApplicationDeleteAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.DELETE
@@ -231,16 +224,18 @@ def account_user_identity():
 
 
 def test_connect_minimal_oauth_account(
-    oauth_remote_account, oauth_remote_token, account_user_identity
+    session,
+    oauth_remote_account,
+    oauth_remote_token,
+    account_user_identity,
 ):
     data = dict(
-        tx_id=1,
         remote_account=oauth_remote_account,
         remote_token=oauth_remote_token,
         user_identity=account_user_identity,
     )
     action = OAuthLinkedAccountConnectAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 3
     assert rows[0].type == OperationType.INSERT
@@ -252,6 +247,7 @@ def test_connect_minimal_oauth_account(
 
 
 def test_connect_full_oauth_account(
+    session,
     oauth_remote_account,
     oauth_remote_token,
     account_user_identity,
@@ -259,7 +255,6 @@ def test_connect_full_oauth_account(
     oauth_token_data,
 ):
     data = dict(
-        tx_id=1,
         remote_account=oauth_remote_account,
         remote_token=oauth_remote_token,
         user_identity=account_user_identity,
@@ -267,7 +262,7 @@ def test_connect_full_oauth_account(
         server_token=oauth_token_data,
     )
     action = OAuthLinkedAccountConnectAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 5
     assert rows[0].type == OperationType.INSERT
@@ -283,16 +278,18 @@ def test_connect_full_oauth_account(
 
 
 def test_disconnect_oauth_account(
-    oauth_remote_account, oauth_remote_token, account_user_identity
+    session,
+    oauth_remote_account,
+    oauth_remote_token,
+    account_user_identity,
 ):
     data = dict(
-        tx_id=1,
         remote_account=oauth_remote_account,
         remote_token=oauth_remote_token,
         user_identity=account_user_identity,
     )
     action = OAuthLinkedAccountDisconnectAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 3
     assert rows[0].type == OperationType.DELETE
@@ -303,14 +300,13 @@ def test_disconnect_oauth_account(
     assert rows[2].model == RemoteAccount
 
 
-def test_disconnect_gh_oauth_account(oauth_token_data, account_user_identity):
+def test_disconnect_gh_oauth_account(session, oauth_token_data, account_user_identity):
     data = dict(
-        tx_id=1,
         token=oauth_token_data,
         user_identity=account_user_identity,
     )
     action = OAuthGHDisconnectToken(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 2
     assert rows[0].type == OperationType.DELETE

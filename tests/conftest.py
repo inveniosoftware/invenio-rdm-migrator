@@ -11,6 +11,7 @@ import tempfile
 
 import pytest
 
+from invenio_rdm_migrator.load.postgresql.transactions.execute import PostgreSQLTx
 from invenio_rdm_migrator.state import STATE, StateDB
 from invenio_rdm_migrator.streams.records.state import ParentModelValidator
 
@@ -38,6 +39,28 @@ def state(tmp_dir):
     STATE.initialized_state(state_db, cache=False, search_cache=False)
 
     return STATE
+
+
+@pytest.fixture(scope="function")
+def pg_tx(db_uri, session):
+    """PostgreSQLTx load configured with test session."""
+    return PostgreSQLTx(
+        db_uri=db_uri,
+        _session=session,
+        dry=False,
+        raise_on_db_error=True,
+    )
+
+
+@pytest.fixture(scope="function")
+def pg_tx_dry(db_uri, session):
+    """PostgreSQLTx load configured with test session and dry run."""
+    return PostgreSQLTx(
+        db_uri=db_uri,
+        _session=session,
+        dry=True,
+        raise_on_db_error=True,
+    )
 
 
 @pytest.fixture(scope="function")

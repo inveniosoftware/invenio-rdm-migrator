@@ -12,7 +12,7 @@ from uuid import uuid4
 from ..state import STATE
 
 
-def generate_uuid(data):
+def generate_uuid(data=None):
     """Generate a UUID."""
     return str(uuid4())
 
@@ -31,7 +31,7 @@ def pid_pk():
     return value
 
 
-def generate_pk(data):
+def generate_pk(data=None):
     """Generate a primary key."""
     return pid_pk()
 
@@ -43,7 +43,7 @@ def generate_pk_for(model_cls):
     "max_{model.__tablename__}_pk".
     """
 
-    def _pk_gen(_):
+    def _pk_gen(_=None):
         state = STATE.VALUES
         key = f"max_{model_cls.__tablename__}_pk"
         state_value = state.get(key)
@@ -58,7 +58,7 @@ def generate_pk_for(model_cls):
     return _pk_gen
 
 
-def generate_recid(data, status="R"):
+def generate_recid(data=None, status="R"):
     """Generate a record id object."""
     # pk is not the pid_value, that comes from rec.json.id in the tg
     return {

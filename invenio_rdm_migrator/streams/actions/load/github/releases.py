@@ -10,10 +10,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import sqlalchemy as sa
+
 from .....actions import LoadAction, LoadData
-from .....load.ids import generate_pk, generate_recid, generate_uuid
+from .....load.ids import generate_recid, generate_uuid
 from .....load.postgresql.transactions.operations import Operation, OperationType
-from .....state import STATE
 from ....models.files import FilesBucket, FilesInstance, FilesObjectVersion
 from ....models.github import Release, Repository
 from ....models.pids import PersistentIdentifier
@@ -92,7 +93,7 @@ class ReleaseProcessAction(LoadAction):
         ("parent", "json.pid", generate_recid),
     ]
 
-    def _generate_rows(self, **kwargs):
+    def _generate_rows(self, session, **kwargs):
         """Generates rows for a gh repo update."""
         # pids
 
@@ -101,17 +102,6 @@ class ReleaseProcessAction(LoadAction):
         yield Operation(
             OperationType.INSERT, PersistentIdentifier, self.data.record_pid
         )
-        STATE.PIDS.add(
-            self.data.record_pid["pid_value"],  # recid
-            {
-                "id": self.data.record_pid["id"],
-                "pid_type": self.data.record_pid["pid_type"],
-                "status": self.data.record_pid["status"],
-                "obj_type": self.data.record_pid["object_type"],
-                "created": self.data.record_pid["created"],
-            },
-        )
-
         yield Operation(
             OperationType.INSERT, PersistentIdentifier, self.data.record_doi
         )
@@ -139,10 +129,13 @@ class ReleaseProcessAction(LoadAction):
         yield Operation(OperationType.INSERT, RDMRecordFile, self.data.file_record)
 
         # records
-        existing_parent = STATE.PARENTS.get(self.data.parent["json"]["id"])
-        parent_id = (
-            existing_parent["id"] if existing_parent else self.data.parent["json"]["id"]
+        existing_parent_id = session.scalar(
+            sa.select(PersistentIdentifier.object_uuid).where(
+                PersistentIdentifier.pid_value == self.data.parent["json"]["id"],
+                PersistentIdentifier.pid_type == "recid",
+            )
         )
+        parent_id = existing_parent_id or self.data.parent["id"]
 
         yield Operation(
             OperationType.DELETE,
@@ -162,17 +155,7 @@ class ReleaseProcessAction(LoadAction):
         )
 
         # parent and state
-        if existing_parent:
-            # TODO: verify no need to yield a parent update
-            # if update is needed, needs to match json.pid.pk = parent_pid.id
-            STATE.PARENTS.update(
-                existing_parent["recid"],  # recid
-                {
-                    "latest_id": self.data.record["id"],
-                    "latest_index": self.data.record["index"],
-                },
-            )
-        else:
+        if not existing_parent_id:
             yield Operation(
                 OperationType.INSERT,
                 RDMParentMetadata,
@@ -184,18 +167,10 @@ class ReleaseProcessAction(LoadAction):
                     version_id=self.data.parent["version_id"],
                 ),
             )
-            STATE.PARENTS.add(
-                self.data.parent["json"]["id"],  # recid
-                {
-                    "id": self.data.parent["id"],
-                    "latest_id": self.data.record["id"],
-                    "latest_index": self.data.record["index"],
-                },
-            )
 
         # versioning
         versioning_op = (
-            OperationType.UPDATE if existing_parent else OperationType.INSERT
+            OperationType.UPDATE if existing_parent_id else OperationType.INSERT
         )
         yield Operation(
             versioning_op,

@@ -59,40 +59,40 @@ def event_data():
     }
 
 
-def test_github_repo_update(gh_repo_data):
-    data = dict(tx_id=1, gh_repository=gh_repo_data)
+def test_github_repo_update(session, gh_repo_data):
+    data = dict(gh_repository=gh_repo_data)
     action = RepoUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
     assert rows[0].model == Repository
 
 
-def test_github_hook_event_create_wo_token(event_data):
-    data = dict(tx_id=1, webhook_event=event_data)
+def test_github_hook_event_create_wo_token(session, event_data):
+    data = dict(webhook_event=event_data)
     action = HookEventCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.INSERT
     assert rows[0].model == WebhookEvent
 
 
-def test_github_hook_event_create_w_token(event_data):
-    data = dict(tx_id=1, webhook_event=event_data)
+def test_github_hook_event_create_w_token(session, event_data):
+    data = dict(webhook_event=event_data)
     action = HookEventCreateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.INSERT
     assert rows[0].model == WebhookEvent
 
 
-def test_github_hook_event_update(event_data):
-    data = dict(tx_id=1, webhook_event=event_data)
+def test_github_hook_event_update(session, event_data):
+    data = dict(webhook_event=event_data)
     action = HookEventUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE
@@ -121,10 +121,10 @@ def gh_release_data():
     }
 
 
-def test_github_release_receive(gh_repo_data, gh_release_data):
-    data = dict(tx_id=1, gh_release=gh_release_data, gh_repository=gh_repo_data)
+def test_github_release_receive(session, gh_repo_data, gh_release_data):
+    data = dict(gh_release=gh_release_data, gh_repository=gh_repo_data)
     action = ReleaseReceiveAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 2
     assert rows[0].type == OperationType.UPDATE
@@ -133,10 +133,10 @@ def test_github_release_receive(gh_repo_data, gh_release_data):
     assert rows[1].model == Release
 
 
-def test_github_release_update(gh_release_data):
-    data = dict(tx_id=1, gh_release=gh_release_data)
+def test_github_release_update(session, gh_release_data):
+    data = dict(gh_release=gh_release_data)
     action = ReleaseUpdateAction(data)
-    rows = list(action.prepare())
+    rows = list(action.prepare(session))
 
     assert len(rows) == 1
     assert rows[0].type == OperationType.UPDATE

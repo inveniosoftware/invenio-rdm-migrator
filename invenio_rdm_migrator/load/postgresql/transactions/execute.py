@@ -19,7 +19,9 @@ from .operations import OperationType
 class PostgreSQLTx(Load):
     """PostgreSQL COPY load."""
 
-    def __init__(self, db_uri, _session=None, dry=True, raise_on_db_error=False, **kwargs):
+    def __init__(
+        self, db_uri, _session=None, dry=True, raise_on_db_error=False, **kwargs
+    ):
         """Constructor."""
         self.db_uri = db_uri
         self.dry = dry
@@ -30,7 +32,10 @@ class PostgreSQLTx(Load):
     def session(self):
         """DB session."""
         if self._session is None:
-            self._session = Session(bind=create_engine(self.db_uri))
+            session_kwargs = dict(bind=create_engine(self.db_uri))
+            if self.dry:
+                session_kwargs["join_transaction_mode"] = "create_savepoint"
+            self._session = Session(**session_kwargs)
         return self._session
 
     def _cleanup(self, db=False):
@@ -44,60 +49,52 @@ class PostgreSQLTx(Load):
         logger = Logger.get_logger()
         exec_kwargs = dict(execution_options={"synchronize_session": False})
 
-        for action in transactions:
-            operations = []
-            try:
-                operations = list(action.prepare())
-            except Exception:
-                logger.exception(
-                    f"Could not load {action.data} ({action.name})",
-                    exc_info=1,
-                )
-
-            with self.session.begin(), self.session.no_autoflush:
-                try:
-                    for op in operations:
-                        if op.type == OperationType.INSERT:
-                            row = op.as_row_dict()
-                            logger.info(f"INSERT {op.model}: {row}")
-                            if not self.dry:
+        outer_trans = None
+        if self.dry:
+            outer_trans = self.session.begin()
+        try:
+            for action in transactions:
+                with self.session.no_autoflush:
+                    nested_trans = self.session.begin_nested()
+                    try:
+                        for op in action.prepare(session=self.session):
+                            if op.type == OperationType.INSERT:
+                                row = op.as_row_dict()
+                                logger.info(f"INSERT {op.model}: {row}")
                                 self.session.execute(
                                     sa.insert(op.model),
                                     [row],
                                     **exec_kwargs,
                                 )
-                        elif op.type == OperationType.DELETE:
-                            logger.info(f"DELETE {op.model}: {op.data}")
-                            if not self.dry:
+                            elif op.type == OperationType.DELETE:
+                                logger.info(f"DELETE {op.model}: {op.data}")
                                 self.session.execute(
                                     sa.delete(op.model).where(*op.pk_clauses),
                                     **exec_kwargs,
                                 )
-                        elif op.type == OperationType.UPDATE:
-                            row = op.as_row_dict()
-                            logger.info(f"UDPATE {op.model}: {op.data}")
-                            if not self.dry:
+                            elif op.type == OperationType.UPDATE:
+                                row = op.as_row_dict()
+                                logger.info(f"UDPATE {op.model}: {op.data}")
                                 self.session.execute(
                                     sa.update(op.model),
                                     [row],
                                     **exec_kwargs,
                                 )
-                        if not self.dry:
                             self.session.flush()
-                        else:
-                            self.session.expunge_all()
-                    # commit all transaction group or none
-                    if not self.dry:
-                        self.session.commit()
-                except Exception as ex:
-                    logger.exception(
-                        f"Could not load {action.data} ({action.name}), {ex}",
-                        exc_info=True,
-                    )
-                    if not self.dry:
-                        self.session.rollback()
-                    if self.raise_on_db_error:
-                        raise
+                        nested_trans.commit()
+                    except Exception:
+                        logger.exception(
+                            f"Could not load {action.data} ({action.name})",
+                            exc_info=True,
+                        )
+                        nested_trans.rollback()
+                        if self.raise_on_db_error:
+                            raise
+        except Exception:
+            logger.exception("Transactions load failed", exc_info=True)
+        finally:
+            if self.dry and outer_trans:
+                outer_trans.rollback()
 
     def run(self, entries, cleanup=False):
         """Load entries."""
