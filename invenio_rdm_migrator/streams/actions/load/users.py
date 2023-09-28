@@ -74,16 +74,6 @@ class UserProfileEditAction(LoadAction):
 
     name = "edit-user-profile"
 
-    def __init__(
-        self,
-        tx_id,
-        profile,
-    ):
-        """Constructor."""
-        super().__init__(tx_id)
-        assert profile  # i.e. not None as parameter
-        self.profile = profile
-
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
         pass
