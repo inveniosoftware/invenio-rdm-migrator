@@ -75,7 +75,7 @@ class TestTransformAction(TransformAction):
         record = next(o["after"] for o in self.tx.operations if o["table"] == "records")
         record["json"]["titles"] = [record["json"].pop("title")]
         return dict(
-            tx_id=self.tx.id,
+            tx=self.tx,
             record=record,
             files=[o["after"] for o in self.tx.operations if o["table"] == "files"],
         )
@@ -92,7 +92,7 @@ def test_transform_returns_load_action(tx):
     load_action = transform._transform(tx)
     assert isinstance(load_action, TestLoadAction)
     assert isinstance(load_action.data, TestLoadData)
-    assert load_action.data.tx_id == 1
+    assert load_action.data.tx == tx
     assert load_action.data.record == {"id": "abc", "json": {"titles": ["Test title"]}}
     assert load_action.data.files == [
         # NOTE: Order doesn't really matter here

@@ -15,7 +15,11 @@ an action. Being the latter the one implementing the logic.
 
 from abc import ABC, abstractclassmethod, abstractmethod
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional
+
+import sqlalchemy.orm as orm
+
+from invenio_rdm_migrator.extract.transactions import Tx
 
 from ..logging import Logger
 from ..transform import DatetimeMixin
@@ -36,7 +40,7 @@ class Action:
 class LoadData:
     """Load action data."""
 
-    tx_id: int
+    tx: Optional[Tx]
 
 
 class LoadAction(Action, ABC):
@@ -54,6 +58,7 @@ class LoadAction(Action, ABC):
         :param pks: a triplet with the attribute, the key and the function.
         """
         assert data is not None
+        data.setdefault("tx", None)
         self.data = self.data_cls(**data)
         super().__init__()
 
@@ -99,18 +104,21 @@ class TransformAction(Action, DatetimeMixin, ABC):
 
     load_cls: ClassVar[type[LoadAction]] = None
 
-    def __init__(self, tx):
+    def __init__(self, tx: Tx):
         """Constructor."""
         assert self.load_cls is not None
-        self.tx = tx
+        self.tx: Tx = tx
         super().__init__()
 
     def transform(self):
         """Transforms an action."""
-        return self.load_cls(self._transform_data())
+        transformed_data = self._transform_data()
+        transformed_data.pop("tx_id", None)
+        transformed_data["tx"] = self.tx
+        return self.load_cls(transformed_data)
 
     @abstractclassmethod
-    def matches_action(cls, tx):  # pragma: no cover
+    def matches_action(cls, tx: Tx):  # pragma: no cover
         """Checks if the data matches with that required by the action."""
 
     @abstractmethod

@@ -82,18 +82,13 @@ def test_item(database, session):
     session.commit()
 
 
-@pytest.fixture(scope="function")
-def pg_tx(db_uri, session):
-    return PostgreSQLTx(db_uri=db_uri, _session=session, dry=False)
-
-
 ###
 # Operation Type
 ###
 
 
 def test_load_transaction_insert(session, pg_tx, database):
-    tx = [TestLoadAction(data={"tx_id": 1, "id": 101, "test": "insert test"})]
+    tx = [TestLoadAction(data={"tx": None, "id": 101, "test": "insert test"})]
     pg_tx.run(tx)
 
     result = session.query(TestModel).all()
@@ -107,14 +102,14 @@ def test_load_transaction_insert(session, pg_tx, database):
 
 
 def test_load_transaction_delete(pg_tx, session, database, test_item):
-    tx = [TestLoadAction(data={"tx_id": 2, "id": 1})]
+    tx = [TestLoadAction(data={"tx": None, "id": 1})]
     pg_tx.run(tx)
 
     session.query(TestModel).all()
 
 
 def test_load_transaction_update(pg_tx, session, database, test_item):
-    tx = [TestLoadAction(data={"tx_id": 1, "id": 1, "test": "update test"})]
+    tx = [TestLoadAction(data={"tx": None, "id": 1, "test": "update test"})]
     pg_tx.run(tx)
 
     result = session.query(TestModel).all()
@@ -137,8 +132,8 @@ def test_load_no_transaction(pg_tx, session, database):
 
 def test_load_transaction_multiple_actions(pg_tx, session, database):
     tx = [
-        TestLoadAction(data={"tx_id": 1, "id": 101, "test": "first instance"}),
-        TestLoadAction(data={"tx_id": 2, "id": 102, "test": "second instance"}),
+        TestLoadAction(data={"tx": None, "id": 101, "test": "first instance"}),
+        TestLoadAction(data={"tx": None, "id": 102, "test": "second instance"}),
     ]
     pg_tx.run(tx)
 
