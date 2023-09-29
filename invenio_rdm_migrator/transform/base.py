@@ -8,6 +8,7 @@
 """Invenio RDM migration transform interfaces."""
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import pypeln
 
@@ -17,9 +18,10 @@ from ..logging import Logger
 class Transform(ABC):
     """Base class for data transformation."""
 
-    def __init__(self, workers=None):
+    def __init__(self, workers=None, throw=False):
         """Initialize base transform."""
         self._workers = workers
+        self._throw = throw
 
     @abstractmethod
     def _transform(self, entry):  # pragma: no cover
@@ -35,7 +37,9 @@ class Transform(ABC):
                 return self._transform(entry)
             except Exception:
                 logger = Logger.get_logger()
-                logger.exception(entry, exc_info=1)
+                logger.exception(entry, exc_info=True)
+                if self._throw:
+                    raise
 
         for result in pypeln.process.map(
             _transform,
@@ -71,7 +75,11 @@ class Entry(ABC):
         self.partial = partial
 
     def _load_partial(
-        self, entry: dict, obj: dict, keys: list[str], prefix: str = None
+        self,
+        entry: dict,
+        obj: dict,
+        keys: list[str],
+        prefix: Optional[str] = None,
     ):
         for key in keys:
             if isinstance(key, tuple):
