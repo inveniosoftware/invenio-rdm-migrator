@@ -12,7 +12,12 @@ from .communities import (
     CommunityDeleteAction,
     CommunityUpdateAction,
 )
-from .drafts import DraftCreateAction, DraftEditAction, DraftPublishNewAction
+from .drafts import (
+    DraftCreateAction,
+    DraftEditAction,
+    DraftPublishEditAction,
+    DraftPublishNewAction,
+)
 from .files import (
     FileDeleteAction,
     FileUploadAction,
@@ -53,6 +58,7 @@ __all__ = (
     "MediaFileUploadAction",
     "MediaFileDeleteAction",
     "DraftPublishNewAction",
+    "DraftPublishEditAction",
     "IgnoredAction",
     "HookEventCreateAction",
     "HookEventUpdateAction",

@@ -10,12 +10,14 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from uuid import uuid4
+
+import sqlalchemy as sa
 
 from ....actions import LoadAction, LoadData
-from ....load.ids import generate_pk, generate_uuid
 from ....load.postgresql.transactions.operations import Operation, OperationType
-from ....state import STATE
-from ...models.files import FilesBucket
+from ...models.communities import Community
+from ...models.files import FilesBucket, FilesObjectVersion
 from ...models.pids import PersistentIdentifier
 from ...models.records import (
     RDMDraftFile,
@@ -25,172 +27,356 @@ from ...models.records import (
     RDMRecordMetadata,
     RDMVersionState,
 )
-from ...records.table_generators.references import (
-    CommunitiesReferencesMixin,
-    PIDsReferencesMixin,
-)
-from .parents import generate_parent_ops
+
+
+def _get_community_id(session, slug):
+    return session.execute(
+        sa.select(Community.id).where(Community.slug == slug)
+    ).one_or_none()
+
+
+def resolve_communities(session, communities):
+    default_slug = communities.get("default")
+    if default_slug:
+        community_id = _get_community_id(session, default_slug)
+        if community_id:
+            communities["default"] = community_id
+        else:
+            communities.pop("default", None)
+            communities["ids"].remove(default_slug)
+
+    communities_slugs = communities.get("ids", [])
+    _ids = []
+    for slug in communities_slugs:
+        community_id = _get_community_id(session, slug)
+        if community_id:
+            _ids.append(community_id)
+
+    communities["ids"] = _ids
+
+
+def get_published_record(session, recid):
+    return session.scalars(
+        sa.select(RDMRecordMetadata)
+        .join(
+            PersistentIdentifier,
+            RDMRecordMetadata.id == PersistentIdentifier.object_uuid,
+        )
+        .where(
+            PersistentIdentifier.pid_type == "recid",
+            PersistentIdentifier.object_type == "rec",
+            PersistentIdentifier.pid_value == recid,
+        )
+    ).one_or_none()
+
+
+def get_pid(session, pid_type, pid_value) -> Optional[PersistentIdentifier]:
+    return session.scalars(
+        sa.select(PersistentIdentifier).where(
+            PersistentIdentifier.pid_type == pid_type,
+            PersistentIdentifier.pid_value == pid_value,
+        )
+    ).one_or_none()
+
+
+def delete_ov(session, bucket_id, key):
+    obj = session.scalar(
+        sa.select(FilesObjectVersion).where(
+            FilesObjectVersion.bucket_id == bucket_id,
+            FilesObjectVersion.key == key,
+            FilesObjectVersion.is_head.is_(True),
+            FilesObjectVersion.file_id.isnot(None),
+        )
+    )
+    if obj:
+        yield Operation(
+            OperationType.UPDATE,
+            FilesObjectVersion,
+            {"version_id": obj.version_id, "is_head": False},
+        )
+        yield Operation(
+            OperationType.INSERT,
+            FilesObjectVersion,
+            {
+                "version_id": uuid4(),
+                "is_head": True,
+            },
+        )
+
+
+def copy_ov(session, src, bucket_id, version_id=None, created=None, updated=None):
+    latest_obj = session.scalar(
+        sa.select(FilesObjectVersion).where(
+            FilesObjectVersion.bucket_id == bucket_id,
+            FilesObjectVersion.key == src.key,
+            FilesObjectVersion.is_head.is_(True),
+        )
+    )
+    if latest_obj is not None:
+        yield Operation(
+            OperationType.UPDATE,
+            FilesObjectVersion,
+            {"version_id": latest_obj.version_id, "is_head": False},
+        )
+
+    yield Operation(
+        OperationType.INSERT,
+        FilesObjectVersion,
+        {
+            "version_id": version_id or uuid4(),
+            "is_head": True,
+            "bucket_id": bucket_id,
+            "key": src.key,
+            "file_id": src.file_id,
+            "created": created or datetime.utcnow(),
+            "updated": updated or datetime.utcnow(),
+        },
+    )
+
+
+def synchronize_files(session, draft, draft_bucket, record, record_bucket):
+    draft_ovs = session.scalars(
+        sa.select(FilesObjectVersion)
+        .join(
+            FilesObjectVersion,
+            RDMDraftFile.object_version_id == FilesObjectVersion.version_id,
+        )
+        .where(
+            RDMDraftFile.record_id == draft["id"],
+            FilesObjectVersion.is_head.is_(True),
+        )
+    ).all()
+
+    record_ovs = session.scalars(
+        sa.select(FilesObjectVersion)
+        .join(
+            FilesObjectVersion,
+            RDMRecordFile.object_version_id == FilesObjectVersion.version_id,
+        )
+        .where(
+            RDMRecordFile.record_id == record["id"],
+            FilesObjectVersion.is_head.is_(True),
+        )
+    ).all()
+
+    changed_ovs = []
+    draft_dict_ovs = {}
+    for ov in draft_ovs:
+        if ov.key not in draft_dict_ovs:
+            draft_dict_ovs[ov.key] = ov
+
+    record_dict_ovs = {}
+    for ov in record_ovs:
+        if ov.key not in record_dict_ovs:
+            record_dict_ovs[ov.key] = ov
+
+    for key, ov in draft_dict_ovs.items():
+        key_in_dest = key in record_dict_ovs
+        if ov.file_id is None:
+            if key_in_dest and record_dict_ovs[key].file_id is not None:
+                yield from delete_ov(session, record_bucket["id"], key)
+                changed_ovs.append(("delete", key))
+        else:
+            if not key_in_dest:
+                new_ov_id = None
+                for op in copy_ov(session, ov, record_bucket["id"]):
+                    new_ov_id = op.data["version_id"]
+                    yield op
+                if new_ov_id:
+                    changed_ovs.append(("add", new_ov_id))
+            else:
+                record_ov = record_dict_ovs[key]
+                file_in_record_differs = ov.file_id != record_ov.file_id
+                ov_deleted_in_dest = record_ov.file_id is None
+                if file_in_record_differs or ov_deleted_in_dest:
+                    new_ov_id = None
+                    for op in copy_ov(session, ov, record_bucket["id"]):
+                        new_ov_id = op.data["version_id"]
+                        yield op
+                    if new_ov_id:
+                        if ov_deleted_in_dest:
+                            changed_ovs.append(("add", new_ov_id))
+                        else:
+                            changed_ovs.append(("update", new_ov_id))
+
+    for key, ov in record_dict_ovs.items():
+        if key not in draft_dict_ovs:
+            yield from delete_ov(session, record_bucket["id"], key)
+            changed_ovs.append(("delete", key))
+    # TODO: Process `changed_ovs` to apply changes to RDMFileRecord
+
+
+def resolve_draft_pids(session, draft):
+    """Enforce record's pids to draft."""
+    if not draft:
+        return
+
+    recid = draft["json"]["id"]
+    forked_published = get_published_record(session, recid)
+    if forked_published:
+        pids = draft["json"]["pids"]
+        has_draft_external_doi = pids.get("doi", {}).get("provider") == "external"
+        if has_draft_external_doi:
+            # keep the draft external value as it might be there for
+            # updating the existing value. Update the draft only with `oai`
+            pids["oai"] = forked_published.json["pids"]["oai"]
+        else:
+            # enfore published record pids to draft
+            pids = forked_published.json["pids"]
 
 
 @dataclass
 class RDMDraftCreateData(LoadData):
     """Draft create action data."""
 
-    parent_pid: dict
-    parent: dict
-    draft_pid: dict
+    pid: dict
     draft: dict
     draft_bucket: dict
+    parent_pid: dict
+    parent: dict
 
 
-class DraftCreateAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
+class DraftCreateAction(LoadAction):
     """RDM draft creation."""
 
     name = "create-draft"
     data_cls = RDMDraftCreateData
+    data: RDMDraftCreateData
 
-    pks = [
-        # not both parent.json.pid and draft.json.pid come filled in from the
-        # transform action to match parent_pid and draft_pid data.
-        ("draft_pid", "id", generate_pk),
-        ("draft", "id", generate_uuid),
-        ("parent_pid", "id", generate_pk),
-        ("parent", "id", generate_uuid),
-    ]
-
-    def _generate_rows(self, **kwargs):
+    def _generate_rows(self, session, **kwargs):
         """Generates rows for a new draft."""
-        yield from self._generate_pid_rows(**kwargs)
-        yield from self._generate_bucket_rows(**kwargs)
-        yield from self._generate_draft_rows(**kwargs)
+        draft = self.data.draft
+        draft["id"] = str(uuid4())
+        parent = self.data.parent
+        parent.setdefault("id", str(uuid4()))
+        pid = self.data.pid
 
-    def _generate_pid_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        pid = self.data.draft_pid
-        if pid["pid_type"] != "depid":
-            # note would raise an exception if it exists
-            STATE.PIDS.add(
-                pid["pid_value"],  # recid
+        published_record = get_published_record(session, draft["json"]["id"])
+        version_state = session.scalars(
+            sa.select(RDMVersionState).where(RDMVersionState.parent_id == parent["id"])
+        ).one_or_none()
+
+        is_first_publish_draft = not published_record and not version_state
+        is_new_version_draft = version_state and not published_record
+
+        if is_first_publish_draft or is_new_version_draft:
+            # Recid PID
+            pid.update(
                 {
-                    "id": pid["id"],
-                    "pid_type": pid["pid_type"],
-                    "status": pid["status"],
-                    "obj_type": pid["object_type"],
-                    "created": pid["created"],
-                },
+                    "pid_type": "recid",
+                    "object_type": "rec",
+                    "object_uuid": draft["id"],
+                    "status": "R",
+                }
             )
             yield Operation(OperationType.INSERT, PersistentIdentifier, pid)
+            pid_model = get_pid(session, "recid", pid["pid_value"])
+            assert pid_model
+            self.data.draft["json"]["pid"] = {
+                "pk": pid_model.id,
+                "obj_type": pid_model.object_type,
+                "pid_type": pid_model.pid_type,
+                "status": pid_model.status,
+            }
+            # Bucket
+            yield Operation(OperationType.INSERT, FilesBucket, self.data.draft_bucket)
+        else:
+            raise Exception("Draft PID creation in invalid state.")
 
-    def _generate_bucket_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        yield Operation(OperationType.INSERT, FilesBucket, self.data.draft_bucket)
-
-    def _generate_draft_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        now = datetime.utcnow().isoformat()
-
-        draft = self.data.draft
-        parent = self.data.parent
-
-        forked_published = STATE.RECORDS.get(draft["json"]["id"])
-        existing_parent = STATE.PARENTS.get(parent["json"]["id"])
-
-        # parent id
-        #  a) draft of a published record, parent id = parent id of published
-        #  b) new version, parent id = parent id of the previous version
-        #  c) draft of a new record, parent id = given by pk func
-
-        # both values should be equal at first, the cannot be set in the transform step
-        # parent.id is calculated in the pks step
-        draft["parent_id"] = parent["id"]
-        if not existing_parent:  # case c
-            STATE.PARENTS.add(
-                parent["json"]["id"],  # recid
-                {"id": parent["id"], "next_draft_id": draft["id"]},
+        # Parent
+        #  A) draft of a published record, parent id = parent id of published
+        #  B) new version, parent id = parent id of the previous version
+        #  C) draft of a new record, parent id = given by pk func
+        if is_first_publish_draft:
+            parent_pid = self.data.parent_pid
+            parent_pid.update(
+                {
+                    "pid_type": "recid",
+                    "object_type": "rec",
+                    "object_uuid": parent["id"],
+                    "status": "R",
+                }
             )
-            # drafts have a parent on save
-            # on the other hand there is no community parent/request
-            yield from generate_parent_ops(parent, self.data.parent_pid)
-
-        else:  # case a and b
-            parent["id"] = existing_parent["id"]
-            draft["parent_id"] = existing_parent["id"]  # keep metadata consistent
-            if not forked_published:
-                # it can only happen once
-                assert not existing_parent.get("next_draft_id")
-                STATE.PARENTS.update(
-                    parent["json"]["id"],
-                    {"next_draft_id": draft["id"]},
-                )
-            else:
-                # state parent  and an existing record must match
-                assert parent["id"] == forked_published["parent_id"]
-
-        if not forked_published:
-            # recid must have been created by a previous action in the same tx group
-            draft_pid = STATE.PIDS.get(draft["json"]["id"])
-            assert draft_pid
-
-            # update to add object_uuid
-            # could avoid this operation but it is clearer on when and why this happens
+            yield Operation(OperationType.INSERT, PersistentIdentifier, parent_pid)
+            parent_pid_model = get_pid(session, "recid", parent_pid["pid_value"])
+            assert parent_pid_model
+            self.data.parent["json"]["pid"] = {
+                "pk": parent_pid_model.id,
+                "obj_type": parent_pid_model.object_type,
+                "pid_type": parent_pid_model.pid_type,
+                "status": parent_pid_model.status,
+            }
             yield Operation(
-                OperationType.UPDATE,
-                PersistentIdentifier,
+                OperationType.INSERT,
+                RDMParentMetadata,
                 dict(
-                    id=draft_pid["id"],  # pk
-                    pid_type=draft_pid["pid_type"],  # in drafts are recid
-                    pid_value=draft["json"]["id"],
-                    status=draft_pid["status"],
-                    object_type="rec",  # hardcoded since the state has the initial one
-                    object_uuid=draft["id"],
-                    created=draft_pid["created"],
-                    updated=now,
+                    id=parent["id"],
+                    json=parent["json"],
+                    created=parent["created"],
+                    updated=parent["updated"],
+                    version_id=parent["version_id"],
+                ),
+            )
+        else:
+            raise Exception("Draft parent creation in invalid state.")
+        draft["parent_id"] = parent["id"]
+
+        if is_first_publish_draft or is_new_version_draft:
+            if is_first_publish_draft:
+                draft_index = 1
+            else:
+                assert version_state
+                draft_index = version_state.latest_index + 1
+            yield Operation(
+                OperationType.INSERT,
+                RDMDraftMetadata,
+                dict(
+                    id=draft["id"],
+                    json=draft["json"],
+                    created=draft["created"],
+                    updated=draft["updated"],
+                    version_id=draft["version_id"],
+                    index=draft_index,
+                    bucket_id=draft["bucket_id"],
+                    parent_id=parent["id"],
+                    expires_at=draft["expires_at"],
+                    fork_version_id=None,
                 ),
             )
 
-        draft_id = forked_published.get("id") or draft["id"]
+        if is_first_publish_draft:
+            yield Operation(
+                OperationType.INSERT,
+                RDMVersionState,
+                dict(
+                    latest_index=None,
+                    parent_id=parent["id"],
+                    latest_id=None,
+                    next_draft_id=draft["id"],
+                ),
+            )
+        elif is_new_version_draft:
+            yield Operation(
+                OperationType.UPDATE,
+                RDMVersionState,
+                dict(
+                    parent_id=parent["id"],
+                    next_draft_id=draft["id"],
+                ),
+            )
 
-        STATE.BUCKETS.add(draft["bucket_id"], {"draft_id": draft_id})
-        yield Operation(
-            OperationType.INSERT,
-            RDMDraftMetadata,
-            dict(
-                id=draft_id,
-                json=draft["json"],
-                created=draft["created"],
-                updated=draft["updated"],
-                version_id=draft["version_id"],
-                index=forked_published.get("index") or draft["index"],
-                bucket_id=draft["bucket_id"],
-                parent_id=parent["id"],
-                expires_at=draft["expires_at"],
-                fork_version_id=forked_published.get("fork_version_id")
-                or draft["fork_version_id"],
-            ),
-        )
-
-        # this query can be avoided by keeping a consistent view across this method
-        existing_parent = STATE.PARENTS.get(parent["json"]["id"])
-        version_op = OperationType.UPDATE if forked_published else OperationType.INSERT
-        yield Operation(
-            version_op,
-            RDMVersionState,
-            dict(
-                latest_index=existing_parent["latest_index"],
-                parent_id=existing_parent["id"],
-                latest_id=existing_parent["latest_id"],
-                next_draft_id=existing_parent["next_draft_id"],
-            ),
-        )
-
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, session, **kwargs):
         """Resolve references e.g communities slug names."""
-        # resolve parent communities slug
         parent = self.data.parent
+        parent_pid = get_pid(session, "recid", parent["json"]["id"])
+        if parent_pid:
+            parent["id"] = str(parent_pid.object_uuid)
+
+        # resolve parent communities slug
         communities = parent["json"].get("communities")
         if communities:
-            self.resolve_communities(communities)
-        self.resolve_draft_pids(self.data.draft)
+            resolve_communities(session, communities)
+        resolve_draft_pids(session, self.data.draft)
 
 
 @dataclass
@@ -199,206 +385,379 @@ class RDMDraftEditData(LoadData):
 
     draft: dict
     parent: dict
+    bucket: Optional[dict]
 
 
-class DraftEditAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
+class DraftEditAction(LoadAction):
     """RDM draft edit/update."""
 
     name = "edit-draft"
     data_cls = RDMDraftEditData
+    data: RDMDraftEditData
 
-    def _generate_rows(self, **kwargs):
+    def _generate_rows(self, session, **kwargs):
         """Generates rows for a new draft."""
         draft = self.data.draft
-        parent = self.data.parent
 
-        assert parent["id"]  # make sure we have an id to update on
-        # data and model keys/fields are the same
-        yield Operation(OperationType.UPDATE, RDMParentMetadata, parent)
+        # resolve draft ID from bucket
+        draft["id"] = session.scalar(
+            sa.select(PersistentIdentifier.object_uuid).where(
+                PersistentIdentifier.pid_type == "recid",
+                PersistentIdentifier.pid_value == draft["json"]["id"],
+            )
+        )
+        yield Operation(
+            OperationType.UPDATE,
+            RDMDraftMetadata,
+            {
+                "id": draft["id"],
+                "json": draft["json"],
+                "updated": draft["updated"],
+                "version_id": RDMDraftMetadata.version_id + 1,
+            },
+        )
+        if self.data.bucket:
+            yield Operation(
+                OperationType.UPDATE,
+                FilesBucket,
+                {
+                    "id": self.data.bucket["id"],
+                    "size": self.data.bucket["size"],
+                    "locked": self.data.bucket["locked"],
+                    "updated": self.data.bucket["updated"],
+                },
+            )
 
-        forked_published = STATE.RECORDS.get(draft["json"]["id"])
-        draft_id = forked_published.get("id") or draft["id"]
-        assert draft_id
-        draft["id"] = draft_id
-
-        # the index and forked_version_id have been properly set from cached when the draft
-        # was created, therefore now they are only passed (from the draft) if given in the
-        # partial data
-        # the parent_id cannot change unless is a support operation (e.g. merge) which
-        # will not happen during migration
-        # therefore all fields come from the draft and match data/model keys/fields
-        yield Operation(OperationType.UPDATE, RDMDraftMetadata, draft)
-
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, session, **kwargs):
         """Resolve references e.g communities slug names."""
         # resolve parent communities slug
         parent = self.data.parent
-        communities = parent.get("json").get("communities")
+        communities = parent.get("json", {}).get("communities")
         if communities:
-            self.resolve_communities(communities)
-        self.resolve_draft_pids(self.data.draft)
-
-        # resolve parent and draft uuid from versioning table
-        state_parent = STATE.PARENTS.get(parent["json"]["id"])
-        self.data.draft["id"] = state_parent["next_draft_id"]
-        self.data.parent["id"] = state_parent["id"]
+            resolve_communities(session, communities)
+        resolve_draft_pids(session, self.data.draft)
 
 
 @dataclass
-class RDMDraftPublishData(LoadData):
-    """Draft publish action data."""
+class RDMDraftPublishNewData(LoadData):
+    """Draft new publish action data."""
 
-    bucket: dict
+    # Files
+    draft_bucket: dict
+    record_bucket: dict
+    record_object_versions: dict
+
+    # Records
     parent: dict
     draft: dict
-    parent_pid: dict
-    draft_pid: dict
-    draft_oai: dict
+    record: dict
+
+    # PIDs
+    pid: dict
+    oai_pid: dict
+    doi: dict
+    parent_pid: Optional[dict] = None
     parent_doi: Optional[dict] = None
-    draft_doi: Optional[dict] = None
+
+    # Communities?
 
 
-class DraftPublishAction(LoadAction, CommunitiesReferencesMixin, PIDsReferencesMixin):
-    """RDM publish creation."""
+class DraftPublishNewAction(LoadAction):
+    """RDM new publish action."""
 
-    # IMPORTANT: at the moment it assumes publishing a new draft
-    # not taking into account forked_published or other cases
+    name = "publish-new-draft"
+    data_cls = RDMDraftPublishNewData
+    data: RDMDraftPublishNewData
 
-    name = "publish-draft"
-    data_cls = RDMDraftPublishData
-
-    def _generate_rows(self, **kwargs):
+    def _generate_rows(self, session, **kwargs):
         """Generates rows for a new draft."""
-        yield from self._generate_pid_rows(**kwargs)
-        yield from self._generate_bucket_rows(**kwargs)
-        yield from self._generate_draft_rows(**kwargs)
+        is_first_publish = self.data.parent_pid is not None
+        is_local_doi = self.data.parent_doi is not None
 
-    def _generate_pid_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        # recid (draft) gets registered when creating a record, keeps the same pid
-        assert self.data.draft_pid["status"] == "R"
-        assert self.data.parent_pid["status"] == "R"
-        # no need to update parent pids, they are not in the state
-        STATE.PIDS.update(self.data.draft_pid["pid_value"], {"status": "R"})
+        draft = self.data.draft
+        record = self.data.record
+        parent = self.data.parent
 
-        yield Operation(OperationType.UPDATE, PersistentIdentifier, self.data.draft_pid)
+        #
+        # Files rows
+        #
+        draft_bucket = self.data.draft_bucket
+        record_bucket = self.data.record_bucket
+
+        record_bucket["locked"] = True
+        yield Operation(OperationType.INSERT, FilesBucket, record_bucket)
         yield Operation(
-            OperationType.UPDATE, PersistentIdentifier, self.data.parent_pid
+            OperationType.UPDATE,
+            FilesBucket,
+            {
+                "id": draft_bucket["id"],
+                "updated": draft_bucket["updated"],
+                "locked": True,
+            },
         )
 
-        if self.data.draft_doi:
-            assert self.data.parent_doi  # cannot be one doi without the other
+        record_object_versions = self.data.record_object_versions
+        for record_ov in record_object_versions:
+            yield Operation(OperationType.INSERT, FilesObjectVersion, record_ov)
             yield Operation(
-                OperationType.INSERT, PersistentIdentifier, self.data.draft_doi
+                OperationType.INSERT,
+                RDMRecordFile,
+                {
+                    "id": str(uuid4()),
+                    "created": record_ov["created"],
+                    "updated": record_ov["updated"],
+                    "json": {},
+                    "version_id": 1,
+                    "key": record_ov["key"],
+                    "record_id": record["id"],
+                    "object_version_id": record_ov["version_id"],
+                },
             )
-            yield Operation(
-                OperationType.INSERT, PersistentIdentifier, self.data.parent_doi
-            )
 
-        if self.data.draft_oai:
-            yield Operation(
-                OperationType.INSERT, PersistentIdentifier, self.data.draft_oai
-            )
-
-    def _generate_bucket_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        # the drafts service would make a copy of all object versions to the copied bucket
-        # however, at DB level updating the bucket information would suffice
-        # the new record would point to it and the previous draft would be deleted.
-        assert self.data.bucket["locked"]
-        # delete bucket from STATE.BUCKET
-        # it is not linked to a draft anymore and records cannot get file updates
-        STATE.BUCKETS.delete(self.data.bucket["id"])
-        # need to update the bucket (e.g. for locking it)
-        yield Operation(OperationType.UPDATE, FilesBucket, self.data.bucket)
-
-        # TODO: impelement search on the state
-        files = STATE.FILE_RECORDS.search("record_id", self.data.draft["id"])
-        for file in files:
-            yield Operation(OperationType.DELETE, RDMDraftFile, file)
-            yield Operation(OperationType.INSERT, RDMRecordFile, file)
-            STATE.FILE_RECORDS.delete(file["id"])
-
-    def _generate_draft_rows(self, **kwargs):
-        """Generates rows for a new draft."""
-        parent = self.data.parent
-        draft = self.data.draft
-        # delete draft
-        # can we simplify this by only passing an `id`?
-        # would mean all other fields are optional
-        # i.e. data validation is delegated to db exceptions
+        #
+        # PID rows
+        #
+        pid = self.data.pid
+        pid_model = get_pid(session, "recid", pid["pid_value"])
+        assert pid_model
         yield Operation(
-            OperationType.DELETE,
+            OperationType.UPDATE,
+            PersistentIdentifier,
+            {
+                "id": pid_model.id,
+                "status": "R",
+                "updated": pid["updated"],
+            },
+        )
+
+        doi = self.data.doi
+        doi["object_uuid"] = record["id"]
+        doi["status"] = "R"
+        yield Operation(OperationType.INSERT, PersistentIdentifier, doi)
+
+        oai_pid = self.data.oai_pid
+        oai_pid["status"] = "R"
+        oai_pid["record_i"] = record["id"]
+        yield Operation(OperationType.INSERT, PersistentIdentifier, oai_pid)
+
+        if is_first_publish:
+            parent_pid = self.data.parent_pid
+            assert parent_pid
+            parent_pid_model = get_pid(session, "recid", parent_pid["pid_value"])
+            assert parent_pid_model
+            yield Operation(
+                OperationType.UPDATE,
+                PersistentIdentifier,
+                {
+                    "id": parent_pid_model.id,
+                    "status": "R",
+                    "updated": parent_pid["updated"],
+                },
+            )
+            if is_local_doi:
+                parent_doi = self.data.parent_doi
+                assert parent_doi
+                parent_doi["object_uuid"] = parent["id"]
+                parent_doi["status"] = "R"
+                yield Operation(OperationType.INSERT, PersistentIdentifier, parent_doi)
+
+        #
+        # Draft rows
+        #
+        # Soft-delete draft
+        yield Operation(
+            OperationType.UPDATE,
             RDMDraftMetadata,
             dict(
                 id=draft["id"],
-                json=draft["json"],
-                created=draft["created"],
+                json=None,
                 updated=draft["updated"],
-                version_id=draft["version_id"],
-                index=draft["index"],
-                bucket_id=draft["bucket_id"],
-                parent_id=parent["id"],
-                expires_at=draft["expires_at"],
-                fork_version_id=draft["fork_version_id"],
+                version_id=(RDMDraftMetadata.version_id + 1),
+                fork_version_id=None,
             ),
         )
 
-        # create record
+        # Create record
         yield Operation(
             OperationType.INSERT,
             RDMRecordMetadata,
             dict(
-                id=draft["id"],
-                json=draft["json"],  # what happens with fields such as $schema?
-                created=draft["updated"],  # creation of record ~ latest draft update
-                updated=draft["updated"],
+                id=record["id"],
+                json=record["json"],
+                created=record["updated"],
+                updated=record["updated"],
                 version_id=1,
-                index=1,
-                bucket_id=draft["bucket_id"],
+                index=draft["index"],  # take from drat
+                bucket_id=record_bucket["id"],
                 parent_id=parent["id"],
+                deletion_status="P",
             ),
         )
-        # update parent
+        # Update parent
         yield Operation(
             OperationType.UPDATE,
             RDMParentMetadata,
             dict(
                 id=parent["id"],
                 json=parent["json"],
-                created=parent["created"],
                 updated=parent["updated"],
-                version_id=parent["version_id"],
+                version_id=(RDMParentMetadata.version_id + 1),
             ),
-        )
-
-        # update versioning
-        STATE.PARENTS.update(
-            parent["json"]["id"],
-            {
-                "id": parent["id"],
-                "latest_id": draft["id"],
-                "latest_index": draft["index"],
-                "next_draft_id": None,
-            },
         )
         yield Operation(
             OperationType.UPDATE,
             RDMVersionState,
             dict(
                 parent_id=parent["id"],
-                latest_id=draft["id"],
+                latest_id=record["id"],
                 latest_index=draft["index"],
-                next_draft_id=None,  # publishing a new record
+                next_draft_id=None,
             ),
         )
 
-    def _resolve_references(self, **kwargs):
+    def _resolve_references(self, session, **kwargs):
         """Resolve references e.g communities slug names."""
-        # TODO: dup code, move to base DraftAction class?
-        # resolve parent communities slug
+        draft = self.data.draft
+        draft_pid = get_pid(session, "recid", draft["json"]["id"])
+        assert draft_pid
+        draft["id"] = str(draft_pid.object_uuid)
+        draft["index"] = session.scalar(
+            sa.select(RDMDraftMetadata.index).where(RDMDraftMetadata.id == draft["id"])
+        )
+        self.data.record["id"] = draft["id"]
+
         parent = self.data.parent
+        parent_pid = get_pid(session, "recid", parent["json"]["id"])
+        assert parent_pid
+        parent["id"] = str(parent_pid.object_uuid)
+
+        # resolve parent communities slug
         communities = parent["json"].get("communities")
         if communities:
-            self.resolve_communities(communities)
-        self.resolve_draft_pids(self.data.draft)
+            resolve_communities(session, communities)
+        resolve_draft_pids(session, self.data.draft)
+
+
+@dataclass
+class RDMDraftPublishEditData(LoadData):
+    """Draft edit publish action data."""
+
+    # Files
+    draft_bucket: Optional[dict]
+    record_bucket: Optional[dict]
+    record_object_versions: Optional[dict]
+
+    # Records
+    parent: dict
+    draft: dict
+    record: dict
+
+    # PIDs
+    old_external_doi: Optional[dict]
+    new_external_doi: Optional[dict]
+
+    # Communities?
+
+
+class DraftPublishEditAction(LoadAction):
+    """RDM edit publish creation."""
+
+    name = "publish-edit-draft"
+    data_cls = RDMDraftPublishEditData
+    data: RDMDraftPublishEditData
+
+    def _generate_rows(self, session, **kwargs):
+        """Generates rows for a new draft."""
+        is_external_doi = self.data.old_external_doi or self.data.old_external_doi
+
+        draft = self.data.draft
+        record = self.data.record
+        parent = self.data.parent
+
+        #
+        # Files rows
+        #
+        if is_external_doi and self.data.record_object_versions:
+            # TODO: Synchronize files
+            yield from synchronize_files(
+                session,
+                draft,
+                self.data.draft_bucket,
+                record,
+                self.data.record_bucket,
+            )
+        #
+        # PID rows
+        #
+        external_doi_changed = self.data.old_external_doi and self.data.new_external_doi
+        if external_doi_changed:
+            old_doi = self.data.old_external_doi
+            assert old_doi
+            old_doi_model = get_pid(session, "doi", old_doi["pid_value"])
+            assert old_doi_model
+            yield Operation(
+                OperationType.DELETE, PersistentIdentifier, {"id": old_doi_model.id}
+            )
+            new_doi = self.data.new_external_doi
+            assert new_doi
+            new_doi["object_uuid"] = record["id"]
+            yield Operation(OperationType.INSERT, PersistentIdentifier, new_doi)
+
+        #
+        # Draft rows
+        #
+        # Soft-delete draft
+        yield Operation(
+            OperationType.UPDATE,
+            RDMDraftMetadata,
+            dict(
+                id=draft["id"],
+                json=None,
+                updated=draft["updated"],
+                version_id=draft["version_id"],
+                fork_version_id=None,
+            ),
+        )
+
+        # Create record
+        yield Operation(
+            OperationType.UPDATE,
+            RDMRecordMetadata,
+            dict(
+                id=record["id"],
+                json=record["json"],
+                updated=record["updated"],
+                version_id=(RDMRecordMetadata.version_id + 1),
+            ),
+        )
+
+        # Update parent
+        yield Operation(
+            OperationType.UPDATE,
+            RDMParentMetadata,
+            dict(
+                id=parent["id"],
+                json=parent["json"],
+                updated=parent["updated"],
+                version_id=(RDMParentMetadata.version_id + 1),
+            ),
+        )
+
+    def _resolve_references(self, session, **kwargs):
+        """Resolve references e.g communities slug names."""
+        draft = self.data.draft
+        draft_pid = get_pid(session, "recid", draft["json"]["id"])
+        assert draft_pid
+        draft["id"] = str(draft_pid.object_uuid)
+        self.data.record["id"] = draft["id"]
+
+        parent = self.data.parent
+        parent_pid = get_pid(session, "recid", parent["json"]["id"])
+        assert parent_pid
+        parent["id"] = str(parent_pid.object_uuid)
+
+        # resolve parent communities slug
+        communities = parent["json"].get("communities")
+        if communities:
+            resolve_communities(session, communities)
+        resolve_draft_pids(session, self.data.draft)
