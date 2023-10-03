@@ -92,6 +92,9 @@ class PostgreSQLTx(Load):
                             raise
         except Exception:
             logger.exception("Transactions load failed", exc_info=True)
+            if self.raise_on_db_error:
+                # NOTE: the "finally" block below will run before this "raise"
+                raise
         finally:
             if self.dry and outer_trans:
                 outer_trans.rollback()

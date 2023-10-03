@@ -10,6 +10,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Type
 
 from ..models import Model
 
@@ -46,7 +47,7 @@ class Operation:
     """SQL operation."""
 
     type: OperationType
-    model: type[Model]
+    model: Type[Model]
     data: dict
 
     def as_row_dict(self):

@@ -8,7 +8,7 @@
 """Invenio RDM migration transform interfaces."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 import pypeln
 
@@ -58,7 +58,9 @@ class Transform(ABC):
                     yield self._transform(entry)
                 except Exception:
                     logger = Logger.get_logger()
-                    logger.exception(entry, exc_info=1)
+                    logger.exception(entry, exc_info=True)
+                    if self._throw:
+                        raise
                     continue
         else:
             yield from self._multiprocess_transform(entries)
@@ -78,7 +80,7 @@ class Entry(ABC):
         self,
         entry: dict,
         obj: dict,
-        keys: list[str],
+        keys: list[Union[str, tuple[str, str]]],
         prefix: Optional[str] = None,
     ):
         for key in keys:
