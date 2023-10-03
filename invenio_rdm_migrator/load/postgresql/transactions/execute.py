@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from ....logging import Logger
+from ....logging import FailedTxLogger, Logger
 from ...base import Load
 from .operations import OperationType
 
@@ -47,6 +47,7 @@ class PostgreSQLTx(Load):
     def _load(self, transactions):
         """Performs the operations of a group transaction."""
         logger = Logger.get_logger()
+        failed_tx_logger = FailedTxLogger.get_logger()
         exec_kwargs = dict(execution_options={"synchronize_session": False})
 
         outer_trans = None
@@ -87,11 +88,17 @@ class PostgreSQLTx(Load):
                             f"Could not load {action.data} ({action.name})",
                             exc_info=True,
                         )
+                        failed_tx_logger.exception(
+                            "Failed processing transaction",
+                            extra={"tx": action.data},
+                            exc_info=True,
+                        )
                         nested_trans.rollback()
                         if self.raise_on_db_error:
                             raise
         except Exception:
             logger.exception("Transactions load failed", exc_info=True)
+            failed_tx_logger.exception("Failed transaction", exc_info=True)
             if self.raise_on_db_error:
                 # NOTE: the "finally" block below will run before this "raise"
                 raise

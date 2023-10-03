@@ -7,10 +7,20 @@
 
 """Logging module."""
 
+import dataclasses
 import logging
-import sys
 
-from .utils import ts
+from pythonjsonlogger import jsonlogger
+
+
+class DataclassJSONEncoder(jsonlogger.JsonEncoder):
+    """JSON encoder for serializing dataclasses as ``dict``."""
+
+    def default(self, o):
+        """Encoder."""
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
 
 
 class Logger:
@@ -39,3 +49,30 @@ class Logger:
     def get_logger(cls):
         """Get migration logger."""
         return logging.getLogger("migrator")
+
+
+class FailedTxLogger:
+    """Failed transactions logger."""
+
+    name = "migrator.failed_tx"
+
+    @classmethod
+    def initialize(cls, log_dir):
+        """Constructor."""
+        formatter = jsonlogger.JsonFormatter(json_encoder=DataclassJSONEncoder)
+
+        logger = logging.getLogger(cls.name)
+        fh = logging.FileHandler(log_dir / "failed-tx.log")
+        fh.setFormatter(formatter)
+        fh.setLevel(logging.ERROR)
+        logger.addHandler(fh)
+        # info to stream/stdout
+        sh = logging.StreamHandler()
+        sh.setFormatter(formatter)
+        sh.setLevel(logging.INFO)
+        logger.addHandler(sh)
+
+    @classmethod
+    def get_logger(cls):
+        """Get migration logger."""
+        return logging.getLogger(cls.name)

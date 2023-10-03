@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from ..logging import Logger
+from ..logging import FailedTxLogger, Logger
 from ..state import STATE, StateDB
 from .records.state import ParentModelValidator
 from .streams import Stream
@@ -42,6 +42,7 @@ class Runner:
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         Logger.initialize(self.log_dir)
+        FailedTxLogger.initialize(self.log_dir)
 
         self.db_uri = config.get("db_uri")
         self.state = StateDB(
