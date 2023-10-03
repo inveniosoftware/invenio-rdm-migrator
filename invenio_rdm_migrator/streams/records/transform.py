@@ -131,25 +131,38 @@ class RDMRecordEntry(Entry):
 
     def transform(self, entry):
         """Transform a record single entry."""
-        return {
-            "id": self._id(entry),
-            "created": self._created(entry),
-            "updated": self._updated(entry),
-            "version_id": self._version_id(entry),
-            "index": self._index(entry),
-            "bucket_id": self._bucket_id(entry),
-            "media_bucket_id": self._media_bucket_id(entry),
-            "json": {
-                "$schema": self._schema(entry),
-                "id": self._recid(entry),
-                "pids": self._pids(entry),
-                "files": self._files(entry),
-                "media_files": self._media_files(entry),
-                "metadata": self._metadata(entry),
-                "access": self._access(entry),
-                "custom_fields": self._custom_fields(entry),
-            },
-        }
+        transformed = {}
+        self._load_partial(
+            entry,
+            transformed,
+            [
+                "id",
+                "created",
+                "updated",
+                "version_id",
+                "index",
+                "bucket_id",
+                "media_bucket_id",
+            ],
+        )
+        # json might give an inner KeyError that should not be masked
+        self._load_partial(
+            entry,
+            transformed,
+            [
+                ("id", "recid"),
+                ("$schema", "schema"),
+                "pids",
+                "files",
+                "media_files",
+                "metadata",
+                "access",
+                "custom_fields",
+            ],
+            prefix="json",
+        )
+
+        return transformed
 
 
 class RDMRecordFileEntry(Entry):
