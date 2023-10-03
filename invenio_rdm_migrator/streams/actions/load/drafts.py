@@ -432,7 +432,7 @@ class DraftEditAction(LoadAction):
 
         fork_version_id = session.scalar(
             sa.select(RDMRecordMetadata.version_id).where(
-                RDMDraftMetadata.id == draft["id"]
+                RDMRecordMetadata.id == draft["id"]
             )
         )
         yield Operation(
