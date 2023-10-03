@@ -99,6 +99,7 @@ class FileDeleteAction(LoadAction):
 
     name = "file-delete"
     data_cls = FileDeleteData
+    data: FileDeleteData
 
     def _generate_rows(self, *, session, **kwargs):
         """Generates rows for deleting a draft file."""
@@ -150,6 +151,7 @@ class MediaFileUploadAction(LoadAction):
 
     name = "media-file-upload"
     data_cls = MediaFileUploadData
+    data: MediaFileUploadData
     pks = [("file_record", "id", generate_uuid)]
 
     def _generate_rows(self, **kwargs):
@@ -186,6 +188,7 @@ class MediaFileDeleteAction(LoadAction):
 
     name = "media-file-delete"
     data_cls = MediaFileDeleteData
+    data: MediaFileDeleteData
 
     def _generate_rows(self, **kwargs):
         """Generates rows for a new draft."""
