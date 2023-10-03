@@ -22,6 +22,14 @@ class Transform(ABC):
         """Initialize base transform."""
         self._workers = workers
         self._throw = throw
+        self._logger = None
+
+    @property
+    def logger(self):
+        """Return the base logger."""
+        if self._logger is None:
+            self._logger = Logger.get_logger()
+        return self._logger
 
     @abstractmethod
     def _transform(self, entry):  # pragma: no cover
@@ -36,8 +44,7 @@ class Transform(ABC):
             try:
                 return self._transform(entry)
             except Exception:
-                logger = Logger.get_logger()
-                logger.exception(entry, exc_info=True)
+                self.logger.exception(entry, exc_info=True)
                 if self._throw:
                     raise
 
@@ -57,8 +64,7 @@ class Transform(ABC):
                 try:
                     yield self._transform(entry)
                 except Exception:
-                    logger = Logger.get_logger()
-                    logger.exception(entry, exc_info=True)
+                    self.logger.exception(entry, exc_info=True)
                     if self._throw:
                         raise
                     continue
