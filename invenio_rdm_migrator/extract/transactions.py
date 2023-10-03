@@ -22,16 +22,18 @@ class Tx:
     operations: list[dict]  # TODO: we could more narrowly define it later
     commit_lsn: Optional[int] = None
 
-    def as_ops_tuples(self, include=None):
+    def as_ops_tuples(
+        self,
+        include: Optional[Sequence[str]] = None,
+        exclude: Optional[Sequence[str]] = None,
+    ):
         """Return a list of (table, op_type) tuples."""
-        if include is None:
-            return [(o["source"]["table"], o["op"]) for o in self.operations]
-        else:
-            return [
-                (table, o["op"])
-                for o in self.operations
-                if (table := o["source"]["table"]) in include
-            ]
+        res = [(o["source"]["table"], o["op"]) for o in self.operations]
+        if include:
+            res = [t for t in res if t[0] in include]
+        if exclude:
+            res = [t for t in res if t[0] not in exclude]
+        return res
 
     def ops_by(
         self,
@@ -90,6 +92,7 @@ class Tx:
 
     @staticmethod
     def filter_unchanged(data, ignored_keys=None):
+        """Filter out unchanged fields in an transaction operation, keeping PKs."""
         before = copy.deepcopy(data["before"])
         after = copy.deepcopy(data["after"])
         ignored_keys = set(ignored_keys or data["key"].keys())
