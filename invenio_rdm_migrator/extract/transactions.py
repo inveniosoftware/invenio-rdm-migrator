@@ -26,6 +26,7 @@ class Tx:
         self,
         include: Optional[Sequence[str]] = None,
         exclude: Optional[Sequence[str]] = None,
+        op_types: Optional[Sequence[str]] = None,
     ):
         """Return a list of (table, op_type) tuples."""
         res = [(o["source"]["table"], o["op"]) for o in self.operations]
@@ -33,6 +34,8 @@ class Tx:
             res = [t for t in res if t[0] in include]
         if exclude:
             res = [t for t in res if t[0] not in exclude]
+        if op_types:
+            res = [t for t in res if t[1] in op_types]
         return res
 
     def ops_by(
