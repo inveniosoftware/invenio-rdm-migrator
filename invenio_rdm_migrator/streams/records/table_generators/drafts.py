@@ -96,6 +96,12 @@ class RDMDraftTableGenerator(
         # all drafts have a bucket due to the `post_create` hook on the files sysfield
         STATE.BUCKETS.add(draft["bucket_id"], {"draft_id": draft_id})
 
+        draft["fork_version_id"] = forked_published.get("fork_version_id")
+        # If the draft is published we want to "soft" delete it
+        if data.get("is_published"):
+            draft["json"] = None
+            draft["fork_version_id"] = None
+
         yield RDMDraftMetadata(
             id=draft_id,
             json=draft["json"],
@@ -107,8 +113,7 @@ class RDMDraftTableGenerator(
             media_bucket_id=draft.get("media_bucket_id"),
             parent_id=parent_id,
             expires_at=draft["expires_at"],
-            fork_version_id=forked_published.get("fork_version_id")
-            or draft["fork_version_id"],
+            fork_version_id=draft["fork_version_id"],
         )
 
         # if there is a record in the state it means both recid and doi were already

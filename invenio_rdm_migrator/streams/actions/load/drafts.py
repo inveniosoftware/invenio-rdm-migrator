@@ -238,15 +238,15 @@ def synchronize_files(session, draft, draft_bucket, record, record_bucket):
     # TODO: Process `changed_ovs` to apply changes to RDMFileRecord
 
 
-def resolve_draft_pids(session, draft, parent=None):
-    """Enforce record's pids to draft."""
-    if not draft:
+def resolve_pids(session, draft_or_record, parent=None):
+    """Enforce Pids to draft/record and parent."""
+    if not draft_or_record:
         return
 
-    pid = draft["json"]["id"]
+    pid = draft_or_record["json"]["id"]
     forked_published = get_published_record(session, pid)
     if forked_published:
-        pids = draft["json"]["pids"]
+        pids = draft_or_record["json"]["pids"]
         has_draft_external_doi = pids.get("doi", {}).get("provider") == "external"
         if has_draft_external_doi:
             # keep the draft external value as it might be there for
@@ -254,7 +254,7 @@ def resolve_draft_pids(session, draft, parent=None):
             pids["oai"] = forked_published.json["pids"]["oai"]
         else:
             # enfore published record pids to draft
-            draft["json"]["pids"] = forked_published.json["pids"]
+            draft_or_record["json"]["pids"] = forked_published.json["pids"]
 
         if parent:
             parent_model = session.scalars(
@@ -406,7 +406,7 @@ class DraftCreateAction(LoadAction):
         communities = parent["json"].get("communities")
         if communities:
             resolve_communities(session, communities)
-        resolve_draft_pids(session, self.data.draft)
+        resolve_pids(session, self.data.draft)
         _set_permission_flags(session, parent, self.data.draft)
 
 
@@ -480,7 +480,7 @@ class DraftEditAction(LoadAction):
         if communities:
             resolve_communities(session, communities)
 
-        resolve_draft_pids(session, self.data.draft, parent=parent)
+        resolve_pids(session, self.data.draft, parent=parent)
         _set_permission_flags(session, parent, self.data.draft)
 
 
@@ -663,16 +663,16 @@ class DraftPublishNewAction(LoadAction):
     def _resolve_references(self, session, **kwargs):
         """Resolve references e.g communities slug names."""
         draft = self.data.draft
-        draft_pid = get_pid(session, "recid", draft["json"]["id"])
-        assert draft_pid
-        draft["id"] = str(draft_pid.object_uuid)
-        draft["index"] = session.scalar(
-            sa.select(RDMDraftMetadata.index).where(RDMDraftMetadata.id == draft["id"])
-        )
-        draft["json"]["pid"] = format_pid_ref(draft_pid)
+        record = self.data.record
+        pid = get_pid(session, "recid", record["json"]["id"])
+        assert pid
         # In RDM drafts and records share their PK
-        self.data.record["id"] = draft["id"]
-        self.data.record["json"]["pid"] = draft["json"]["pid"]
+        draft["id"] = record["id"] = str(pid.object_uuid)
+        # Get the index from the draft
+        record["index"] = draft["index"] = session.scalar(
+            sa.select(RDMDraftMetadata.index).where(RDMDraftMetadata.id == record["id"])
+        )
+        record["json"]["pid"] = format_pid_ref(pid)
 
         parent = self.data.parent
         parent_pid = get_pid(session, "recid", parent["json"]["id"])
@@ -684,8 +684,8 @@ class DraftPublishNewAction(LoadAction):
         communities = parent["json"].get("communities")
         if communities:
             resolve_communities(session, communities)
-        resolve_draft_pids(session, self.data.draft, parent=parent)
-        _set_permission_flags(session, parent, self.data.draft)
+        resolve_pids(session, record, parent=parent)
+        _set_permission_flags(session, parent, record)
 
 
 @dataclass
@@ -796,13 +796,12 @@ class DraftPublishEditAction(LoadAction):
     def _resolve_references(self, session, **kwargs):
         """Resolve references e.g communities slug names."""
         draft = self.data.draft
-        draft_pid = get_pid(session, "recid", draft["json"]["id"])
-        assert draft_pid
-        draft["id"] = str(draft_pid.object_uuid)
-        draft["json"]["pid"] = format_pid_ref(draft_pid)
-        self.data.record["id"] = draft["id"]
-        self.data.record["id"] = draft["id"]
-        self.data.record["json"]["pid"] = draft["json"]["pid"]
+        record = self.data.record
+        pid = get_pid(session, "recid", record["json"]["id"])
+        assert pid
+        # In RDM drafts and records share their PK
+        draft["id"] = record["id"] = str(pid.object_uuid)
+        record["json"]["pid"] = format_pid_ref(pid)
 
         parent = self.data.parent
         parent_pid = get_pid(session, "recid", parent["json"]["id"])
@@ -814,5 +813,5 @@ class DraftPublishEditAction(LoadAction):
         communities = parent["json"].get("communities")
         if communities:
             resolve_communities(session, communities)
-        resolve_draft_pids(session, self.data.draft, parent=parent)
-        _set_permission_flags(session, parent, self.data.draft)
+        resolve_pids(session, record, parent=parent)
+        _set_permission_flags(session, parent, record)
