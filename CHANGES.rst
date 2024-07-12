@@ -9,7 +9,15 @@
 Changes
 =======
 
+Version 5.0.0 (released 2024-07-12)
+
+- change how the submodule are packaged (breaking change)
+- installation: install sqlalchemy version 2 optionally
+  (solves dependency conflict with current InvenioRDM installations)
+
+
 Version 4.4.1
+
 
 - Fix default value for nullable model fields.
 
