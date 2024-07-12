@@ -7,11 +7,9 @@
 
 """Invenio RDM migration users stream."""
 
-from .load import UserCopyLoad
 from .transform import UserEntry, UserTransform
 
 __all__ = (
-    "UserCopyLoad",
     "UserEntry",
     "UserTransform",
 )

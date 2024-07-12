@@ -35,11 +35,20 @@ Make sure that you have `libpq-dev` installed in your system. See
 `psycopg installation instructions <https://www.psycopg.org/install/>`_
 for more information.
 
+Decide if you need to use intermediate database to copy from (more details below)
+If yes, you need to install the optional [alchemy] extra.
+Attention! it installs sqlalchemy in version 2, which might be incompatible with some
+InvenioRDM instances.
+
 Choose a version of search and database, then run:
 
 .. code-block:: console
 
     pip install -e .
+
+.. code-block:: console
+
+    pip install -e ."[tests,alchemy]"
 
 
 Tests
@@ -87,13 +96,13 @@ To run the migration you need:
 
 
 - You will need to create a small python script
-  putting together the different blocks of the ETL. You can find an eample
+  putting together the different blocks of the ETL. You can find an example
   at `my-site/site/my_site/migrator/__main__.py`.
 
 .. code-block:: python
 
     from invenio_rdm_migrator.streams import StreamDefinition
-    from invenio_rdm_migrator.streams.records import RDMRecordCopyLoad
+    from invenio_rdm_migrator.streams.records.load import RDMRecordCopyLoad
 
     if __name__ == "__main__":
         RecordStreamDefinition = StreamDefinition(
